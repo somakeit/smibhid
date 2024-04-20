@@ -5,8 +5,13 @@ SMIBHID is the So Make It Bot Human Interface Device and definitely not a mispro
 
 This device run on a Raspberry Pi Pico W and provides physical input and output to humans for the SMIB project; Buttons, LEDs, that sort of thing.
 
+Space_open and Space_closed LEDs show current state (based on last successful state change form this device) and boots with both off.
+
+Press the space_open or space_closed buttons to call the smib server endpoint appropriately. The target state LED will flash to show it's attempting to communicate and confirm successful state update to provide feedback to the user. One of the timeouts I can't work around yet is quite lengthy so expect ~30 seconds of flashing if SMIBHID can't connect to the API webserver. In normal operation the light will simply update immediately.
+
 ## Features
 - Space open and closed buttons with LED feedback that calls the SMIB space_open endpoint
+- LED flashes while trying to set state so you know it's trying to do something
 
 ## Circuit diagram
 ### Pico W Connections
