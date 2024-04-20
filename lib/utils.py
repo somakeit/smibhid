@@ -9,22 +9,23 @@ class Status_LED:
     Info log level output of state changes.
     Supports sync and async flash functions taking count and frequency arguments.
     """
-    def __init__(self, log_level: int, gpio_pin=None) -> None:
+    def __init__(self, log_level: int, gpio_pin: int = -1) -> None:
         self.logger = uLogger("Status_LED", log_level)
-        self.pin_number = gpio_pin
-        if self.pin_number:
+        if gpio_pin > -1:
             self.status_led = Pin(gpio_pin, Pin.OUT)
+            self.pin_id = gpio_pin
         else:
             self.status_led = Pin("LED", Pin.OUT)
+            self.pin_id = "LED"
     
     def on(self) -> None:
         """"Turn the LED on"""
-        self.logger.info(f"Pin {self.pin_number}: LED on")
+        self.logger.info(f"Pin {self.pin_id}: LED on")
         self.status_led.on()
 
     def off(self) -> None:
         """"Turn the LED off"""
-        self.logger.info(f"Pin {self.pin_number}: LED off")
+        self.logger.info(f"Pin {self.pin_id}: LED off")
         self.status_led.off()
 
     async def async_flash(self, count: int, hz: float) -> None:

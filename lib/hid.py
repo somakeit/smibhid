@@ -4,10 +4,11 @@ from button import Button
 from uasyncio import Event, create_task, get_event_loop
 from utils import Status_LED
 from slack_api import Wrapper
+from lib.networking import Wireless_Network
 
 class HID:
     
-    def __init__(self, loglevel: int = 2) -> None:
+    def __init__(self, loglevel: int) -> None:
         """
         Human Interface Device for event spaces providing buttons and status LEDs for space open state.
         Create HID instance and then run startup() to start services for button monitoring and LED output.
@@ -21,7 +22,9 @@ class HID:
         self.space_closed_led = Status_LED(loglevel, config.SPACE_CLOSED_LED)
         self.space_open_led.on()
         self.space_closed_led.off()
-        self.slack_api = Wrapper()
+        self.wifi = Wireless_Network(log_level=loglevel)
+        self.wifi.configure_wifi()
+        self.slack_api = Wrapper(loglevel, self.wifi)
         self.loop_running = False
 
     def startup(self) -> None:
@@ -37,6 +40,8 @@ class HID:
         create_task(self.space_opened_watcher())
         self.log.info(f"Starting {self.closed_button.get_name()} button pressed event catcher")
         create_task(self.space_closed_watcher())
+        self.log.info(f"Starting network monitor")
+        create_task(self.wifi.network_monitor())
 
         self.log.info(f"Entering main loop")        
         self.loop_running = True
@@ -51,7 +56,7 @@ class HID:
             await self.space_open_button_event.wait()
             self.space_open_button_event.clear()
             try:
-                response = self.slack_api.space_open()
+                response = await self.slack_api.space_open()
                 self.space_open_led.on()
                 self.space_closed_led.off()
                 self.log.info(f"Space state set to opened successfully, API response: {response}")
@@ -67,7 +72,7 @@ class HID:
             await self.space_closed_button_event.wait()
             self.space_closed_button_event.clear()
             try:
-                response = self.slack_api.space_closed()
+                response = await self.slack_api.space_closed()
                 self.space_closed_led.on()
                 self.space_open_led.off()
                 self.log.info(f"Space state set to closed successfully, API response: {response}")
