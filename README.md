@@ -9,7 +9,11 @@ This device run on a Raspberry Pi Pico W and provides physical input and output 
 - Space open and closed buttons with LED feedback that calls the SMIB space_open endpoint
 
 ## Circuit diagram
+### Pico W Connections
 ![Circuit diagram](images/SMIBHID%20circuit%20diagram.drawio.png)
+
+### Pico W pinout
+![Pico W pinout](images/pico_w_pinout.png)
 
 ## Developers
 SMIB uses a class abstracted approach running an async loop using the builtin uasyncio, a static copy of the uaiohttpclient for making async requests and my custom logging module.
