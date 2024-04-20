@@ -38,6 +38,19 @@ class Status_LED:
             await uasyncio.sleep(sleep_duration)
             self.off()
     
+    async def async_constant_flash(self, hz: float) -> None:
+        """
+        Flash the LED constantly at a given frequency using async awaits on the sleep function.
+        This should be started by task = asyncio.create_task() and cancelled with task.cancel().
+        """
+        self.off()
+        sleep_duration = (1 / hz) / 2
+        while True:
+            await uasyncio.sleep(sleep_duration)
+            self.on()
+            await uasyncio.sleep(sleep_duration)
+            self.off()
+    
     def flash(self, count: int, hz: float) -> None:
         """Flash the LED a number of times at a given frequency using standrad blocking sleep function."""
         self.off()

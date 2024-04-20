@@ -20,7 +20,7 @@ class HID:
         self.closed_button = Button(loglevel, config.SPACE_CLOSED_BUTTON, "Space_closed", self.space_closed_button_event)
         self.space_open_led = Status_LED(loglevel, config.SPACE_OPEN_LED)
         self.space_closed_led = Status_LED(loglevel, config.SPACE_CLOSED_LED)
-        self.space_open_led.on()
+        self.space_open_led.off()
         self.space_closed_led.off()
         self.wifi = Wireless_Network(log_level=loglevel)
         self.wifi.configure_wifi()
@@ -55,14 +55,21 @@ class HID:
         while True:
             await self.space_open_button_event.wait()
             self.space_open_button_event.clear()
+            flash_task = create_task(self.space_open_led.async_constant_flash(4))
             try:
                 response = await self.slack_api.space_open()
-                self.space_open_led.on()
-                self.space_closed_led.off()
-                self.log.info(f"Space state set to opened successfully, API response: {response}")
+                if response == 0:
+                    flash_task.cancel()
+                    self.space_open_led.on()
+                    self.space_closed_led.off()
+                    self.log.info(f"Space state set to opened successfully, API response: {response}")
+                else:
+                    print(response)
+                    raise Exception("Request to API timed out")
             except Exception as e:
-                self.log.warn(f"An exception was encountered trying to set SMIB space state: {e}")
-
+                self.log.error(f"An exception was encountered trying to set SMIB space state: {e}")
+                flash_task.cancel()
+                self.space_open_led.off()
 
     async def space_closed_watcher(self) -> None:
         """
@@ -71,10 +78,18 @@ class HID:
         while True:
             await self.space_closed_button_event.wait()
             self.space_closed_button_event.clear()
+            flash_task = create_task(self.space_closed_led.async_constant_flash(4))
             try:
                 response = await self.slack_api.space_closed()
-                self.space_closed_led.on()
-                self.space_open_led.off()
-                self.log.info(f"Space state set to closed successfully, API response: {response}")
+                if response == 0:
+                    flash_task.cancel()
+                    self.space_closed_led.on()
+                    self.space_open_led.off()
+                    self.log.info(f"Space state set to closed successfully, API response: {response}")
+                else:
+                    print(response)
+                    raise Exception("Request to API timed out")
             except Exception as e:
-                self.log.warn(f"An exception was encountered trying to set SMIB space state: {e}")
+                self.log.error(f"An exception was encountered trying to set SMIB space state: {e}")
+                flash_task.cancel()
+                self.space_closed_led.off()
