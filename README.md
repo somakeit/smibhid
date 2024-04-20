@@ -20,6 +20,16 @@ Press the space_open or space_closed buttons to call the smib server endpoint ap
 ### Pico W pinout
 ![Pico W pinout](images/pico_w_pinout.png)
 
+### Example breadboard build
+![Breadboard photo](images/breadboard.jpg)
+
+## Deployment
+Copy the files from the smibhib folder into the root of a Pico W running Micropython and update values in config.py as necessary
+### Configuration
+- Ensure the pins for the space open/closed LEDs and buttons are correctly specified for your wiring
+- Populate Wifi SSID and password
+- Configure the webserver hostname/IP and port as per your smib.webserver configuration
+
 ## Developers
 SMIB uses a class abstracted approach running an async loop using the builtin uasyncio, a static copy of the uaiohttpclient for making async requests and my custom logging module.
 
