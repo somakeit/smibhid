@@ -22,8 +22,11 @@ class Button:
                 previous_value = self.pin.value()
                 await uasyncio.sleep(0.1)
 
-            self.logger.info(f"Button pressed: {self.name}")
-            self.button_pressed.set()
+            if self.pin.value() == 0:
+                self.logger.info(f"Button pressed: {self.name}")
+                self.button_pressed.set()
+            else:
+                self.logger.info(f"Button released: {self.name}")
 
     def get_name(self) -> str:
         return self.name
