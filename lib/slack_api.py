@@ -40,7 +40,13 @@ class Wrapper:
             response = await request.read()
             self.log.info(f"response data: {response}")
             gc.collect()
-            return 0
+            
+            if request.status == 200:
+                self.log.info("Request processed sucessfully by SMIB API")
+                return 0
+            else:
+                self.log.info(f"Request to SMIB API encountered errors: {request.status} - {response}")
+                return -1
         except Exception as e:
             self.log.error(f"Failed to call slack API: {url}. Exception: {e}")
             gc.collect()

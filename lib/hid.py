@@ -65,7 +65,7 @@ class HID:
                     self.log.info(f"Space state set to opened successfully, API response: {response}")
                 else:
                     print(response)
-                    raise Exception("Request to API timed out")
+                    raise Exception("Request to API failed")
             except Exception as e:
                 self.log.error(f"An exception was encountered trying to set SMIB space state: {e}")
                 flash_task.cancel()
