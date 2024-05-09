@@ -1,6 +1,6 @@
 from machine import Pin
 from lib.ulogging import uLogger
-from uasyncio import Event, sleep_ms
+from asyncio import Event, sleep
 
 class Button:
 
@@ -23,7 +23,7 @@ class Button:
                     active += 1
                 else:
                     active = 0
-                await sleep_ms(1)
+                await sleep(0.001)
 
             if self.pin.value() == 0:
                 self.logger.info(f"Button pressed: {self.name}")
