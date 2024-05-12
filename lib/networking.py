@@ -1,18 +1,18 @@
-from utime import ticks_ms, sleep
+from utime import ticks_ms
 from math import ceil
 import rp2
 import network
 from ubinascii import hexlify
 import config
 from lib.ulogging import uLogger
-from lib.utils import Status_LED
+from lib.utils import StatusLED
 import uasyncio
 
-class Wireless_Network:
+class WirelessNetwork:
 
     def __init__(self, log_level: int) -> None:
         self.logger = uLogger("WIFI", log_level)
-        self.status_led = Status_LED(log_level)
+        self.status_led = StatusLED(log_level)
         self.wifi_ssid = config.WIFI_SSID
         self.wifi_password = config.WIFI_PASSWORD
         self.wifi_country = config.WIFI_COUNTRY
@@ -109,7 +109,7 @@ class Wireless_Network:
         try:
             await self.attempt_ap_connect()
         except Exception:
-            raise Exception(f"Failed to connect to network")
+            raise Exception("Failed to connect to network")
 
         elapsed_ms = ticks_ms() - start_ms
         self.generate_connection_info(elapsed_ms)

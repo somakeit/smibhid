@@ -3,7 +3,7 @@ from machine import Pin
 import uasyncio
 from lib.ulogging import uLogger
 
-class Status_LED:
+class StatusLED:
     """
     Instantiate an LED on a GPIO pin or leave pin unset for onboard LED.
     Info log level output of state changes.

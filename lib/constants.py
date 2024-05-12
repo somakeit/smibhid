@@ -1,0 +1,2 @@
+OPEN = True
+CLOSED = False
