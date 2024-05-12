@@ -1,13 +1,11 @@
 from ulogging import uLogger
 import config
 from button import Button
-from asyncio import Event, create_task, get_event_loop
-from utils import StatusLED
-from asyncio import Event, create_task, get_event_loop
+from asyncio import Event, create_task, get_event_loop, sleep
 from utils import StatusLED
 from slack_api import Wrapper
 from lib.networking import WirelessNetwork
-from constants import OPEN
+from constants import OPEN, CLOSED
 
 class HID:
     
@@ -32,6 +30,11 @@ class HID:
         self.wifi.configure_wifi()
         self.slack_api = Wrapper(loglevel, self.wifi)
         self.loop_running = False
+        self.space_state = None
+        
+        self.space_state_poll_frequency = config.space_state_poll_frequency_s
+        if self.space_state_poll_frequency != 0 and self.space_state_poll_frequency < 5:
+            self.space_state_poll_frequency = 5
 
     def startup(self) -> None:
         """
@@ -49,6 +52,11 @@ class HID:
         create_task(self.async_space_closed_watcher())
         self.log.info("Starting network monitor")
         create_task(self.wifi.network_monitor())
+        if self.space_state_poll_frequency != 0:
+            self.log.info(f"Starting space state poller with frequency of {self.space_state_poll_frequency} seconds")
+            create_task(self.async_space_state_watcher())
+        else:
+            self.log.info("Space state poller disabled by config")
 
         self.log.info("Entering main loop")        
         self.log.info("Entering main loop")        
@@ -67,11 +75,17 @@ class HID:
         self.space_open_led.off()
         self.space_closed_led.on()
         self.log.info("Space state is closed.")
+
+    def set_output_space_none(self) -> None:
+        """Set LED's display etc to show the space as none"""
+        self.space_open_led.off()
+        self.space_closed_led.off()
+        self.log.info("Space state is none.")
     
     async def async_update_space_state_output(self) -> None:
         """Checks space state from server and sets SMIDHID output to reflect current space state, including errors if space state not available."""
         try:
-            state = await self.slack_api.space_state()
+            state = await self.slack_api.async_get_space_state()
             if state == OPEN:
                 self.set_output_space_open()
             else:
@@ -88,7 +102,7 @@ class HID:
             self.space_open_button_event.clear()
             flash_task = create_task(self.space_open_led.async_constant_flash(4))
             try:
-                await self.slack_api.space_open()
+                await self.slack_api.async_space_open()
                 flash_task.cancel()
                 self.set_output_space_open()
                 await self.async_update_space_state_output()
@@ -106,7 +120,7 @@ class HID:
             self.space_closed_button_event.clear()
             flash_task = create_task(self.space_closed_led.async_constant_flash(4))
             try:
-                await self.slack_api.space_closed()
+                await self.slack_api.async_space_closed()
                 flash_task.cancel()
                 self.set_output_space_closed()
                 await self.async_update_space_state_output()
@@ -114,3 +128,27 @@ class HID:
                 self.log.error(f"An exception was encountered trying to set SMIB space state: {e}")
                 flash_task.cancel()
                 self.space_closed_led.off()
+
+    async def async_space_state_watcher(self) -> None:
+        """
+        Coroutine to frequently poll the space state from the slack server and update SMIBHID output if the state has changed.
+        """
+        while True:
+            self.log.info("Polling space state")
+            try:
+                space_state = await self.slack_api.async_get_space_state()
+                self.log.info(f"Space state is: {space_state}")
+                if space_state != self.space_state:
+                    self.space_state = space_state
+                    if space_state is OPEN:
+                        self.set_output_space_open()
+                    elif space_state is CLOSED:
+                        self.set_output_space_closed()
+                    elif space_state is None:
+                        self.set_output_space_none()
+                    else:
+                        raise ValueError("Space state is not an expected value")
+            except Exception as e:
+                self.log.error(f"Error encountered updating space state: {e}")
+            finally:
+                await sleep(self.space_state_poll_frequency)

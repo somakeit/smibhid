@@ -14,21 +14,23 @@ class Wrapper:
         self.wifi = wifi
         self.event_api_base_url = "http://" + WEBSERVER_HOST + ":" + WEBSERVER_PORT + "/smib/event/"
 
-    async def space_open(self) -> None:
+    async def async_space_open(self) -> None:
         """Call space_open."""
         await self._async_slack_api_request("PUT", "space_open")
     
-    async def space_closed(self) -> None:
+    async def async_space_closed(self) -> None:
         """Call space_closed."""
         await self._async_slack_api_request("PUT", "space_closed")
     
-    async def space_state(self) -> bool:
+    async def async_get_space_state(self) -> bool | None:
         """Call space_state and return boolean: True = Open, False = closed."""
         response = await self._async_slack_api_request("GET", "space_state")
         self.log.info(f"Request result: {response}")
         try:
             state = response['open']
-        except ValueError as e:
+            if state not in [True, False, None]:
+                raise ValueError(f"Space state set to illegal value: {state}")
+        except Exception as e:
             self.log.error(f"Unable to load space state from response data: {e}")
             raise
         return state

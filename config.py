@@ -15,3 +15,7 @@ WIFI_RETRY_BACKOFF_SECONDS = 5
 ## Web host
 WEBSERVER_HOST = ""
 WEBSERVER_PORT = "80"
+
+## Space state
+# Set the space state poll frequency in seconds (>= 5), set to 0 to disable the state poll
+space_state_poll_frequency_s = 5
