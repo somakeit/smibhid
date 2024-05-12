@@ -6,6 +6,7 @@ from utils import StatusLED
 from slack_api import Wrapper
 from lib.networking import WirelessNetwork
 from constants import OPEN, CLOSED
+from time import ticks_ms
 
 class HID:
     
@@ -32,6 +33,8 @@ class HID:
         self.loop_running = False
         self.space_state = None
         self.space_state_check_in_error_state = False
+        self.checking_space_state = False
+        self.checking_space_state_timeout_s = 30
         
         self.space_state_poll_frequency = config.space_state_poll_frequency_s
         if self.space_state_poll_frequency != 0 and self.space_state_poll_frequency < 5:
@@ -67,18 +70,21 @@ class HID:
 
     def set_output_space_open(self) -> None:
         """Set LED's display etc to show the space as open"""
+        self.space_state = True
         self.space_open_led.on()
         self.space_closed_led.off()
         self.log.info("Space state is open.")
     
     def set_output_space_closed(self) -> None:
         """Set LED's display etc to show the space as closed"""
+        self.space_state = False
         self.space_open_led.off()
         self.space_closed_led.on()
         self.log.info("Space state is closed.")
 
     def set_output_space_none(self) -> None:
         """Set LED's display etc to show the space as none"""
+        self.space_state = None
         self.space_open_led.off()
         self.space_closed_led.off()
         self.log.info("Space state is none.")
@@ -98,29 +104,53 @@ class HID:
         self.state_check_error_closed_led_flash_task.cancel()
         self.space_open_led.off()
         self.space_closed_led.off()
+
+    def _free_to_check_space_state(self) -> bool: # TODO State checks currently back up in a queue, so this is no use yet, need the calls to update_space_state output to be fire and forget not awaits
+        """Check that we're not already checking for space state with a timeout to reset and retry after"""
+        now = ticks_ms()
+        if self.checking_space_state and self.checking_space_state_started + self.checking_space_state_timeout_s > now:
+            self.log.warn("Already checking space state and timeout not reached, cancelling this check")
+            return False
+        else:
+            self.checking_space_state_started = ticks_ms()
+            return True
+        
+    def _set_space_output(self, new_space_state: bool | None) -> None:
+        """Call appropriate space output configuration method for new space state."""
+        if new_space_state is OPEN:
+            self.set_output_space_open()
+        elif new_space_state is CLOSED:
+            self.set_output_space_closed()
+        elif new_space_state is None:
+            self.set_output_space_none()
+        else:
+            raise ValueError("Space state is not an expected value")
     
     async def async_update_space_state_output(self) -> None:
-        """Checks space state from server and sets SMIDHID output to reflect current space state, including errors if space state not available."""
-        try:
-            new_space_state = await self.slack_api.async_get_space_state()
-            self.log.info(f"Space state is: {new_space_state}")
-            if new_space_state != self.space_state:
-                self.space_state = new_space_state
-                if new_space_state is OPEN:
-                    self.set_output_space_open()
-                elif new_space_state is CLOSED:
-                    self.set_output_space_closed()
-                elif new_space_state is None:
-                    self.set_output_space_none()
-                else:
-                    raise ValueError("Space state is not an expected value")
-            if self.space_state_check_in_error_state:
-                self._set_space_state_check_to_ok()
-        except Exception as e:
-            self.log.error(f"Error encountered polling updating space state: {e}")
-            if not self.space_state_check_in_error_state:
-                self._set_space_state_check_to_error()
-            raise
+        """
+        Checks space state from server and sets SMIDHID output to reflect current space state, including errors if space state not available.
+        """
+        self.log.info("Checking space state")
+        if not self._free_to_check_space_state():
+            return
+        else:
+            self.checking_space_state = True
+            
+            try:
+                new_space_state = await self.slack_api.async_get_space_state()
+                self.log.info(f"Space state is: {new_space_state}")
+                if new_space_state != self.space_state:
+                    self._set_space_output(new_space_state)
+                    
+                if self.space_state_check_in_error_state:
+                    self._set_space_state_check_to_ok()
+
+                self.checking_space_state = False
+            except Exception as e:
+                self.log.error(f"Error encountered polling updating space state: {e}")
+                if not self.space_state_check_in_error_state:
+                    self._set_space_state_check_to_error()
+                raise
     
     async def async_space_opened_watcher(self) -> None:
         """
