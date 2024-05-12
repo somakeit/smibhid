@@ -85,13 +85,21 @@ class HID:
     async def async_update_space_state_output(self) -> None:
         """Checks space state from server and sets SMIDHID output to reflect current space state, including errors if space state not available."""
         try:
-            state = await self.slack_api.async_get_space_state()
-            if state == OPEN:
-                self.set_output_space_open()
-            else:
-                self.set_output_space_closed()
+            space_state = await self.slack_api.async_get_space_state()
+            self.log.info(f"Space state is: {space_state}")
+            if space_state != self.space_state:
+                self.space_state = space_state
+                if space_state is OPEN:
+                    self.set_output_space_open()
+                elif space_state is CLOSED:
+                    self.set_output_space_closed()
+                elif space_state is None:
+                    self.set_output_space_none()
+                else:
+                    raise ValueError("Space state is not an expected value")
         except Exception as e:
-            self.log.error(f"Error encountered updating space state: {e}")
+            self.log.error(f"Error encountered polling updating space state: {e}")
+            raise
     
     async def async_space_opened_watcher(self) -> None:
         """
@@ -136,19 +144,8 @@ class HID:
         while True:
             self.log.info("Polling space state")
             try:
-                space_state = await self.slack_api.async_get_space_state()
-                self.log.info(f"Space state is: {space_state}")
-                if space_state != self.space_state:
-                    self.space_state = space_state
-                    if space_state is OPEN:
-                        self.set_output_space_open()
-                    elif space_state is CLOSED:
-                        self.set_output_space_closed()
-                    elif space_state is None:
-                        self.set_output_space_none()
-                    else:
-                        raise ValueError("Space state is not an expected value")
+                await self.async_update_space_state_output()
             except Exception as e:
-                self.log.error(f"Error encountered updating space state: {e}")
+                self.log.error(f"State poller encountered an error updating space state: {e}")
             finally:
                 await sleep(self.space_state_poll_frequency)
