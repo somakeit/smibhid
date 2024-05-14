@@ -21,11 +21,8 @@ class HID:
         self.closed_button = Button(loglevel, config.SPACE_CLOSED_BUTTON, "Space_closed", self.space_closed_button_event)
         self.space_open_led = StatusLED(loglevel, config.SPACE_OPEN_LED)
         self.space_closed_led = StatusLED(loglevel, config.SPACE_CLOSED_LED)
-        self.space_open_led = StatusLED(loglevel, config.SPACE_OPEN_LED)
-        self.space_closed_led = StatusLED(loglevel, config.SPACE_CLOSED_LED)
         self.space_open_led.off()
         self.space_closed_led.off()
-        self.wifi = WirelessNetwork(log_level=loglevel)
         self.wifi = WirelessNetwork(log_level=loglevel)
         self.wifi.configure_wifi()
         self.slack_api = Wrapper(loglevel, self.wifi)
@@ -40,7 +37,6 @@ class HID:
         """
         Initialise all aysnc services for the HID.
         """
-        self.log.info("Starting HID")
         self.log.info("Starting HID")
         self.log.info(f"Starting {self.open_button.get_name()} button watcher")
         create_task(self.open_button.wait_for_press())
@@ -57,8 +53,7 @@ class HID:
             create_task(self.async_space_state_watcher())
         else:
             self.log.info("Space state poller disabled by config")
-
-        self.log.info("Entering main loop")        
+      
         self.log.info("Entering main loop")        
         self.loop_running = True
         loop = get_event_loop()
