@@ -38,7 +38,6 @@ class HID:
         Initialise all aysnc services for the HID.
         """
         self.log.info("Starting HID")
-        self.log.info("Starting HID")
         self.log.info(f"Starting {self.open_button.get_name()} button watcher")
         create_task(self.open_button.wait_for_press())
         self.log.info(f"Starting {self.closed_button.get_name()} button watcher")
@@ -54,8 +53,7 @@ class HID:
             create_task(self.async_space_state_watcher())
         else:
             self.log.info("Space state poller disabled by config")
-
-        self.log.info("Entering main loop")        
+      
         self.log.info("Entering main loop")        
         self.loop_running = True
         loop = get_event_loop()
