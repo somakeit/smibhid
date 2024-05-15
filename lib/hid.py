@@ -1,12 +1,11 @@
 from ulogging import uLogger
 import config
 from button import Button
-from asyncio import Event, create_task, get_event_loop, sleep
+from asyncio import Event, create_task, get_event_loop, sleep, wait_for
 from utils import StatusLED
 from slack_api import Wrapper
 from lib.networking import WirelessNetwork
 from constants import OPEN, CLOSED
-from time import ticks_ms
 
 class HID:
     
@@ -105,14 +104,15 @@ class HID:
         self.space_open_led.off()
         self.space_closed_led.off()
 
-    def _free_to_check_space_state(self) -> bool: # TODO State checks currently back up in a queue, so this is no use yet, need the calls to update_space_state output to be fire and forget not awaits
-        """Check that we're not already checking for space state with a timeout to reset and retry after"""
-        now = ticks_ms()
-        if self.checking_space_state and self.checking_space_state_started + self.checking_space_state_timeout_s > now:
-            self.log.warn("Already checking space state and timeout not reached, cancelling this check")
+    def _free_to_check_space_state(self) -> bool:
+        """Check that we're not already checking for space state"""
+        self.log.info("Checking space state check state")
+        if self.checking_space_state:
+            self.log.warn("Already checking space state")
             return False
         else:
-            self.checking_space_state_started = ticks_ms()
+            self.log.info("Free to check space state")
+            self.checking_space_state = True
             return True
         
     def _set_space_output(self, new_space_state: bool | None) -> None:
@@ -134,23 +134,27 @@ class HID:
         if not self._free_to_check_space_state():
             return
         else:
-            self.checking_space_state = True
-            
             try:
-                new_space_state = await self.slack_api.async_get_space_state()
+                self.log.info("Checking space status from server")
+                new_space_state = await wait_for(self.slack_api.async_get_space_state(), self.checking_space_state_timeout_s)
                 self.log.info(f"Space state is: {new_space_state}")
                 if new_space_state != self.space_state:
+                    self.log.info("Space state changed")
                     self._set_space_output(new_space_state)
                     
                 if self.space_state_check_in_error_state:
+                    self.log.info("Space state unchanged")
                     self._set_space_state_check_to_ok()
-
-                self.checking_space_state = False
+            
             except Exception as e:
-                self.log.error(f"Error encountered polling updating space state: {e}")
+                self.log.error(f"Error encountered updating space state: {e}")
                 if not self.space_state_check_in_error_state:
                     self._set_space_state_check_to_error()
                 raise
+            
+            finally:
+                self.log.info("Setting checking_space_state to False")
+                self.checking_space_state = False
     
     async def async_space_opened_watcher(self) -> None:
         """
@@ -164,7 +168,7 @@ class HID:
                 await self.slack_api.async_space_open()
                 flash_task.cancel()
                 self.set_output_space_open()
-                await self.async_update_space_state_output()
+                create_task(self.async_update_space_state_output())
             except Exception as e:
                 self.log.error(f"An exception was encountered trying to set SMIB space state: {e}")
                 flash_task.cancel()
@@ -182,7 +186,7 @@ class HID:
                 await self.slack_api.async_space_closed()
                 flash_task.cancel()
                 self.set_output_space_closed()
-                await self.async_update_space_state_output()
+                create_task(self.async_update_space_state_output())
             except Exception as e:
                 self.log.error(f"An exception was encountered trying to set SMIB space state: {e}")
                 flash_task.cancel()
@@ -195,7 +199,7 @@ class HID:
         while True:
             self.log.info("Polling space state")
             try:
-                await self.async_update_space_state_output()
+                create_task(self.async_update_space_state_output())
             except Exception as e:
                 self.log.error(f"State poller encountered an error updating space state: {e}")
             finally:
