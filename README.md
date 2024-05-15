@@ -13,6 +13,7 @@ Press the space_open or space_closed buttons to call the smib server endpoint ap
 - LED flashes while trying to set state so you know it's trying to do something
 - Confirms the space state after change by calling space_state
 - Regularly polls for space state (polling period configurable in config.py) and updates the SMIBHID status appropriately to sync with other space state controls
+- Flashes both space state LEDs at 2Hz if space state cannot be determined
 
 ## Circuit diagram
 ### Pico W Connections
