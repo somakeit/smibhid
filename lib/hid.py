@@ -6,6 +6,7 @@ from utils import StatusLED
 from slack_api import Wrapper
 from lib.networking import WirelessNetwork
 from constants import OPEN, CLOSED
+from display import Display
 
 class HID:
     
@@ -31,6 +32,7 @@ class HID:
         self.space_state_check_in_error_state = False
         self.checking_space_state = False
         self.checking_space_state_timeout_s = 30
+        self.display = Display()
         
         self.space_state_poll_frequency = config.space_state_poll_frequency_s
         if self.space_state_poll_frequency != 0 and self.space_state_poll_frequency < 5:
@@ -41,6 +43,9 @@ class HID:
         Initialise all aysnc services for the HID.
         """
         self.log.info("Starting HID")
+        self.display.clear()
+        self.display.print_top_line("S.M.I.B.H.I.D.")
+        self.display.print_bottom_line("Starting up...")
         self.log.info(f"Starting {self.open_button.get_name()} button watcher")
         create_task(self.open_button.wait_for_press())
         self.log.info(f"Starting {self.closed_button.get_name()} button watcher")
@@ -67,6 +72,7 @@ class HID:
         self.space_state = True
         self.space_open_led.on()
         self.space_closed_led.off()
+        self.display.print_space_state("Open")
         self.log.info("Space state is open.")
     
     def set_output_space_closed(self) -> None:
@@ -74,6 +80,7 @@ class HID:
         self.space_state = False
         self.space_open_led.off()
         self.space_closed_led.on()
+        self.display.print_space_state("Closed")
         self.log.info("Space state is closed.")
 
     def set_output_space_none(self) -> None:
@@ -81,6 +88,7 @@ class HID:
         self.space_state = None
         self.space_open_led.off()
         self.space_closed_led.off()
+        self.display.print_space_state("None")
         self.log.info("Space state is none.")
 
     def _set_space_state_check_to_error(self) -> None:
@@ -89,6 +97,7 @@ class HID:
         self.space_state_check_in_error_state = True
         self.state_check_error_open_led_flash_task = create_task(self.space_open_led.async_constant_flash(2))
         self.state_check_error_closed_led_flash_task = create_task(self.space_closed_led.async_constant_flash(2))
+        self.display.print_space_state("Error")
     
     def _set_space_state_check_to_ok(self) -> None:
         """Activities relating to space_state check moving to ok state"""
