@@ -32,7 +32,7 @@ class HID:
         self.space_state_check_in_error_state = False
         self.checking_space_state = False
         self.checking_space_state_timeout_s = 30
-        self.display = Display()
+        self.display = Display(loglevel)
         
         self.space_state_poll_frequency = config.space_state_poll_frequency_s
         if self.space_state_poll_frequency != 0 and self.space_state_poll_frequency < 5:

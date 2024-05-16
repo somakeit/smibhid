@@ -1,4 +1,6 @@
 from LCD1602 import LCD1602
+from config import I2C_ID, SCL_PIN, SDA_PIN
+from ulogging import uLogger
 
 def check_enabled(method):
         def wrapper(self, *args, **kwargs):
@@ -8,9 +10,15 @@ def check_enabled(method):
         return wrapper
 
 class Display:
-    def __init__(self) -> None:
-        self.lcd = LCD1602(16, 2)
+    def __init__(self, log_level: int) -> None:
+        self.log = uLogger("Display", log_level)
+        self.log.info("Init display")
         self.enabled = True
+        try:
+            self.lcd = LCD1602(log_level, I2C_ID, SDA_PIN, SCL_PIN, 16, 2)
+        except Exception:
+            self.log.error("Error initialising display on I2C bus. Disabling display functionality.")
+            self.enabled = False
     
     @check_enabled
     def clear(self) -> None:

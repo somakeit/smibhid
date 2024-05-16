@@ -3,11 +3,7 @@
 # -*- coding: utf-8 -*-
 import time
 from machine import Pin,I2C
-
-LCD1602_SDA = Pin(8)
-LCD1602_SCL = Pin(9)
-
-LCD1602_I2C = I2C(0,sda = LCD1602_SDA,scl = LCD1602_SCL ,freq = 400000)
+from ulogging import uLogger
 
 #Device I2C Arress
 LCD_ADDRESS   =  (0x7c>>1)
@@ -50,26 +46,32 @@ LCD_5x8DOTS = 0x00
 
 
 class LCD1602:
-  def __init__(self, col, row): # TODO move I2C pins and number here
+  def __init__(self, log_level: int, i2c_id: int,  i2c_sda: int, i2c_scl: int, col: int, row: int):
+    self.log = uLogger("LCD1602", log_level)
+    self.log.info("Init LCD1602 display driver")
     self._row = row
     self._col = col
 
-    self._showfunction = LCD_4BITMODE | LCD_1LINE | LCD_5x8DOTS
-    self.begin(self._row,self._col)
-
+    try:
+      self.LCD1602_I2C = I2C(i2c_id, sda = i2c_sda, scl = i2c_scl ,freq = 400000)
+      self._showfunction = LCD_4BITMODE | LCD_1LINE | LCD_5x8DOTS
+      self.begin(self._row,self._col)
+    except BaseException:
+      self.log.error("Error connecting to LCD display on I2C bus. Check I2C pins and ID and that correct module (I2C address) is connected.")
+      raise
         
   def command(self,cmd):
-    LCD1602_I2C.writeto_mem(LCD_ADDRESS, 0x80, chr(cmd))
+    self.LCD1602_I2C.writeto_mem(LCD_ADDRESS, 0x80, chr(cmd))
 
   def write(self,data):
-    LCD1602_I2C.writeto_mem(LCD_ADDRESS, 0x40, chr(data))
+    self.LCD1602_I2C.writeto_mem(LCD_ADDRESS, 0x40, chr(data))
 
   def setCursor(self,col,row):
     if(row == 0):
       col|=0x80
     else:
       col|=0xc0
-    LCD1602_I2C.writeto(LCD_ADDRESS, bytearray([0x80,col]))
+    self.LCD1602_I2C.writeto(LCD_ADDRESS, bytearray([0x80,col]))
 
   def clear(self):
     self.command(LCD_CLEARDISPLAY)
