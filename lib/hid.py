@@ -107,6 +107,7 @@ class HID:
         self.state_check_error_closed_led_flash_task.cancel()
         self.space_open_led.off()
         self.space_closed_led.off()
+        self._set_space_output(self.space_state)
 
     def _free_to_check_space_state(self) -> bool:
         """Check that we're not already checking for space state"""
