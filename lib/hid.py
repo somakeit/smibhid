@@ -11,7 +11,8 @@ class HID:
         Human Interface Device for event spaces providing buttons and status LEDs for space open state.
         Create HID instance and then run startup() to start services for button monitoring and LED output.
         """
-        self.log = uLogger("HID", loglevel)        
+        self.log = uLogger("HID", loglevel)
+        self.version = "1.1.0"     
         self.slack_api = Wrapper(loglevel)
         self.loop_running = False
         self.display = Display(loglevel)
@@ -22,9 +23,10 @@ class HID:
         Initialise all aysnc services for the HID.
         """
         self.log.info("Starting HID")
+        self.log.info(f"SMIBHID firmware version: {self.version}")
         self.display.clear()
         self.display.print_top_line("S.M.I.B.H.I.D.")
-        self.display.print_bottom_line("Starting up...")
+        self.display.print_bottom_line(f"Loading: v{self.version}")
         self.log.info("Starting network monitor")
         self.spaceState.startup()
       
