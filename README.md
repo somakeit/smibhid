@@ -55,3 +55,6 @@ Use existing space state buttons, lights, slack APi wrapper and watchers as an e
   - Instantiate the object instance, passing an asyncio event to the watcher and add the watcher coroutine to the loop
   - Configure another coroutine to watch for the event and take appropriate action on event firing
   - Add new API endpoint methods as needed as the API is upgraded to support them
+
+## Version
+Ensure that the `HID` class version attribute is updated to match the version in `pyproject.toml`
