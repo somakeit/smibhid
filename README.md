@@ -58,3 +58,6 @@ Use existing space state buttons, lights, slack APi wrapper and watchers as an e
 
 ## Version
 Ensure that the `HID` class version attribute is updated to match the version in `pyproject.toml`
+
+> [!IMPORTANT]
+> This version needs to match the release when it goes into the `master` branch.
