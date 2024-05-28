@@ -71,20 +71,22 @@ class SpaceState:
     def _set_space_state_check_to_error(self) -> None:
         """Activities relating to space_state check moving to error state"""
         self.log.info("Space state check has errored.")
-        self.space_state_check_in_error_state = True
-        self.state_check_error_open_led_flash_task = create_task(self.space_open_led.async_constant_flash(2))
-        self.state_check_error_closed_led_flash_task = create_task(self.space_closed_led.async_constant_flash(2))
-        self.display.print_space_state("Error")
+        if not self.space_state_check_in_error_state:
+            self.space_state_check_in_error_state = True
+            self.state_check_error_open_led_flash_task = create_task(self.space_open_led.async_constant_flash(2))
+            self.state_check_error_closed_led_flash_task = create_task(self.space_closed_led.async_constant_flash(2))
+            self.display.print_space_state("Error")
     
     def _set_space_state_check_to_ok(self) -> None:
         """Activities relating to space_state check moving to ok state"""
         self.log.info("Space state check status error has cleared")
-        self.space_state_check_in_error_state = False
-        self.state_check_error_open_led_flash_task.cancel()
-        self.state_check_error_closed_led_flash_task.cancel()
-        self.space_open_led.off()
-        self.space_closed_led.off()
-        self._set_space_output(self.space_state)
+        if self.space_state_check_in_error_state:
+            self.space_state_check_in_error_state = False
+            self.state_check_error_open_led_flash_task.cancel()
+            self.state_check_error_closed_led_flash_task.cancel()
+            self.space_open_led.off()
+            self.space_closed_led.off()
+            self._set_space_output(self.space_state)
 
     def _free_to_check_space_state(self) -> bool:
         """Check that we're not already checking for space state"""
@@ -119,19 +121,13 @@ class SpaceState:
             try:
                 self.log.info("Checking space status from server")
                 new_space_state = await wait_for(self.slack_api.async_get_space_state(), self.checking_space_state_timeout_s)
-                self.log.info(f"Space state is: {new_space_state}")
-                if new_space_state != self.space_state:
-                    self.log.info("Space state changed")
-                    self._set_space_output(new_space_state)
-                    
-                if self.space_state_check_in_error_state:
-                    self.log.info("Space state unchanged")
-                    self._set_space_state_check_to_ok()
+                self.log.info(f"Space state is: {new_space_state}, was: {self.space_state}")
+                self._set_space_output(new_space_state)
+                self._set_space_state_check_to_ok()
             
             except Exception as e:
                 self.log.error(f"Error encountered updating space state: {e}")
-                if not self.space_state_check_in_error_state:
-                    self._set_space_state_check_to_error()
+                self._set_space_state_check_to_error()
                 raise
             
             finally:
