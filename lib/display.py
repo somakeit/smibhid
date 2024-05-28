@@ -15,13 +15,13 @@ class Display:
     Provides functions to clear display and print top or bottom line text.
     Currently supports 2x16 character LCD display.
     """
-    def __init__(self, log_level: int) -> None:
+    def __init__(self) -> None:
         """Connect to display using configu file values for I2C"""
-        self.log = uLogger("Display", log_level)
+        self.log = uLogger("Display")
         self.log.info("Init display")
         self.enabled = True
         try:
-            self.lcd = LCD1602(log_level, I2C_ID, SDA_PIN, SCL_PIN, 16, 2)
+            self.lcd = LCD1602(I2C_ID, SDA_PIN, SCL_PIN, 16, 2)
         except Exception:
             self.log.error("Error initialising display on I2C bus. Disabling display functionality.")
             self.enabled = False

@@ -44,7 +44,7 @@ The LED on the Pico W board is used to give feedback around network connectivity
 SMIB uses a class abstracted approach running an async loop using the builtin uasyncio, a static copy of the uaiohttpclient for making async requests and my custom logging module.
 
 ### Logging
-Set the loglevel argument for the HID object in \_\_main\_\_.py for global log level output where: 0 = Disabled, 1 = Critical, 2 = Error, 3 = Warning, 4 = Info
+Set the loglevel config.py for global log level output conifguration where: 0 = Disabled, 1 = Critical, 2 = Error, 3 = Warning, 4 = Info
 
 ### Adding functionality
 Refer to the [S.M.I.B. contribution guidelines](https://github.com/somakeit/S.M.I.B./contribute) for more info on contributing.

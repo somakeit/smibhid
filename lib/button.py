@@ -4,9 +4,8 @@ from asyncio import Event, sleep
 
 class Button:
 
-    def __init__(self, log_level: int, GPIO_pin: int, button_name: str, button_pressed_event: Event) -> None:
-        self.log_level = log_level
-        self.logger = uLogger(f"Button {GPIO_pin}", log_level)
+    def __init__(self, GPIO_pin: int, button_name: str, button_pressed_event: Event) -> None:
+        self.logger = uLogger(f"Button {GPIO_pin}")
         self.gpio = GPIO_pin
         self.pin = Pin(GPIO_pin, Pin.IN, Pin.PULL_UP)
         self.name = button_name

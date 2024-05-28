@@ -10,9 +10,9 @@ import uasyncio
 
 class WirelessNetwork:
 
-    def __init__(self, log_level: int) -> None:
-        self.logger = uLogger("WIFI", log_level)
-        self.status_led = StatusLED(log_level)
+    def __init__(self) -> None:
+        self.logger = uLogger("WIFI")
+        self.status_led = StatusLED()
         self.wifi_ssid = config.WIFI_SSID
         self.wifi_password = config.WIFI_PASSWORD
         self.wifi_country = config.WIFI_COUNTRY
