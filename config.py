@@ -1,3 +1,6 @@
+## Log level 0-4: 0 = Disabled, 1 = Critical, 2 = Error, 3 = Warning, 4 = Info
+log_level = 2
+
 ## IO
 SPACE_OPEN_BUTTON = 12
 SPACE_CLOSED_BUTTON = 13
