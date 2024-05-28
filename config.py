@@ -1,5 +1,8 @@
-## Log level 0-4: 0 = Disabled, 1 = Critical, 2 = Error, 3 = Warning, 4 = Info
+## Logging
+# Level 0-4: 0 = Disabled, 1 = Critical, 2 = Error, 3 = Warning, 4 = Info
 log_level = 2
+# Handlers: Populate list with zero or more of the following log output handlers: "console", "file"
+log_handlers = ["console"]
 
 ## IO
 SPACE_OPEN_BUTTON = 12
