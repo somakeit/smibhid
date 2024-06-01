@@ -28,8 +28,9 @@ class uLogger:
             except Exception as e:
                 print(f"An unexpected error occurred: {e}. Using default log level.")
 
-    def configure_handlers(self, handlers: list) -> None: # TODO make this DRY with above.
+    def configure_handlers(self, handlers: list) -> None:
         self.handlers = []
+        self.handler_objects = []
         
         if len(handlers) > 0:
             self.handlers = handlers
@@ -41,12 +42,7 @@ class uLogger:
                 print("LOG_HANDLERS not found in config.py not found. Using default output handler.")
             except Exception as e:
                 print(f"An unexpected error occurred: {e}. Using default output handler.")
-
-    def decorate_message(self, message: str, level: str) -> str:
-        decorated_message = f"[Mem: {round(mem_free() / 1024)}kB free][{level}][{self.module_name}]: {message}"
-        return decorated_message
-    
-    def process_handlers(self, message: str) -> None: #TODO handler objects should be set up and stored in the list
+        
         for handler in self.handlers:
             try:
                 handler_class = globals().get(handler)
@@ -55,6 +51,18 @@ class uLogger:
                     raise ValueError(f"Handler class '{handler}' not found.")
                 
                 handler = handler_class()
+                self.handler_objects.append(handler)
+            except Exception as e:
+                print(f"An error occurred while confguring handler '{handler}': {e}")
+                raise
+
+    def decorate_message(self, message: str, level: str) -> str:
+        decorated_message = f"[Mem: {round(mem_free() / 1024)}kB free][{level}][{self.module_name}]: {message}"
+        return decorated_message
+    
+    def process_handlers(self, message: str) -> None:
+        for handler in self.handler_objects:
+            try:
                 handler.emit(message)
             except Exception as e:
                 print(f"An error occurred while processing handler '{handler}': {e}")
