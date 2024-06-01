@@ -22,7 +22,7 @@ class HID:
         """
         Initialise all aysnc services for the HID.
         """
-        self.log.info("Starting HID")
+        self.log.info("--------Starting SMIBHID--------")
         self.log.info(f"SMIBHID firmware version: {self.version}")
         self.display.clear()
         self.display.print_top_line("S.M.I.B.H.I.D.")

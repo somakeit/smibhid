@@ -2,6 +2,7 @@ from time import sleep
 from machine import Pin
 import uasyncio
 from lib.ulogging import uLogger
+from os import stat, statvfs
 
 class StatusLED:
     """

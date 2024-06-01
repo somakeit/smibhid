@@ -1,4 +1,5 @@
-import gc
+from gc import mem_free
+from os import stat, remove, rename
 
 class uLogger:
     
@@ -20,12 +21,10 @@ class uLogger:
             self.log_level = log_level
         else:
             try:
-                from config import log_level as config_log_level
+                from config import LOG_LEVEL as config_log_level
                 self.log_level = config_log_level
             except ImportError:
-                print("config.py not found. Using default log level.")
-            except AttributeError:
-                print("log_level not found in config.py. Using default log level.")
+                print("LOG_LEVEL not found in config.py not found. Using default log level.")
             except Exception as e:
                 print(f"An unexpected error occurred: {e}. Using default log level.")
 
@@ -36,20 +35,18 @@ class uLogger:
             self.handlers = handlers
         else:
             try:
-                from config import log_handlers as config_log_handlers
+                from config import LOG_HANDLERS as config_log_handlers
                 self.handlers = config_log_handlers
             except ImportError:
-                print("config.py not found. Using default output handler.")
-            except AttributeError:
-                print("log_handlers not found in config.py. Using default output handler.")
+                print("LOG_HANDLERS not found in config.py not found. Using default output handler.")
             except Exception as e:
                 print(f"An unexpected error occurred: {e}. Using default output handler.")
 
     def decorate_message(self, message: str, level: str) -> str:
-        decorated_message = f"[Mem: {round(gc.mem_free() / 1024)}kB free][{level}][{self.module_name}]: {message}"
+        decorated_message = f"[Mem: {round(mem_free() / 1024)}kB free][{level}][{self.module_name}]: {message}"
         return decorated_message
     
-    def process_handlers(self, message: str) -> None:
+    def process_handlers(self, message: str) -> None: #TODO handler objects should be set up and stored in the list
         for handler in self.handlers:
             try:
                 handler_class = globals().get(handler)
@@ -79,23 +76,35 @@ class uLogger:
         if self.log_level > 0:
             self.process_handlers(self.decorate_message(message, "Critical"))
 
-class console:
+class Console:
     def __init__(self) -> None:
         pass
     
     def emit(self, message) -> None:
         print(message)
 
-class file:
+class File:
     def __init__(self) -> None:
-        # Setup file for streaming
-        pass
+        self.log_file = "log.txt"
+        self.second_log_file = "log2.txt"
+        from config import LOG_FILE_MAX_SIZE
+        self.LOG_FILE_MAX_SIZE = LOG_FILE_MAX_SIZE
     
     def emit(self, message) -> None:
-        print(f"Dummy file output: {message}")
+        with open(self.log_file, "a") as log_file:
+            log_file.write(message + "\n")
+        self.check_for_rotate()
 
     def check_for_rotate(self) -> None:
-        pass
+        log_file_size = stat(self.log_file)[6]
+        if log_file_size > self.LOG_FILE_MAX_SIZE:
+            self.rotate_file()
 
     def rotate_file(self) -> None:
-        pass
+        try:
+            remove(self.second_log_file)
+        except OSError:
+            print(f"{self.second_log_file} did not exist to be deleted.")
+        
+        rename(self.log_file, self.second_log_file)
+    
