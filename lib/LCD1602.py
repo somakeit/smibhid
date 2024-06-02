@@ -4,6 +4,8 @@
 from time import sleep
 from machine import I2C
 from ulogging import uLogger
+from display import driver_registry
+from config import SDA_PIN, SCL_PIN, I2C_ID
 
 #Device I2C address
 LCD_ADDRESS   =  (0x7c>>1)
@@ -46,15 +48,16 @@ LCD_5x8DOTS = 0x00
 
 class LCD1602:
 	"""Drive for the LCD1602 16x2 character LED display"""
-	def __init__(self, log_level: int, i2c_id: int,  i2c_sda: int, i2c_scl: int, col: int, row: int) -> None:
+
+	def __init__(self, log_level: int) -> None:
 		"""Configure and connect to display via I2C, throw error on connection issue."""
 		self.log = uLogger("LCD1602", log_level)
 		self.log.info("Init LCD1602 display driver")
-		self._row = row
-		self._col = col
+		self._row = 16
+		self._col = 2
 
 		try:
-			self.LCD1602_I2C = I2C(i2c_id, sda = i2c_sda, scl = i2c_scl ,freq = 400000)
+			self.LCD1602_I2C = I2C(I2C_ID, sda = SDA_PIN, scl = SCL_PIN, freq = 400000)
 			self._showfunction = LCD_4BITMODE | LCD_1LINE | LCD_5x8DOTS
 			self._begin(self._row)
 		except BaseException:
@@ -80,6 +83,10 @@ class LCD1602:
 		"""Clear the entire screen."""
 		self._command(LCD_CLEARDISPLAY)
 		sleep(0.002)
+		 
+	def print_startup(self, version: str) -> None:
+		self.print_on_line(0, "S.M.I.B.H.I.D.")
+		self.print_on_line(1, f"Loading: v{version}")
 
 	def printout(self, arg: str) -> None:
 		"""Print a string to the cursor position."""
@@ -89,10 +96,26 @@ class LCD1602:
 		for x in bytearray(arg, 'utf-8'):
 			self._write(x)
 
+	def _text_to_line(self, text: str) -> str:
+		"""Internal function to ensure line fits the screen and no previous line text is present for short strings."""
+		text = text[:16]
+		text = "{:<16}".format(text)
+		return text
+	
+	def print_on_line(self, line: int, text: str) -> None:
+		"""Print up to 16 characters on line 0 or 1."""
+		self.setCursor(0, line)
+		self.printout(self._text_to_line(text))
+
 	def _display(self) -> None:
 		"""Turn on display"""
 		self._showcontrol |= LCD_DISPLAYON 
 		self._command(LCD_DISPLAYCONTROL | self._showcontrol)
+	
+	def print_space_state(self, state: str) -> None:
+		"""Abstraction for space state formatting and placement."""
+		self.print_on_line(0, "S.M.I.B.H.I.D.")
+		self.print_on_line(1, f"Space: {state}")
  
 	def _begin(self, lines: int) -> None:
 		"""Configure and set initial display output"""
@@ -126,3 +149,5 @@ class LCD1602:
 		# set the entry mode
 		self._command(LCD_ENTRYMODESET | self._showmode)
 		# backlight init
+
+driver_registry.register_driver("LCD1602", LCD1602)

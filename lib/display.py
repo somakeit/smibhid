@@ -1,13 +1,25 @@
-from LCD1602 import LCD1602
-from config import I2C_ID, SCL_PIN, SDA_PIN
 from ulogging import uLogger
 
-def check_enabled(method):
-        def wrapper(self, *args, **kwargs):
-            if self.enabled:
-                return method(self, *args, **kwargs)
-            return None
-        return wrapper
+class DriverRegistry:
+    """
+    Object for driver modules to register, so code can look up a driver class from the driver name.
+    Driver modules should import driver_registry and call register_driver to map the driver class object to the driver name.
+    Example: driver_registry.register_driver("LCD1602", LCD1602).
+    Calling code imports driver_registry and uses get_register_class to obtain the class to create a new driver object.
+    Example: driver_class = driver_registry.get_driver_class("LCD1602")
+    """
+    def __init__(self):
+        self._registry = {}
+
+    def register_driver(self, driver_name: str, driver_class):
+        self._registry[driver_name] = driver_class
+
+    def get_driver_class(self, driver_name: str):
+        return self._registry.get(driver_name)
+    
+driver_registry = DriverRegistry()
+
+from LCD1602 import LCD1602  # noqa: E402, F401
 
 class Display:
     """
@@ -15,41 +27,44 @@ class Display:
     Provides functions to clear display and print top or bottom line text.
     Currently supports 2x16 character LCD display.
     """
-    def __init__(self, log_level: int) -> None:
-        """Connect to display using configu file values for I2C"""
+    def __init__(self, log_level: int, drivers: list) -> None:
+        """Attempt to configure screens defined in config file."""
         self.log = uLogger("Display", log_level)
         self.log.info("Init display")
-        self.enabled = True
-        try:
-            self.lcd = LCD1602(log_level, I2C_ID, SDA_PIN, SCL_PIN, 16, 2)
-        except Exception:
-            self.log.error("Error initialising display on I2C bus. Disabling display functionality.")
+        self.enabled = False
+        self.screens = []
+        
+        for driver in drivers:
+            try:
+                driver_class = driver_registry.get_driver_class(driver)
+
+                if driver_class is None:
+                    raise ValueError(f"Display driver class '{driver}' not registered.")
+
+                self.screens.append(driver_class(log_level))
+
+            except Exception as e:
+                print(f"An error occurred while confguring display driver '{driver}': {e}")
+                raise
+                
+        if len(self.screens) > 0:
+            self.log.info(f"Display functionality enabled: {len(self.screens)} screens configured.")
+        else:
+            self.log.info("No screens configured successfully; Display functionality disabled.")
             self.enabled = False
-    
-    @check_enabled
+
+    def execute_command(self, command: str, *args) -> None:
+        for screen in self.screens:
+            if hasattr(screen, command):
+                method = getattr(screen, command)
+                if callable(method):
+                    method(*args)
+
     def clear(self) -> None:
-        """Clear entire screen"""
-        self.lcd.clear()
+        self.execute_command("clear")
     
-    def _text_to_line(self, text: str) -> str:
-        """Internal function to ensure line fits the screen and no previous line text is present for short strings."""
-        text = text[:16]
-        text = "{:<16}".format(text)
-        return text
+    def print_startup(self, version: str) -> None:
+        self.execute_command("print_startup", version)
 
-    @check_enabled
-    def print_top_line(self, text: str) -> None:
-        """Print up to 16 characters on the top line."""
-        self.lcd.setCursor(0, 0)
-        self.lcd.printout(self._text_to_line(text))
-    
-    @check_enabled
-    def print_bottom_line(self, text: str) -> None:
-        """Print up to 16 characters on the bottom line."""
-        self.lcd.setCursor(0, 1)
-        self.lcd.printout(self._text_to_line(text))
-
-    @check_enabled
     def print_space_state(self, state: str) -> None:
-        """Abstraction for space state formatting and placement."""
-        self.print_bottom_line(f"Space: {state}")
+        self.execute_command("print_space_state", state)
