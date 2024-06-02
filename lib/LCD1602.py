@@ -47,7 +47,7 @@ LCD_1LINE = 0x00
 LCD_5x8DOTS = 0x00
 
 class LCD1602:
-	"""Drive for the LCD1602 16x2 character LED display"""
+	"""Driver for the LCD1602 16x2 character LED display"""
 
 	def __init__(self, log_level: int) -> None:
 		"""Configure and connect to display via I2C, throw error on connection issue."""
@@ -85,6 +85,7 @@ class LCD1602:
 		sleep(0.002)
 		 
 	def print_startup(self, version: str) -> None:
+		"""Render startup information on screen."""
 		self.print_on_line(0, "S.M.I.B.H.I.D.")
 		self.print_on_line(1, f"Loading: v{version}")
 
@@ -108,7 +109,7 @@ class LCD1602:
 		self.printout(self._text_to_line(text))
 
 	def _display(self) -> None:
-		"""Turn on display"""
+		"""Turn on display."""
 		self._showcontrol |= LCD_DISPLAYON 
 		self._command(LCD_DISPLAYCONTROL | self._showcontrol)
 	
@@ -118,7 +119,7 @@ class LCD1602:
 		self.print_on_line(1, f"Space: {state}")
  
 	def _begin(self, lines: int) -> None:
-		"""Configure and set initial display output"""
+		"""Configure and set initial display output."""
 		if (lines > 1):
 				self._showfunction |= LCD_2LINE 
 		 

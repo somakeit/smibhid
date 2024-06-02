@@ -24,3 +24,6 @@ space_state_poll_frequency_s = 5
 SDA_PIN = 8
 SCL_PIN = 9
 I2C_ID = 0
+
+## Displays - Populate driver list with connected displays from this supported list: ["LCD1602"]
+DISPLAY_DRIVERS = ["LCD1602"]

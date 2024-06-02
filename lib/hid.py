@@ -15,7 +15,7 @@ class HID:
         self.version = "1.1.0"     
         self.slack_api = Wrapper(loglevel)
         self.loop_running = False
-        self.display = Display(loglevel, ["LCD1602"])
+        self.display = Display(loglevel)
         self.spaceState = SpaceState(loglevel)
         
     def startup(self) -> None:

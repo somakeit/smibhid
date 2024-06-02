@@ -6,13 +6,13 @@ class DriverRegistry:
     Calling code imports driver_registry and uses get_register_class to obtain the class to create a new driver object.
     Example: driver_class = driver_registry.get_driver_class("LCD1602")
     """
-    def __init__(self):
+    def __init__(self) -> None:
         self._registry = {}
 
-    def register_driver(self, driver_name: str, driver_class):
+    def register_driver(self, driver_name: str, driver_class) -> None:
         self._registry[driver_name] = driver_class
 
-    def get_driver_class(self, driver_name: str):
+    def get_driver_class(self, driver_name: str) -> None:
         return self._registry.get(driver_name)
     
 driver_registry = DriverRegistry()

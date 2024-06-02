@@ -10,7 +10,7 @@ from slack_api import Wrapper
 class SpaceState:
     def __init__(self, loglevel: int) -> None:
         self.log = uLogger("SpaceState", loglevel)
-        self.display = Display(loglevel, ["LCD1602"])
+        self.display = Display(loglevel)
         self.slack_api = Wrapper(loglevel)
         self.space_open_button_event = Event()
         self.space_closed_button_event = Event()
