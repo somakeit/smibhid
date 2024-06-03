@@ -42,9 +42,22 @@ The LED on the Pico W board is used to give feedback around network connectivity
 
 ## Developers
 SMIB uses a class abstracted approach running an async loop using the builtin uasyncio, a static copy of the uaiohttpclient for making async requests and my custom logging module.
-
 ### Logging
-Set the loglevel argument for the HID object in \_\_main\_\_.py for global log level output where: 0 = Disabled, 1 = Critical, 2 = Error, 3 = Warning, 4 = Info
+
+#### Log level
+Set the LOG_LEVEL value in config.py for global log level output configuration where: 0 = Disabled, 1 = Critical, 2 = Error, 3 = Warning, 4 = Info
+
+Example: `LOG_LEVEL = 2`
+
+#### Handlers
+Populate the LOG_HANDLERS list in config.py with zero or more of the following log output handlers (case sensitive): "Console", "File"
+
+Example: `LOG_HANDLERS = ["Console", "File"]`
+
+#### Log file max size
+Set the LOG_FILE_MAX_SIZE value in config.py to set the maximum size of the log file in bytes before rotating. The log rotater will create a maximum of 2 files at this size, so configure appropiately for anticpated flash free space.
+
+Example: `LOG_FILE_MAX_SIZE = 10240`
 
 ### Adding functionality
 Refer to the [S.M.I.B. contribution guidelines](https://github.com/somakeit/S.M.I.B./contribute) for more info on contributing.

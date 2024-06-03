@@ -12,8 +12,8 @@ class Display:
     Example:
     If an LCD1602 driver is configured to load, then issuing the command Display.print_startup() will render startup information appropriately on the 2x16 display if connected.
     """
-    def __init__(self, log_level: int) -> None:
-        self.log = uLogger("Display", log_level)
+    def __init__(self) -> None:
+        self.log = uLogger("Display")
         self.drivers = DISPLAY_DRIVERS
         self.log.info("Init display")
         self.enabled = False

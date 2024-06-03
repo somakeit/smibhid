@@ -2,5 +2,5 @@
 
 from lib.hid import HID
 
-hid = HID(loglevel=2)
+hid = HID()
 hid.startup()

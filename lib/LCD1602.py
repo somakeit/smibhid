@@ -49,9 +49,9 @@ LCD_5x8DOTS = 0x00
 class LCD1602:
 	"""Driver for the LCD1602 16x2 character LED display"""
 
-	def __init__(self, log_level: int) -> None:
+	def __init__(self) -> None:
 		"""Configure and connect to display via I2C, throw error on connection issue."""
-		self.log = uLogger("LCD1602", log_level)
+		self.log = uLogger("LCD1602")
 		self.log.info("Init LCD1602 display driver")
 		self._row = 16
 		self._col = 2

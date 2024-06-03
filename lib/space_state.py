@@ -8,16 +8,16 @@ from display import Display
 from slack_api import Wrapper
 
 class SpaceState:
-    def __init__(self, loglevel: int) -> None:
-        self.log = uLogger("SpaceState", loglevel)
-        self.display = Display(loglevel)
-        self.slack_api = Wrapper(loglevel)
+    def __init__(self) -> None:
+        self.log = uLogger("SpaceState")
+        self.display = Display()
+        self.slack_api = Wrapper()
         self.space_open_button_event = Event()
         self.space_closed_button_event = Event()
-        self.open_button = Button(loglevel, config.SPACE_OPEN_BUTTON, "Space_open", self.space_open_button_event)
-        self.closed_button = Button(loglevel, config.SPACE_CLOSED_BUTTON, "Space_closed", self.space_closed_button_event)
-        self.space_open_led = StatusLED(loglevel, config.SPACE_OPEN_LED)
-        self.space_closed_led = StatusLED(loglevel, config.SPACE_CLOSED_LED)
+        self.open_button = Button(config.SPACE_OPEN_BUTTON, "Space_open", self.space_open_button_event)
+        self.closed_button = Button(config.SPACE_CLOSED_BUTTON, "Space_closed", self.space_closed_button_event)
+        self.space_open_led = StatusLED(config.SPACE_OPEN_LED)
+        self.space_closed_led = StatusLED(config.SPACE_CLOSED_LED)
         self.space_open_led.off()
         self.space_closed_led.off()
         self.space_state = None

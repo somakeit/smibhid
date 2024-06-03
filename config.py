@@ -1,3 +1,11 @@
+## Logging
+# Level 0-4: 0 = Disabled, 1 = Critical, 2 = Error, 3 = Warning, 4 = Info
+LOG_LEVEL = 2
+# Handlers: Populate list with zero or more of the following log output handlers (case sensitive): "Console", "File"
+LOG_HANDLERS = ["Console", "File"]
+# Max log file size in bytes, there will be a maximum of 2 files at this size created
+LOG_FILE_MAX_SIZE = 10240
+
 ## IO
 SPACE_OPEN_BUTTON = 12
 SPACE_CLOSED_BUTTON = 13
