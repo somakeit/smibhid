@@ -18,9 +18,9 @@ class Display:
         self.log.info("Init display")
         self.enabled = False
         self.screens = []
-        self._load_configured_drivers(log_level)
+        self._load_configured_drivers()
         
-    def _load_configured_drivers(self, log_level) -> None:
+    def _load_configured_drivers(self) -> None:
         for driver in self.drivers:
             try:
                 driver_class = driver_registry.get_driver_class(driver)
@@ -28,7 +28,7 @@ class Display:
                 if driver_class is None:
                     raise ValueError(f"Display driver class '{driver}' not registered.")
 
-                self.screens.append(driver_class(log_level))
+                self.screens.append(driver_class())
 
             except Exception as e:
                 print(f"An error occurred while confguring display driver '{driver}': {e}")
