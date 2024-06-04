@@ -49,7 +49,7 @@ class SpaceState:
         self.space_state = True
         self.space_open_led.on()
         self.space_closed_led.off()
-        self.display.print_space_state("Open")
+        self.display.update_state("Open")
         self.log.info("Space state is open.")
     
     def set_output_space_closed(self) -> None:
@@ -57,7 +57,7 @@ class SpaceState:
         self.space_state = False
         self.space_open_led.off()
         self.space_closed_led.on()
-        self.display.print_space_state("Closed")
+        self.display.update_state("Closed")
         self.log.info("Space state is closed.")
 
     def set_output_space_none(self) -> None:
@@ -65,7 +65,7 @@ class SpaceState:
         self.space_state = None
         self.space_open_led.off()
         self.space_closed_led.off()
-        self.display.print_space_state("None")
+        self.display.update_state("None")
         self.log.info("Space state is none.")
 
     def _set_space_state_check_to_error(self) -> None:
@@ -75,7 +75,7 @@ class SpaceState:
             self.space_state_check_in_error_state = True
             self.state_check_error_open_led_flash_task = create_task(self.space_open_led.async_constant_flash(2))
             self.state_check_error_closed_led_flash_task = create_task(self.space_closed_led.async_constant_flash(2))
-            self.display.print_space_state("Error")
+            self.space_state_error_id = self.display.push_error("State API")
     
     def _set_space_state_check_to_ok(self) -> None:
         """Activities relating to space_state check moving to ok state"""
@@ -86,6 +86,7 @@ class SpaceState:
             self.state_check_error_closed_led_flash_task.cancel()
             self.space_open_led.off()
             self.space_closed_led.off()
+            self.display.pop_error(self.space_state_error_id)
             self._set_space_output(self.space_state)
 
     def _free_to_check_space_state(self) -> bool:

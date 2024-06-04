@@ -113,11 +113,25 @@ class LCD1602:
 		self._showcontrol |= LCD_DISPLAYON 
 		self._command(LCD_DISPLAYCONTROL | self._showcontrol)
 	
-	def print_space_state(self, state: str) -> None:
-		"""Abstraction for space state formatting and placement."""
-		self.print_on_line(0, "S.M.I.B.H.I.D.")
-		self.print_on_line(1, f"Space: {state}")
- 
+	def update_status(self, status: dict) -> None:
+		"""Render state and error information on LCD display."""
+		# TODO Ensure error loop is running, start if not. Get loop and add coroutine to cycle through status["errors"] values on line 1 every 2 seconds, this replaces below code even if error length is 1 as loop always runs
+		self.log.info("Updating display status on LCD1602")
+		state_line = 0
+		self.log.info(f"Length of errors dict: {len(status['errors'])}")
+		if len(status["errors"]) == 0:
+			self.log.info("No errors in status update")
+			self.print_on_line(0, "S.M.I.B.H.I.D.")
+			state_line = 1
+
+		self.print_on_line(state_line, f"State: {status["state"]}")
+
+		# Testing - replace with error loop eventually
+		if len(status["errors"]) == 1:
+			self.log.info(f"One error in status update: {status['errors'][0]}")
+			self.print_on_line(1, f"Err: {status['errors'][0]}")
+		# /Testing - replace with error loop eventually
+
 	def _begin(self, lines: int) -> None:
 		"""Configure and set initial display output."""
 		if (lines > 1):

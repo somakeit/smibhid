@@ -19,6 +19,8 @@ class Display:
         self.enabled = False
         self.screens = []
         self._load_configured_drivers()
+        self.state = "Unknown"
+        self.errors = {}
         
     def _load_configured_drivers(self) -> None:
         for driver in self.drivers:
@@ -40,6 +42,7 @@ class Display:
             self.enabled = False
 
     def _execute_command(self, command: str, *args) -> None:
+        self.log.info(f"Executing command on screen drivers: {command}, with arguments: {args}")
         for screen in self.screens:
             if hasattr(screen, command):
                 method = getattr(screen, command)
@@ -54,6 +57,33 @@ class Display:
         """Display startup information on all screens."""
         self._execute_command("print_startup", version)
 
-    def print_space_state(self, state: str) -> None:
-        """Update space state information on all screens."""
-        self._execute_command("print_space_state", state)
+    def _update_status(self) -> None:
+        """Update state and error information on all screens."""
+        self.log.info("Updating status on all screens")
+        self._execute_command("update_status", {"state": self.state, "errors": self.errors})
+
+    def update_state(self, state: str) -> None:
+        self.state = state
+        self._update_status()
+    
+    def push_error(self, error: str) -> int:
+        """Add error to the error list, returning error instance ID for future use such as popping from current errors."""
+        self.log.info(f"Pushing error to display error list: {error}")
+        id = len(self.errors)
+        self.errors[id] = error
+        self.log.info(f"Error ID: {id}, Error dictionary now: {self.errors}")
+        self._update_status()
+        return id
+    
+    def pop_error(self, id: int) -> str:
+        """Remove error from the error list using the ID provided when pushing the error to the list. Returns the error text popped or empty string on error."""
+        try:
+            error = self.errors.pop(id)
+            self._update_status()
+            return error
+        except KeyError:
+            self.log.error(f"Error ID {id} does not exist in error log.")
+            return ""
+        except Exception as e:
+            self.log.error(f"Error encountered popping error and updating display status: {e}")
+            return ""
