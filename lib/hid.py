@@ -25,8 +25,7 @@ class HID:
         self.log.info("--------Starting SMIBHID--------")
         self.log.info(f"SMIBHID firmware version: {self.version}")
         self.display.clear()
-        self.display.print_top_line("S.M.I.B.H.I.D.")
-        self.display.print_bottom_line(f"Loading: v{self.version}")
+        self.display.print_startup(self.version)
         self.log.info("Starting network monitor")
         self.spaceState.startup()
       

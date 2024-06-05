@@ -1,55 +1,59 @@
-from LCD1602 import LCD1602
-from config import I2C_ID, SCL_PIN, SDA_PIN
 from ulogging import uLogger
-
-def check_enabled(method):
-        def wrapper(self, *args, **kwargs):
-            if self.enabled:
-                return method(self, *args, **kwargs)
-            return None
-        return wrapper
+from registry import driver_registry
+from LCD1602 import LCD1602
+from config import DISPLAY_DRIVERS
 
 class Display:
     """
-    Display management for SMIBHID to drive displays via driver classes abstracting display constraints from the messaging required.
-    Provides functions to clear display and print top or bottom line text.
-    Currently supports 2x16 character LCD display.
+    Abstracted display capabilities for supported physical displays.
+    Display drivers must be provided as modules and included in this module to be made available for loading in config.py
+    All abstracted functions should be defined in this module and will be passed to each configured display (if supported) for the driver to interpret.
+    
+    Example:
+    If an LCD1602 driver is configured to load, then issuing the command Display.print_startup() will render startup information appropriately on the 2x16 display if connected.
     """
     def __init__(self) -> None:
-        """Connect to display using configu file values for I2C"""
         self.log = uLogger("Display")
+        self.drivers = DISPLAY_DRIVERS
         self.log.info("Init display")
-        self.enabled = True
-        try:
-            self.lcd = LCD1602(I2C_ID, SDA_PIN, SCL_PIN, 16, 2)
-        except Exception:
-            self.log.error("Error initialising display on I2C bus. Disabling display functionality.")
+        self.enabled = False
+        self.screens = []
+        self._load_configured_drivers()
+        
+    def _load_configured_drivers(self) -> None:
+        for driver in self.drivers:
+            try:
+                driver_class = driver_registry.get_driver_class(driver)
+
+                if driver_class is None:
+                    raise ValueError(f"Display driver class '{driver}' not registered.")
+
+                self.screens.append(driver_class())
+
+            except Exception as e:
+                print(f"An error occurred while confguring display driver '{driver}': {e}")
+                
+        if len(self.screens) > 0:
+            self.log.info(f"Display functionality enabled: {len(self.screens)} screens configured.")
+        else:
+            self.log.info("No screens configured successfully; Display functionality disabled.")
             self.enabled = False
-    
-    @check_enabled
+
+    def _execute_command(self, command: str, *args) -> None:
+        for screen in self.screens:
+            if hasattr(screen, command):
+                method = getattr(screen, command)
+                if callable(method):
+                    method(*args)
+
     def clear(self) -> None:
-        """Clear entire screen"""
-        self.lcd.clear()
+        """Clear all screens."""
+        self._execute_command("clear")
     
-    def _text_to_line(self, text: str) -> str:
-        """Internal function to ensure line fits the screen and no previous line text is present for short strings."""
-        text = text[:16]
-        text = "{:<16}".format(text)
-        return text
+    def print_startup(self, version: str) -> None:
+        """Display startup information on all screens."""
+        self._execute_command("print_startup", version)
 
-    @check_enabled
-    def print_top_line(self, text: str) -> None:
-        """Print up to 16 characters on the top line."""
-        self.lcd.setCursor(0, 0)
-        self.lcd.printout(self._text_to_line(text))
-    
-    @check_enabled
-    def print_bottom_line(self, text: str) -> None:
-        """Print up to 16 characters on the bottom line."""
-        self.lcd.setCursor(0, 1)
-        self.lcd.printout(self._text_to_line(text))
-
-    @check_enabled
     def print_space_state(self, state: str) -> None:
-        """Abstraction for space state formatting and placement."""
-        self.print_bottom_line(f"Space: {state}")
+        """Update space state information on all screens."""
+        self._execute_command("print_space_state", state)
