@@ -6,11 +6,11 @@ from ubinascii import hexlify
 import config
 from lib.ulogging import uLogger
 from lib.utils import StatusLED
-import uasyncio
+from asyncio import sleep, Event
 
 class WirelessNetwork:
 
-    def __init__(self) -> None:
+    def __init__(self) -> None: #TODO: Add error handling for network connection
         self.logger = uLogger("WIFI")
         self.status_led = StatusLED()
         self.wifi_ssid = config.WIFI_SSID
@@ -58,7 +58,7 @@ class WirelessNetwork:
     
     async def wait_status(self, expected_status, *, timeout=config.WIFI_CONNECT_TIMEOUT_SECONDS, tick_sleep=0.5) -> bool:
         for unused in range(ceil(timeout / tick_sleep)):
-            await uasyncio.sleep(tick_sleep)
+            await sleep(tick_sleep)
             status = self.dump_status()
             if status == expected_status:
                 return True
@@ -143,7 +143,7 @@ class WirelessNetwork:
     async def network_monitor(self) -> None:
         while True:
             await self.check_network_access()
-            await uasyncio.sleep(5)
+            await sleep(5)
     
     def get_mac(self) -> str:
         return self.mac

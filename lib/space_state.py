@@ -8,9 +8,14 @@ from display import Display
 from slack_api import Wrapper
 
 class SpaceState:
-    def __init__(self) -> None:
+    def __init__(self, error_event: Event, display: Display) -> None:
+        """
+        Pass an asyncio event object to error_event and use a coroutine to
+        monitor for event triggers to handle errors in space state checking
+        by querying the is_in_error_state attribute.
+        """
         self.log = uLogger("SpaceState")
-        self.display = Display()
+        self.display = display
         self.slack_api = Wrapper()
         self.space_open_button_event = Event()
         self.space_closed_button_event = Event()
@@ -21,7 +26,9 @@ class SpaceState:
         self.space_open_led.off()
         self.space_closed_led.off()
         self.space_state = None
-        self.space_state_check_in_error_state = False
+        self.state_check_error_state = False
+        self.error_event = error_event
+        self.errors = []
         self.checking_space_state = False
         self.checking_space_state_timeout_s = 30
         self.space_state_poll_frequency = config.space_state_poll_frequency_s
@@ -71,33 +78,47 @@ class SpaceState:
     def _set_space_state_check_to_error(self) -> None:
         """Activities relating to space_state check moving to error state"""
         self.log.info("Space state check has errored.")
-        if not self.space_state_check_in_error_state:
-            self.space_state_check_in_error_state = True
+        if not self.state_check_error_state:
+            self.state_check_error_state = True
+            self.error_event.set()
+            self.add_error("Space state check")
             self.state_check_error_open_led_flash_task = create_task(self.space_open_led.async_constant_flash(2))
             self.state_check_error_closed_led_flash_task = create_task(self.space_closed_led.async_constant_flash(2))
-            self.space_state_error_id = self.display.push_error("State API")
     
     def _set_space_state_check_to_ok(self) -> None:
         """Activities relating to space_state check moving to ok state"""
         self.log.info("Space state check status error has cleared")
-        if self.space_state_check_in_error_state:
-            self.space_state_check_in_error_state = False
+        if self.state_check_error_state:
+            self.state_check_error_state = False
+            self.remove_error("Space state check")
+            self.error_event.set()
             self.state_check_error_open_led_flash_task.cancel()
             self.state_check_error_closed_led_flash_task.cancel()
             self.space_open_led.off()
             self.space_closed_led.off()
-            self.display.pop_error(self.space_state_error_id)
             self._set_space_output(self.space_state)
+    
+    def add_error(self, error: str) -> None: #TODO Should this go in error_handling module?
+        if error not in self.errors:
+            self.errors.append(error)
+            self.error_event.set()
+    
+    def remove_error(self, error: str) -> None:
+        if error in self.errors:
+            self.errors.remove(error)
+            self.error_event.set()
 
     def _free_to_check_space_state(self) -> bool:
         """Check that we're not already checking for space state"""
         self.log.info("Checking space state check state")
         if self.checking_space_state:
             self.log.warn("Already checking space state")
+            self.add_error("Slow state API")
             return False
         else:
             self.log.info("Free to check space state")
             self.checking_space_state = True
+            self.remove_error("Slow state API")
             return True
         
     def _set_space_output(self, new_space_state: bool | None) -> None:
@@ -190,3 +211,9 @@ class SpaceState:
                 self.log.error(f"State poller encountered an error creating task: {e}")
             finally:
                 await sleep(self.space_state_poll_frequency)
+    
+    def set_error_id(self, error_id: int) -> None:
+        self.error_id = error_id
+    
+    def get_error_id(self) -> int:
+        return self.error_id
