@@ -2,6 +2,11 @@ from display import Display
 from ulogging import uLogger
 
 class ErrorHandler: # TODO add pytests for this class
+    """
+    Register a module for error handling and provide methods for registering, enabling, disabling, and getting error messages.
+    If a display is available, ensure your display handling module registers the display instance with the error handler using configure_display().
+    The error handler will then ensure the display update status method is called when errors are enabled or disabled, passing in all enabled errors.
+    """
     
     error_handler_registry = {}
 
@@ -25,6 +30,7 @@ class ErrorHandler: # TODO add pytests for this class
         cls.display.update_errors(errors)
 
     def __init__(self, module_name: str) -> None:
+        """Creates a new error handler instance for a module and registers it with the error handler registry."""
         self.log = uLogger(f"ErrorHandling - {module_name}")
         self.errors = {}
         self.register_error_handler(module_name, self)
