@@ -9,9 +9,9 @@ class Wrapper:
     """
     API wrapper for the REST API accepting comands to pass to the local slack server socket.
     """
-    def __init__(self, log_level: int, wifi: WirelessNetwork) -> None:
-        self.log = uLogger("Slack API", debug_level=log_level)
-        self.wifi = wifi
+    def __init__(self) -> None:
+        self.log = uLogger("Slack API")
+        self.wifi = WirelessNetwork()
         self.event_api_base_url = "http://" + WEBSERVER_HOST + ":" + WEBSERVER_PORT + "/smib/event/"
 
     async def async_space_open(self) -> None:

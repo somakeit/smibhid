@@ -2,6 +2,7 @@ from time import sleep
 from machine import Pin
 import uasyncio
 from lib.ulogging import uLogger
+from os import stat, statvfs
 
 class StatusLED:
     """
@@ -9,8 +10,8 @@ class StatusLED:
     Info log level output of state changes.
     Supports sync and async flash functions taking count and frequency arguments.
     """
-    def __init__(self, log_level: int, gpio_pin: int = -1) -> None:
-        self.logger = uLogger("Status_LED", log_level)
+    def __init__(self, gpio_pin: int = -1) -> None:
+        self.logger = uLogger("Status_LED")
         if gpio_pin > -1:
             self.status_led = Pin(gpio_pin, Pin.OUT)
             self.pin_id = gpio_pin
