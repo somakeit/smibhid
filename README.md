@@ -14,6 +14,7 @@ Press the space_open or space_closed buttons to call the smib server endpoint ap
 - Confirms the space state after change by calling space_state
 - Regularly polls for space state (polling period configurable in config.py) and updates the SMIBHID status appropriately to sync with other space state controls
 - Flashes both space state LEDs at 2Hz if space state cannot be determined
+- 2x16 character LCD display support
 - Error information shown on connected displays where configured in modules using ErrorHandler class
 
 ## Circuit diagram
