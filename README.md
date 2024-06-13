@@ -14,6 +14,7 @@ Press the space_open or space_closed buttons to call the smib server endpoint ap
 - Confirms the space state after change by calling space_state
 - Regularly polls for space state (polling period configurable in config.py) and updates the SMIBHID status appropriately to sync with other space state controls
 - Flashes both space state LEDs at 2Hz if space state cannot be determined
+- Error information shown on connected displays where configured in modules using ErrorHandler class
 
 ## Circuit diagram
 ### Pico W Connections
@@ -49,7 +50,7 @@ Set the LOG_LEVEL value in config.py for global log level output configuration w
 
 Example: `LOG_LEVEL = 2`
 
-#### Handlers
+#### Log Handlers
 Populate the LOG_HANDLERS list in config.py with zero or more of the following log output handlers (case sensitive): "Console", "File"
 
 Example: `LOG_HANDLERS = ["Console", "File"]`
@@ -58,6 +59,9 @@ Example: `LOG_HANDLERS = ["Console", "File"]`
 Set the LOG_FILE_MAX_SIZE value in config.py to set the maximum size of the log file in bytes before rotating. The log rotater will create a maximum of 2 files at this size, so configure appropiately for anticpated flash free space.
 
 Example: `LOG_FILE_MAX_SIZE = 10240`
+
+### Error handling
+Create a new instance of the ErrorHandling class in a module to register a list of possible errors for that module and enabled or disable them for display on connected screens using class methods. See the space state module for an example of implementation.
 
 ### Adding functionality
 Refer to the [S.M.I.B. contribution guidelines](https://github.com/somakeit/S.M.I.B./contribute) for more info on contributing.

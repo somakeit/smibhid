@@ -6,9 +6,10 @@ from asyncio import Event, create_task, sleep, wait_for
 from constants import OPEN, CLOSED
 from display import Display
 from slack_api import Wrapper
+from error_handling import ErrorHandler
 
 class SpaceState:
-    def __init__(self, error_event: Event, display: Display) -> None:
+    def __init__(self, display: Display) -> None:
         """
         Pass an asyncio event object to error_event and use a coroutine to
         monitor for event triggers to handle errors in space state checking
@@ -26,15 +27,25 @@ class SpaceState:
         self.space_open_led.off()
         self.space_closed_led.off()
         self.space_state = None
-        self.state_check_error_state = False
-        self.error_event = error_event
-        self.errors = []
         self.checking_space_state = False
         self.checking_space_state_timeout_s = 30
         self.space_state_poll_frequency = config.space_state_poll_frequency_s
         if self.space_state_poll_frequency != 0 and self.space_state_poll_frequency < 5:
             self.space_state_poll_frequency = 5
+        self.configure_error_handling()
 
+    def configure_error_handling(self) -> None:
+        self.error_handler = ErrorHandler("SpaceState")
+        self.errors = {
+            "API": "Slow API",
+            "CHK": "State check"
+            # "API": "The space state API is taking too long to respond.", needs scrolling feature on lcd1602
+            # "CHK": "An error occurred while checking the space state."
+        }
+
+        for error_key, error_message in self.errors.items():
+            self.error_handler.register_error(error_key, error_message)
+    
     def startup(self) -> None:
         self.log.info(f"Starting {self.open_button.get_name()} button watcher")
         create_task(self.open_button.wait_for_press())
@@ -78,47 +89,35 @@ class SpaceState:
     def _set_space_state_check_to_error(self) -> None:
         """Activities relating to space_state check moving to error state"""
         self.log.info("Space state check has errored.")
-        if not self.state_check_error_state:
-            self.state_check_error_state = True
-            self.error_event.set()
-            self.add_error("Space state check")
+        if not self.error_handler.is_error_enabled("CHK"):
+            self.error_handler.enable_error("CHK")
             self.state_check_error_open_led_flash_task = create_task(self.space_open_led.async_constant_flash(2))
             self.state_check_error_closed_led_flash_task = create_task(self.space_closed_led.async_constant_flash(2))
     
     def _set_space_state_check_to_ok(self) -> None:
         """Activities relating to space_state check moving to ok state"""
         self.log.info("Space state check status error has cleared")
-        if self.state_check_error_state:
-            self.state_check_error_state = False
-            self.remove_error("Space state check")
-            self.error_event.set()
+        if self.error_handler.is_error_enabled("CHK"):
+            self.error_handler.disable_error("CHK")
             self.state_check_error_open_led_flash_task.cancel()
             self.state_check_error_closed_led_flash_task.cancel()
             self.space_open_led.off()
             self.space_closed_led.off()
             self._set_space_output(self.space_state)
-    
-    def add_error(self, error: str) -> None: #TODO Should this go in error_handling module?
-        if error not in self.errors:
-            self.errors.append(error)
-            self.error_event.set()
-    
-    def remove_error(self, error: str) -> None:
-        if error in self.errors:
-            self.errors.remove(error)
-            self.error_event.set()
 
     def _free_to_check_space_state(self) -> bool:
         """Check that we're not already checking for space state"""
         self.log.info("Checking space state check state")
         if self.checking_space_state:
             self.log.warn("Already checking space state")
-            self.add_error("Slow state API")
+            if not self.error_handler.is_error_enabled("API"):
+                self.error_handler.enable_error("API")
             return False
         else:
             self.log.info("Free to check space state")
             self.checking_space_state = True
-            self.remove_error("Slow state API")
+            if self.error_handler.is_error_enabled("API"):
+                self.error_handler.disable_error("API")
             return True
         
     def _set_space_output(self, new_space_state: bool | None) -> None:

@@ -60,7 +60,7 @@ class Display:
     def _update_status(self) -> None:
         """Update state and error information on all screens."""
         self.log.info("Updating status on all screens")
-        self._execute_command("update_status", {"state": self.state, "errors": self.errors}) #TODO Maybe create a status class to pass to the display for better encapsulation and error handling
+        self._execute_command("update_status", {"state": self.state, "errors": self.errors})
 
     def update_state(self, state: str) -> None:
         self.state = state

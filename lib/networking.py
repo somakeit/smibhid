@@ -10,7 +10,7 @@ from asyncio import sleep, Event
 
 class WirelessNetwork:
 
-    def __init__(self) -> None: #TODO: Add error handling for network connection
+    def __init__(self) -> None:
         self.logger = uLogger("WIFI")
         self.status_led = StatusLED()
         self.wifi_ssid = config.WIFI_SSID

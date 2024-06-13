@@ -1,38 +1,79 @@
 from display import Display
-from asyncio import Event, create_task
 from ulogging import uLogger
 
-class ErrorHandling: # TODO add pytests for this class
-    def __init__(self, display: Display, error_event: Event, loaded_modules: list) -> None:
-        self.log = uLogger("ErrorHandling")
-        self.display = display
-        self.error_event = error_event
-        self.loaded_modules = loaded_modules
-        
-    def startup(self) -> None:  
-        self.log.info("Starting error monitor watcher")
-        create_task(self.async_error_monitor_watcher())
+class ErrorHandler: # TODO add pytests for this class
+    
+    error_handler_registry = {}
 
-    async def async_error_monitor_watcher(self) -> None: # TODO remove the watcher and call this function when a module raises an error, the module will register itself and specific module errors on init.
-        """
-        Coroutine to watch for error states set by modules passed the error_event and update current errors from loaded modules. Handlers such as "display" can display
-        appropriate error information on attached screens.
-        """
-        while True:
-            self.errors = []
-            await self.error_event.wait()
-            self.log.info("Error event triggered")
-            for module in self.loaded_modules:
-                try:
-                    self.log.info(f"Checking for errors in module {module.__class__.__name__}")
-                    self.errors.extend(module.errors)
-                    self.log.info(f"Errors in module: {module.errors}")
-                except AttributeError:
-                    self.log.info(f"Module {module.__class__.__name__} does not have an attribute of self.errors.")
-                except TypeError:
-                    self.log.info(f"Module {module.__class__.__name__} attribute self.errors is not of type list.")
-                except Exception as e:
-                    self.log.error(f"Error processing error in module {module.__class__.__name__}: {e}")
-            self.log.info(f"Errors found: {self.errors}")
-            self.display.update_errors(self.errors)
-            self.error_event.clear()
+    @classmethod
+    def register_error_handler(cls, error_handler_name: str, error_handler_instance) -> None:
+        cls.error_handler_registry[error_handler_name] = error_handler_instance
+
+    @classmethod
+    def get_error_handler_class(cls, error_handler_name: str) -> None:
+        return cls.error_handler_registry.get(error_handler_name)
+    
+    @classmethod
+    def configure_display(cls, display: Display) -> None:
+        cls.display = display
+
+    @classmethod
+    def update_errors_on_display(cls) -> None:
+        errors = []
+        for error_handler in cls.error_handler_registry:
+            errors.extend(cls.error_handler_registry[error_handler].get_all_errors())
+        cls.display.update_errors(errors)
+
+    def __init__(self, module_name: str) -> None:
+        self.log = uLogger(f"ErrorHandling - {module_name}")
+        self.errors = {}
+        self.register_error_handler(module_name, self)
+        
+    def register_error(self, key: str, message: str):
+        """Register a new error with its key, message, and enabled status."""
+        if key not in self.errors:
+            self.errors[key] = {'message': message, 'enabled': False}
+            self.log.info(f"Registered error '{key}' with message '{message}'")
+        else:
+            raise ValueError(f"Error key '{key}' already registered.")
+
+    def enable_error(self, key: str):
+        """Enable an error."""
+        if key in self.errors:
+            self.errors[key]['enabled'] = True
+            self.log.info(f"Enabled error '{key}'")
+            self.update_errors_on_display()
+        else:
+            raise ValueError(f"Error key '{key}' not registered.")
+
+    def disable_error(self, key: str):
+        """Disable an error."""
+        if key in self.errors:
+            self.errors[key]['enabled'] = False
+            self.log.info(f"Disabled error '{key}'")
+            self.update_errors_on_display()
+        else:
+            raise ValueError(f"Error key '{key}' not registered.")
+
+    def get_error_message(self, key: str) -> str:
+        """Get the error message for a given key."""
+        if key in self.errors:
+            return self.errors[key]['message']
+        else:
+            raise ValueError(f"Error key '{key}' not registered.")
+
+    def is_error_enabled(self, key: str) -> bool:
+        """Check if an error is enabled."""
+        if key in self.errors:
+            return self.errors[key]['enabled']
+        else:
+            raise ValueError(f"Error key '{key}' not registered.")
+    
+    def get_all_errors(self) -> list:
+        """Return a list of all enabled errors."""
+        errors = []
+        for error in self.errors:
+            if self.errors[error]['enabled']:
+                errors.append(self.errors[error]['message'])
+        return errors
+        
