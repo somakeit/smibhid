@@ -13,7 +13,7 @@ class HID:
         Create HID instance and then run startup() to start services for button monitoring and LED output.
         """
         self.log = uLogger("HID")
-        self.version = "1.1.0"     
+        self.version = "1.1.1"
         self.slack_api = Wrapper()
         self.loop_running = False
         self.display = Display()
