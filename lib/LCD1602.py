@@ -6,6 +6,7 @@ from machine import I2C
 from ulogging import uLogger
 from display import driver_registry
 from config import SDA_PIN, SCL_PIN, I2C_ID
+from asyncio import sleep as async_sleep, create_task
 
 #Device I2C address
 LCD_ADDRESS   =  (0x7c>>1)
@@ -55,6 +56,7 @@ class LCD1602:
 		self.log.info("Init LCD1602 display driver")
 		self._row = 16
 		self._col = 2
+		self.error_loop_task = None
 
 		try:
 			self.LCD1602_I2C = I2C(I2C_ID, sda = SDA_PIN, scl = SCL_PIN, freq = 400000)
@@ -113,11 +115,30 @@ class LCD1602:
 		self._showcontrol |= LCD_DISPLAYON 
 		self._command(LCD_DISPLAYCONTROL | self._showcontrol)
 	
-	def print_space_state(self, state: str) -> None:
-		"""Abstraction for space state formatting and placement."""
-		self.print_on_line(0, "S.M.I.B.H.I.D.")
-		self.print_on_line(1, f"Space: {state}")
- 
+	def update_status(self, status: dict) -> None:
+		"""Render state and error information on LCD display."""
+		self.log.info("Updating display status on LCD1602")
+		self.errors = status["errors"]
+		state_line = 0
+		self.log.info(f"Length of errors dict: {len(self.errors)}")
+		if len(self.errors) == 0:
+			self.log.info("No errors in status update")
+			self.print_on_line(0, "S.M.I.B.H.I.D.")
+			state_line = 1
+
+		self.print_on_line(state_line, f"State: {status["state"]}")
+
+		if self.error_loop_task == None or self.error_loop_task.done():
+			self.error_loop_task = create_task(self.async_error_printing_loop())
+
+	async def async_error_printing_loop(self) -> None:
+		while True:
+			for error in self.errors:
+				self.log.info(f"Printing error: {error}")
+				self.print_on_line(1, f"Err: {error}")
+				await async_sleep(2)
+			await async_sleep(0.1)
+	
 	def _begin(self, lines: int) -> None:
 		"""Configure and set initial display output."""
 		if (lines > 1):

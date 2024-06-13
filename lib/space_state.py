@@ -6,11 +6,17 @@ from asyncio import Event, create_task, sleep, wait_for
 from constants import OPEN, CLOSED
 from display import Display
 from slack_api import Wrapper
+from error_handling import ErrorHandler
 
 class SpaceState:
-    def __init__(self) -> None:
+    def __init__(self, display: Display) -> None:
+        """
+        Pass an asyncio event object to error_event and use a coroutine to
+        monitor for event triggers to handle errors in space state checking
+        by querying the is_in_error_state attribute.
+        """
         self.log = uLogger("SpaceState")
-        self.display = Display()
+        self.display = display
         self.slack_api = Wrapper()
         self.space_open_button_event = Event()
         self.space_closed_button_event = Event()
@@ -21,13 +27,25 @@ class SpaceState:
         self.space_open_led.off()
         self.space_closed_led.off()
         self.space_state = None
-        self.space_state_check_in_error_state = False
         self.checking_space_state = False
         self.checking_space_state_timeout_s = 30
         self.space_state_poll_frequency = config.space_state_poll_frequency_s
         if self.space_state_poll_frequency != 0 and self.space_state_poll_frequency < 5:
             self.space_state_poll_frequency = 5
+        self.configure_error_handling()
 
+    def configure_error_handling(self) -> None:
+        self.error_handler = ErrorHandler("SpaceState")
+        self.errors = {
+            "API": "Slow API",
+            "CHK": "State check"
+            # "API": "The space state API is taking too long to respond.", needs scrolling feature on lcd1602
+            # "CHK": "An error occurred while checking the space state."
+        }
+
+        for error_key, error_message in self.errors.items():
+            self.error_handler.register_error(error_key, error_message)
+    
     def startup(self) -> None:
         self.log.info(f"Starting {self.open_button.get_name()} button watcher")
         create_task(self.open_button.wait_for_press())
@@ -49,7 +67,7 @@ class SpaceState:
         self.space_state = True
         self.space_open_led.on()
         self.space_closed_led.off()
-        self.display.print_space_state("Open")
+        self.display.update_state("Open")
         self.log.info("Space state is open.")
     
     def set_output_space_closed(self) -> None:
@@ -57,7 +75,7 @@ class SpaceState:
         self.space_state = False
         self.space_open_led.off()
         self.space_closed_led.on()
-        self.display.print_space_state("Closed")
+        self.display.update_state("Closed")
         self.log.info("Space state is closed.")
 
     def set_output_space_none(self) -> None:
@@ -65,23 +83,22 @@ class SpaceState:
         self.space_state = None
         self.space_open_led.off()
         self.space_closed_led.off()
-        self.display.print_space_state("None")
+        self.display.update_state("None")
         self.log.info("Space state is none.")
 
     def _set_space_state_check_to_error(self) -> None:
         """Activities relating to space_state check moving to error state"""
         self.log.info("Space state check has errored.")
-        if not self.space_state_check_in_error_state:
-            self.space_state_check_in_error_state = True
+        if not self.error_handler.is_error_enabled("CHK"):
+            self.error_handler.enable_error("CHK")
             self.state_check_error_open_led_flash_task = create_task(self.space_open_led.async_constant_flash(2))
             self.state_check_error_closed_led_flash_task = create_task(self.space_closed_led.async_constant_flash(2))
-            self.display.print_space_state("Error")
     
     def _set_space_state_check_to_ok(self) -> None:
         """Activities relating to space_state check moving to ok state"""
         self.log.info("Space state check status error has cleared")
-        if self.space_state_check_in_error_state:
-            self.space_state_check_in_error_state = False
+        if self.error_handler.is_error_enabled("CHK"):
+            self.error_handler.disable_error("CHK")
             self.state_check_error_open_led_flash_task.cancel()
             self.state_check_error_closed_led_flash_task.cancel()
             self.space_open_led.off()
@@ -93,10 +110,14 @@ class SpaceState:
         self.log.info("Checking space state check state")
         if self.checking_space_state:
             self.log.warn("Already checking space state")
+            if not self.error_handler.is_error_enabled("API"):
+                self.error_handler.enable_error("API")
             return False
         else:
             self.log.info("Free to check space state")
             self.checking_space_state = True
+            if self.error_handler.is_error_enabled("API"):
+                self.error_handler.disable_error("API")
             return True
         
     def _set_space_output(self, new_space_state: bool | None) -> None:
@@ -189,3 +210,9 @@ class SpaceState:
                 self.log.error(f"State poller encountered an error creating task: {e}")
             finally:
                 await sleep(self.space_state_poll_frequency)
+    
+    def set_error_id(self, error_id: int) -> None:
+        self.error_id = error_id
+    
+    def get_error_id(self) -> int:
+        return self.error_id
