@@ -6,7 +6,7 @@ from ubinascii import hexlify
 import config
 from lib.ulogging import uLogger
 from lib.utils import StatusLED
-from asyncio import sleep, Event
+from asyncio import sleep
 
 class WirelessNetwork:
 

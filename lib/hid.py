@@ -1,5 +1,5 @@
 from ulogging import uLogger
-from asyncio import get_event_loop, Event, create_task
+from asyncio import get_event_loop
 from slack_api import Wrapper
 from display import Display
 from space_state import SpaceState
@@ -14,7 +14,6 @@ class HID:
         """
         self.log = uLogger("HID")
         self.version = "1.1.1"
-        self.slack_api = Wrapper()
         self.loop_running = False
         self.display = Display()
         self.spaceState = SpaceState(self.display)
