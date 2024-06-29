@@ -1,6 +1,6 @@
 from lib.ulogging import uLogger
 import lib.uaiohttpclient as httpclient
-from lib.networking import WirelessNetwork
+from networking import WirelessNetwork
 from config import WEBSERVER_HOST, WEBSERVER_PORT
 import gc
 from json import loads
@@ -9,9 +9,9 @@ class Wrapper:
     """
     API wrapper for the REST API accepting comands to pass to the local slack server socket.
     """
-    def __init__(self) -> None:
+    def __init__(self, network: WirelessNetwork) -> None:
         self.log = uLogger("Slack API")
-        self.wifi = WirelessNetwork()
+        self.wifi = network
         self.event_api_base_url = "http://" + WEBSERVER_HOST + ":" + WEBSERVER_PORT + "/smib/event/"
 
     async def async_space_open(self) -> None:

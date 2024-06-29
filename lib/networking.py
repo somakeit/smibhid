@@ -41,6 +41,7 @@ class WirelessNetwork:
         self.subnet = "Unknown"
         self.gateway = "Unknown"
         self.dns = "Unknown"
+        self.state = "Unknown"
 
         self.configure_wifi()
 
@@ -50,6 +51,18 @@ class WirelessNetwork:
         self.wlan.config(pm=self.disable_power_management)
         self.mac = hexlify(self.wlan.config('mac'),':').decode()
         self.logger.info("MAC: " + self.mac)
+
+    async def network_status_monitor(self) -> None:
+        while True:
+            status = self.dump_status()
+            if status == 3:
+                self.state = "Connected"
+            elif status >= 0:
+                self.state = "Connecting"
+            else:
+                self.state = "Disconnected"
+            self.logger.info(f"Network status: {self.state}")
+            await sleep(5)
 
     def dump_status(self):
         status = self.wlan.status()
