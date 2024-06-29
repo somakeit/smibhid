@@ -69,3 +69,13 @@ class Display:
     def update_errors(self, errors: list) -> None:
         self.errors = errors
         self._update_status()
+
+    def set_busy_output(self) -> None:
+        """Set all screens to busy output."""
+        self.log.info("Setting all screens to busy output")
+        self._execute_command("set_busy_output")
+    
+    def clear_busy_output(self) -> None:
+        """Clear all screens from busy output."""
+        self.log.info("Clearing all screens of busy output")
+        self._execute_command("clear_busy_output")

@@ -136,6 +136,7 @@ class SpaceState:
         Checks space state from server and sets SMIDHID output to reflect current space state, including errors if space state not available.
         """
         self.log.info("Checking space state")
+        self.display.set_busy_output()
         if not self._free_to_check_space_state():
             return
         else:
@@ -154,6 +155,7 @@ class SpaceState:
             finally:
                 self.log.info("Setting checking_space_state to False")
                 self.checking_space_state = False
+                self.display.clear_busy_output()
     
     async def async_space_opened_watcher(self) -> None:
         """

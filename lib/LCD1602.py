@@ -57,6 +57,7 @@ class LCD1602:
 		self._row = 16
 		self._col = 2
 		self.error_loop_task = None
+		self.spinner_task = None
 
 		try:
 			self.LCD1602_I2C = I2C(I2C_ID, sda = SDA_PIN, scl = SCL_PIN, freq = 400000)
@@ -138,6 +139,27 @@ class LCD1602:
 				self.print_on_line(1, f"Err: {error}")
 				await async_sleep(2)
 			await async_sleep(0.1)
+
+	def set_busy_output(self) -> None:
+		if self.spinner_task == None or self.spinner_task.done():
+			self.log.info("Setting busy output on LCD1602")
+			self.spinner_task = create_task(self._async_busy_spinner(0, 15))
+
+	def clear_busy_output(self) -> None:
+		self.log.info("Clearing busy output on LCD1602")
+		self.spinner_task.cancel()
+	
+	async def _async_busy_spinner(self, row: int, col: int) -> None:
+		"""
+		Render a spinner on the display at the given row and column to indicate a busy state.
+		Create as an async task and cancel to stop the spinner.
+		"""
+		chars = ["|", "/", "-", "/"] # This display doesn't have a "\".
+		while True:
+			for char in chars:
+				self.setCursor(col, row)
+				self.printout(char)
+				await async_sleep(0.2)
 	
 	def _begin(self, lines: int) -> None:
 		"""Configure and set initial display output."""
