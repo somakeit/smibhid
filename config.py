@@ -35,3 +35,5 @@ I2C_ID = 0
 
 ## Displays - Populate driver list with connected displays from this supported list: ["LCD1602"]
 DISPLAY_DRIVERS = ["LCD1602"]
+# Scroll speed for text on displays in characters per second
+SCROLL_SPEED = 4
