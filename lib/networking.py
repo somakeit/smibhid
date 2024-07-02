@@ -52,6 +52,12 @@ class WirelessNetwork:
         self.wlan.config(pm=self.disable_power_management)
         self.mac = hexlify(self.wlan.config('mac'),':').decode()
         self.log.info("MAC: " + self.mac)
+        self.hostname = config.CUSTOM_HOSTNAME
+        if not self.hostname:
+            self.hostname = "smibhid-" + self.mac[-5:]
+        self.log.info(f"Setting hostname to {self.hostname}")
+        network.hostname(self.hostname)
+        self.log.info("MAC: " + self.mac)
 
     def configure_error_handling(self) -> None:
         self.error_handler = ErrorHandler("Wifi")
