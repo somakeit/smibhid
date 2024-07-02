@@ -86,7 +86,7 @@ class LCD1602:
 		"""Clear the entire screen."""
 		self._command(LCD_CLEARDISPLAY)
 		sleep(0.002)
-		 
+			
 	def print_startup(self, version: str) -> None:
 		"""Render startup information on screen."""
 		self.print_on_line(0, "S.M.I.B.H.I.D.")
@@ -105,7 +105,7 @@ class LCD1602:
 		text = text[:16]
 		text = "{:<16}".format(text)
 		return text
-	
+
 	def print_on_line(self, line: int, text: str) -> None:
 		"""Print up to 16 characters on line 0 or 1."""
 		self.setCursor(0, line)
@@ -115,7 +115,7 @@ class LCD1602:
 		"""Turn on display."""
 		self._showcontrol |= LCD_DISPLAYON 
 		self._command(LCD_DISPLAYCONTROL | self._showcontrol)
-	
+
 	def update_status(self, status: dict) -> None:
 		"""Render state and error information on LCD display."""
 		self.log.info("Updating display status on LCD1602")
@@ -148,7 +148,7 @@ class LCD1602:
 	def clear_busy_output(self) -> None:
 		self.log.info("Clearing busy output on LCD1602")
 		self.spinner_task.cancel()
-	
+
 	async def _async_busy_spinner(self, row: int, col: int) -> None:
 		"""
 		Render a spinner on the display at the given row and column to indicate a busy state.
@@ -160,12 +160,12 @@ class LCD1602:
 				self.setCursor(col, row)
 				self.printout(char)
 				await async_sleep(0.2)
-	
+
 	def _begin(self, lines: int) -> None:
 		"""Configure and set initial display output."""
 		if (lines > 1):
 				self._showfunction |= LCD_2LINE 
-		 
+			
 		self._numlines = lines 
 		self._currline = 0 
 
