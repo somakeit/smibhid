@@ -37,10 +37,8 @@ class SpaceState:
     def configure_error_handling(self) -> None:
         self.error_handler = ErrorHandler("SpaceState")
         self.errors = {
-            "API": "Slow API",
-            "CHK": "State check"
-            # "API": "The space state API is taking too long to respond.", needs scrolling feature on lcd1602
-            # "CHK": "An error occurred while checking the space state."
+            "API": "Space state API slow responding.",
+            "CHK": "Failure checking space state."
         }
 
         for error_key, error_message in self.errors.items():

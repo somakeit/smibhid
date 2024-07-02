@@ -5,7 +5,7 @@ from time import sleep
 from machine import I2C
 from ulogging import uLogger
 from display import driver_registry
-from config import SDA_PIN, SCL_PIN, I2C_ID
+from config import SDA_PIN, SCL_PIN, I2C_ID, SCROLL_SPEED
 from asyncio import sleep as async_sleep, create_task
 
 #Device I2C address
@@ -110,6 +110,19 @@ class LCD1602:
         """Print up to 16 characters on line 0 or 1."""
         self.setCursor(0, line)
         self.printout(self._text_to_line(text))
+
+    async def async_scroll_print_on_line(self, line: int, text: str) -> None:
+        """Print up to 16 characters on line 0 or 1."""
+        self.setCursor(0, line)
+        extra_letters = text[16:]
+        display_text = text[:16]
+        self.printout(self._text_to_line(text))
+        while extra_letters:
+            display_text = display_text[1:] + extra_letters[0]
+            extra_letters = extra_letters[1:]
+            self.setCursor(0, line)
+            self.printout(display_text)
+            await async_sleep(1/SCROLL_SPEED)
 
     def _display(self) -> None:
         """Turn on display."""

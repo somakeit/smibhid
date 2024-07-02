@@ -19,6 +19,8 @@ WIFI_COUNTRY = "GB"
 WIFI_CONNECT_TIMEOUT_SECONDS = 10
 WIFI_CONNECT_RETRIES = 1
 WIFI_RETRY_BACKOFF_SECONDS = 5
+# Leave as none for MAC based unique hostname or specify a custom hostname string
+CUSTOM_HOSTNAME = None
 
 ## Web host
 WEBSERVER_HOST = ""
@@ -35,3 +37,5 @@ I2C_ID = 0
 
 ## Displays - Populate driver list with connected displays from this supported list: ["LCD1602"]
 DISPLAY_DRIVERS = ["LCD1602"]
+# Scroll speed for text on displays in characters per second
+SCROLL_SPEED = 4
