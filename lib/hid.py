@@ -1,9 +1,10 @@
 from ulogging import uLogger
 from asyncio import get_event_loop
-from slack_api import Wrapper
-from display import Display
 from space_state import SpaceState
 from error_handling import ErrorHandler
+from module_config import ModuleConfig
+from display import Display
+from networking import WirelessNetwork
 
 class HID:
     
@@ -15,19 +16,22 @@ class HID:
         self.log = uLogger("HID")
         self.version = "1.1.1"
         self.loop_running = False
-        self.display = Display()
-        self.spaceState = SpaceState(self.display)
+        self.moduleConfig = ModuleConfig(Display(), WirelessNetwork())
+        self.moduleConfig.enable_network_status_monitor()
+        self.display = self.moduleConfig.get_display()
+        self.spaceState = SpaceState(self.moduleConfig)
         self.errorHandler = ErrorHandler("HID")
         self.errorHandler.configure_display(self.display)
         
     def startup(self) -> None:
         """
-        Initialise all aysnc services for the HID.
+        Initialise all async services for the HID.
         """
         self.log.info("--------Starting SMIBHID--------")
         self.log.info(f"SMIBHID firmware version: {self.version}")
         self.display.clear()
         self.display.print_startup(self.version)
+        self.display.set_busy_output()
         self.spaceState.startup()
       
         self.log.info("Entering main loop")        

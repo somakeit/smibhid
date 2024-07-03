@@ -4,20 +4,21 @@ from utils import StatusLED
 from button import Button
 from asyncio import Event, create_task, sleep, wait_for
 from constants import OPEN, CLOSED
-from display import Display
 from slack_api import Wrapper
+from module_config import ModuleConfig
 from error_handling import ErrorHandler
 
 class SpaceState:
-    def __init__(self, display: Display) -> None:
+    def __init__(self, module_config: ModuleConfig) -> None:
         """
         Pass an asyncio event object to error_event and use a coroutine to
         monitor for event triggers to handle errors in space state checking
         by querying the is_in_error_state attribute.
         """
         self.log = uLogger("SpaceState")
-        self.display = display
-        self.slack_api = Wrapper()
+        self.display = module_config.get_display()
+        self.wifi = module_config.get_wifi()
+        self.slack_api = Wrapper(self.wifi)
         self.space_open_button_event = Event()
         self.space_closed_button_event = Event()
         self.open_button = Button(config.SPACE_OPEN_BUTTON, "Space_open", self.space_open_button_event)
@@ -134,6 +135,7 @@ class SpaceState:
         Checks space state from server and sets SMIDHID output to reflect current space state, including errors if space state not available.
         """
         self.log.info("Checking space state")
+        self.display.set_busy_output()
         if not self._free_to_check_space_state():
             return
         else:
@@ -152,6 +154,7 @@ class SpaceState:
             finally:
                 self.log.info("Setting checking_space_state to False")
                 self.checking_space_state = False
+                self.display.clear_busy_output()
     
     async def async_space_opened_watcher(self) -> None:
         """
