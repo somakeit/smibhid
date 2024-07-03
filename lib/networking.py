@@ -7,6 +7,7 @@ import config
 from lib.ulogging import uLogger
 from lib.utils import StatusLED
 from asyncio import sleep
+from error_handling import ErrorHandler
 
 class WirelessNetwork:
 
@@ -44,6 +45,7 @@ class WirelessNetwork:
         self.state = "Unknown"
 
         self.configure_wifi()
+        self.configure_error_handling()
 
     def configure_wifi(self) -> None:
         self.wlan = network.WLAN(network.STA_IF)
@@ -69,6 +71,16 @@ class WirelessNetwork:
                 self.state = "Disconnected"
             self.log.info(f"Network status: {self.state}")
             await sleep(5)
+        self.log.info("MAC: " + self.mac)
+
+    def configure_error_handling(self) -> None:
+        self.error_handler = ErrorHandler("Wifi")
+        self.errors = {
+            "CON": "Wifi connect"
+        }
+
+        for error_key, error_message in self.errors.items():
+            self.error_handler.register_error(error_key, error_message)
 
     def dump_status(self):
         status = self.wlan.status()
@@ -105,9 +117,15 @@ class WirelessNetwork:
             self.log.warn(f"took {elapsed_ms} milliseconds to connect to wifi")
 
     async def connection_error(self) -> None:
+        self.log.info("Error connecting")
+        if not self.error_handler.is_error_enabled("CON"):
+            self.error_handler.enable_error("CON")
         await self.status_led.async_flash(2, 2)
 
     async def connection_success(self) -> None:
+        self.log.info("Successful connection")
+        if self.error_handler.is_error_enabled("CON"):
+            self.error_handler.disable_error("CON")
         await self.status_led.async_flash(1, 2)
 
     async def attempt_ap_connect(self) -> None:
