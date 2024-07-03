@@ -25,12 +25,13 @@ class HID:
         
     def startup(self) -> None:
         """
-        Initialise all aysnc services for the HID.
+        Initialise all async services for the HID.
         """
         self.log.info("--------Starting SMIBHID--------")
         self.log.info(f"SMIBHID firmware version: {self.version}")
         self.display.clear()
         self.display.print_startup(self.version)
+        self.display.set_busy_output()
         self.spaceState.startup()
       
         self.log.info("Entering main loop")        
