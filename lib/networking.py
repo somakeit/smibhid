@@ -41,6 +41,7 @@ class WirelessNetwork:
         self.subnet = "Unknown"
         self.gateway = "Unknown"
         self.dns = "Unknown"
+        self.state = "Unknown"
 
         self.configure_wifi()
 
@@ -55,6 +56,19 @@ class WirelessNetwork:
             self.hostname = "smibhid-" + self.mac[-5:]
         self.log.info(f"Setting hostname to {self.hostname}")
         network.hostname(self.hostname)
+        self.log.info("MAC: " + self.mac)
+
+    async def network_status_monitor(self) -> None:
+        while True:
+            status = self.dump_status()
+            if status == 3:
+                self.state = "Connected"
+            elif status >= 0:
+                self.state = "Connecting"
+            else:
+                self.state = "Disconnected"
+            self.log.info(f"Network status: {self.state}")
+            await sleep(5)
 
     def dump_status(self):
         status = self.wlan.status()
