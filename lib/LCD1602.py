@@ -149,7 +149,7 @@ class LCD1602:
         while True:
             for error in self.errors:
                 self.log.info(f"Printing error: {error}")
-                self.print_on_line(1, f"Err: {error}")
+                await self.async_scroll_print_on_line(1, f"Err: {error}")
                 await async_sleep(2)
             await async_sleep(0.1)
 
