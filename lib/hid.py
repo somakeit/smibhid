@@ -17,8 +17,8 @@ class HID:
         self.version = "1.1.1"
         self.loop_running = False
         self.moduleConfig = ModuleConfig(Display(), WirelessNetwork())
-        self.moduleConfig.enable_network_status_monitor()
         self.display = self.moduleConfig.get_display()
+        self.wifi = self.moduleConfig.get_wifi()
         self.spaceState = SpaceState(self.moduleConfig)
         self.errorHandler = ErrorHandler("HID")
         self.errorHandler.configure_display(self.display)
@@ -29,6 +29,7 @@ class HID:
         """
         self.log.info("--------Starting SMIBHID--------")
         self.log.info(f"SMIBHID firmware version: {self.version}")
+        self.wifi.startup()
         self.display.clear()
         self.display.print_startup(self.version)
         self.display.set_busy_output()

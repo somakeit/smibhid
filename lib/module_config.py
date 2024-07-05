@@ -11,9 +11,6 @@ class ModuleConfig:
         self.display = display
         self.wifi = wifi
 
-    def enable_network_status_monitor(self) -> None:
-        create_task(self.wifi.network_status_monitor())
-
     def get_display(self) -> Display:
         return self.display
     

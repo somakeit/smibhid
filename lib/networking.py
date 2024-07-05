@@ -6,7 +6,7 @@ from ubinascii import hexlify
 import config
 from lib.ulogging import uLogger
 from lib.utils import StatusLED
-from asyncio import sleep
+from asyncio import sleep, create_task
 from error_handling import ErrorHandler
 
 class WirelessNetwork:
@@ -42,7 +42,6 @@ class WirelessNetwork:
         self.subnet = "Unknown"
         self.gateway = "Unknown"
         self.dns = "Unknown"
-        self.state = "Unknown"
 
         self.configure_wifi()
         self.configure_error_handling()
@@ -60,17 +59,9 @@ class WirelessNetwork:
         self.log.info(f"Setting hostname to {self.hostname}")
         network.hostname(self.hostname)
 
-    async def network_status_monitor(self) -> None:
-        while True:
-            status = self.dump_status()
-            if status == 3:
-                self.state = "Connected"
-            elif status >= 0:
-                self.state = "Connecting"
-            else:
-                self.state = "Disconnected"
-            self.log.info(f"Network status: {self.state}")
-            await sleep(5)
+    def startup(self) -> None:
+        self.log.info("Starting wifi network monitor")
+        create_task(self.network_monitor())
 
     def configure_error_handling(self) -> None:
         self.error_handler = ErrorHandler("Wifi")
