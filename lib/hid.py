@@ -5,8 +5,8 @@ from error_handling import ErrorHandler
 from module_config import ModuleConfig
 from display import Display
 from networking import WirelessNetwork
-from config import RFID_SCK, RFID_MOSI, RFID_MISO, RFID_RST, RFID_CS
 from rfid.reader import RFIDReader
+from config import RFID_ENABLED
 
 class HID:
     
@@ -21,7 +21,8 @@ class HID:
         self.moduleConfig = ModuleConfig()
         self.moduleConfig.register_display(Display())
         self.moduleConfig.register_wifi(WirelessNetwork())
-        self.moduleConfig.register_rfid(RFIDReader(RFID_SCK, RFID_MOSI, RFID_MISO, RFID_RST, RFID_CS, Event()))
+        if RFID_ENABLED:
+            self.moduleConfig.register_rfid(RFIDReader(Event()))
         self.display = self.moduleConfig.get_display()
         self.wifi = self.moduleConfig.get_wifi()
         self.reader = self.moduleConfig.get_rfid()
@@ -40,7 +41,8 @@ class HID:
         self.display.print_startup(self.version)
         self.display.set_busy_output()
         self.spaceState.startup()
-        self.reader.startup()
+        if self.reader:
+            self.reader.startup()
       
         self.log.info("Entering main loop")        
         self.loop_running = True

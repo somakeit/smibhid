@@ -11,6 +11,9 @@ class ModuleConfig:
     """
     def __init__(self) -> None:
         self.log = uLogger("ModuleConfig")
+        self.display = None
+        self.wifi = None
+        self.reader = None
 
     def register_display(self, display: Display) -> None:
         self.display = display
