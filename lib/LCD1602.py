@@ -156,18 +156,22 @@ class LCD1602:
     def set_busy_output(self) -> None:
         if self.spinner_task == None or self.spinner_task.done():
             self.log.info("Setting busy output on LCD1602")
-            self.spinner_task = create_task(self._async_busy_spinner(0, 15))
+            self.spinner_task = create_task(self._async_busy_spinner(15, 0))
 
     def clear_busy_output(self) -> None:
         self.log.info("Clearing busy output on LCD1602")
         self.spinner_task.cancel()
+        self.setCursor(self.busy_col, self.busy_row)
+        self.printout(" ")
 
-    async def _async_busy_spinner(self, row: int, col: int) -> None:
+    async def _async_busy_spinner(self, col: int, row: int) -> None:
         """
-        Render a spinner on the display at the given row and column to indicate a busy state.
+        Render a spinner on the display at the given column and row to indicate a busy state.
         Create as an async task and cancel to stop the spinner.
         """
         chars = ["|", "/", "-", "/"] # This display doesn't have a "\".
+        self.busy_col = col
+        self.busy_row = row
         while True:
             for char in chars:
                 self.setCursor(col, row)
