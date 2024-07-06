@@ -186,3 +186,6 @@ class WirelessNetwork:
         all_data['status description'] = self.get_wlan_status_description(status)
         all_data['status code'] = status
         return all_data
+
+    def get_hostname(self) -> str:
+        return self.hostname

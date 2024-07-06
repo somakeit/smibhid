@@ -64,7 +64,12 @@ class Wrapper:
 
         try:
             await self.wifi.check_network_access()
-            request = await httpclient.request(method, url)
+            hostname = self.wifi.get_hostname()
+            headers = {
+                "Content-Type": "application/json",
+                "Device-Hostname": hostname
+            }
+            request = await httpclient.request(method, url, headers=headers)
             self.log.info(f"Request: {request}")
             response = await request.read()
             self.log.info(f"Response data: {response}")
