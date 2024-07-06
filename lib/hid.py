@@ -1,10 +1,12 @@
 from ulogging import uLogger
-from asyncio import get_event_loop
+from asyncio import get_event_loop, Event
 from space_state import SpaceState
 from error_handling import ErrorHandler
 from module_config import ModuleConfig
 from display import Display
 from networking import WirelessNetwork
+from config import RFID_SCK, RFID_MOSI, RFID_MISO, RFID_RST, RFID_CS
+from rfid.reader import RFIDReader
 
 class HID:
     
@@ -16,9 +18,13 @@ class HID:
         self.log = uLogger("HID")
         self.version = "1.1.1"
         self.loop_running = False
-        self.moduleConfig = ModuleConfig(Display(), WirelessNetwork())
-        self.moduleConfig.enable_network_status_monitor()
+        self.moduleConfig = ModuleConfig()
+        self.moduleConfig.register_display(Display())
+        self.moduleConfig.register_wifi(WirelessNetwork())
+        self.moduleConfig.register_rfid(RFIDReader(RFID_SCK, RFID_MOSI, RFID_MISO, RFID_RST, RFID_CS, Event()))
         self.display = self.moduleConfig.get_display()
+        self.wifi = self.moduleConfig.get_wifi()
+        self.reader = self.moduleConfig.get_rfid()
         self.spaceState = SpaceState(self.moduleConfig)
         self.errorHandler = ErrorHandler("HID")
         self.errorHandler.configure_display(self.display)
@@ -29,10 +35,12 @@ class HID:
         """
         self.log.info("--------Starting SMIBHID--------")
         self.log.info(f"SMIBHID firmware version: {self.version}")
+        self.wifi.startup()
         self.display.clear()
         self.display.print_startup(self.version)
         self.display.set_busy_output()
         self.spaceState.startup()
+        self.reader.startup()
       
         self.log.info("Entering main loop")        
         self.loop_running = True

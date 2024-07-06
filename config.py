@@ -39,3 +39,10 @@ I2C_ID = 0
 DISPLAY_DRIVERS = ["LCD1602"]
 # Scroll speed for text on displays in characters per second
 SCROLL_SPEED = 4
+
+## RFID reader
+RFID_SCK = 18
+RFID_MOSI = 19
+RFID_MISO = 16
+RFID_RST = 21
+RFID_CS = 17
