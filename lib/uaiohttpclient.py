@@ -40,7 +40,7 @@ class ChunkedClientResponse(ClientResponse):
         return "<ChunkedClientResponse %d %s>" % (self.status, self.headers)
 
 
-async def request_raw(method, url, headers=None):
+async def request_raw(method, url, headers=None, json_data: str = None):
     try:
         proto, dummy, host, path = url.split("/", 3)
     except ValueError:
@@ -64,20 +64,21 @@ async def request_raw(method, url, headers=None):
     # transfer-encoding But explicitly set Connection: close, even
     # though this should be default for 1.0, because some servers
     # misbehave w/o it.
-    query = "%s /%s HTTP/1.0\r\nHost: %s\r\nConnection: close\r\nUser-Agent: compat\r\n%s\r\n" % (
+    query = "%s /%s HTTP/1.0\r\nHost: %s\r\nConnection: close\r\nUser-Agent: compat\r\n%s\r\n%s" % (
         method,
         path,
         host,
-        headers_string
+        headers_string,
+        json_data
     )
     await writer.awrite(query.encode("latin-1"))
     return reader
 
 
-async def request(method, url, headers=None):
+async def request(method, url, headers=None, json_data: str = None):
     redir_cnt = 0
     while redir_cnt < 2:
-        reader = await request_raw(method, url, headers)
+        reader = await request_raw(method, url, headers, json_data)
         headers = []
         sline = await reader.readline()
         sline = sline.split(None, 2)
