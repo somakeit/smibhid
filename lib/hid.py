@@ -1,11 +1,11 @@
-from ulogging import uLogger
+from lib.ulogging import uLogger
 from asyncio import get_event_loop, Event
-from space_state import SpaceState
-from error_handling import ErrorHandler
-from module_config import ModuleConfig
-from display import Display
-from networking import WirelessNetwork
-from rfid.reader import RFIDReader
+from lib.space_state import SpaceState
+from lib.error_handling import ErrorHandler
+from lib.module_config import ModuleConfig
+from lib.display import Display
+from lib.networking import WirelessNetwork
+from lib.rfid.reader import RFIDReader
 from config import RFID_ENABLED
 
 class HID:

@@ -3,8 +3,8 @@
 # -*- coding: utf-8 -*-
 from time import sleep
 from machine import I2C
-from ulogging import uLogger
-from display import driver_registry
+from lib.ulogging import uLogger
+from lib.display import driver_registry
 from config import SDA_PIN, SCL_PIN, I2C_ID, SCROLL_SPEED
 from asyncio import sleep as async_sleep, create_task
 
