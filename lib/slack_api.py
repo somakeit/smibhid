@@ -3,7 +3,7 @@ import lib.uaiohttpclient as httpclient
 from networking import WirelessNetwork
 from config import WEBSERVER_HOST, WEBSERVER_PORT
 import gc
-from json import loads
+from json import loads, dumps
 
 class Wrapper:
     """
@@ -14,9 +14,10 @@ class Wrapper:
         self.wifi = network
         self.event_api_base_url = "http://" + WEBSERVER_HOST + ":" + WEBSERVER_PORT + "/smib/event/"
 
-    async def async_space_open(self) -> None:
-        """Call space_open."""
-        await self._async_slack_api_request("PUT", "space_open")
+    async def async_space_open(self, hours: int = 0) -> None:
+        """Call space_open, with optional hours open for parameter."""
+        json_hours = dumps({"hours" : hours})
+        await self._async_slack_api_request("PUT", "space_open", json_hours)
     
     async def async_space_closed(self) -> None:
         """Call space_closed."""
@@ -35,25 +36,25 @@ class Wrapper:
             raise
         return state
         
-    async def _async_slack_api_request(self, method: str, url_suffix: str) -> dict:
+    async def _async_slack_api_request(self, method: str, url_suffix: str, json_data: str = "") -> dict:
         """
         Make a request to the S.M.I.B. SLACK API, provide the URL suffix to event api url, e.g. 'space_open'.
         Returns the response payload as a string
         """
-        self.log.info(f"Calling slack API: {url_suffix}")
+        self.log.info(f"Calling slack API: {url_suffix} with method: {method} and data: {json_data}")
         url = self.event_api_base_url + url_suffix
-        result = await self._async_api_request(method, url)
+        result = await self._async_api_request(method, url, json_data)
         return result
     
-    async def _async_api_request(self, method: str, url: str) -> dict:
+    async def _async_api_request(self, method: str, url: str, json_data: str = "") -> dict:
         """Internal method to make a PUT or GET request to an API, provide the HTTP method and the full API URL"""
         if method in ["GET", "PUT"]:
-            response = await self._async_api_make_request(method, url)
+            response = await self._async_api_make_request(method, url, json_data)
             return response
         else:
             raise ValueError(f"{method} is not 'GET' or 'PULL'.")
 
-    async def _async_api_make_request(self, method: str, url: str) -> dict:
+    async def _async_api_make_request(self, method: str, url: str, json_data: str = "") -> dict:
         """
         Internal method for making an API request, provide the method and full URL.
         Returns the response data as a dict, throws an exception if the return status code is not 200.
@@ -67,9 +68,10 @@ class Wrapper:
             hostname = self.wifi.get_hostname()
             headers = {
                 "Content-Type": "application/json",
-                "Device-Hostname": hostname
+                "Device-Hostname": hostname,
+                "Content-Length" : str(len(json_data))
             }
-            request = await httpclient.request(method, url, headers=headers)
+            request = await httpclient.request(method, url, headers=headers, json_data=json_data)
             self.log.info(f"Request: {request}")
             response = await request.read()
             self.log.info(f"Response data: {response}")
