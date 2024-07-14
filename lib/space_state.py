@@ -211,9 +211,3 @@ class SpaceState:
                 self.log.error(f"State poller encountered an error creating task: {e}")
             finally:
                 await sleep(self.space_state_poll_frequency)
-    
-    def set_error_id(self, error_id: int) -> None:
-        self.error_id = error_id
-    
-    def get_error_id(self) -> int:
-        return self.error_id
