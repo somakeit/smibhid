@@ -261,7 +261,7 @@ class SpaceState:
             self.log.info("Polling space state")
             try:
                 create_task(task_wrapper_for_error_handling())
-            except Exception as e:
-                self.log.error(f"State poller encountered an error creating task: {e}")
+            except CancelledError as e:
+                self.log.info(f"State poller task cancelled: {e}")
             finally:
                 await sleep(self.space_state_poll_frequency)
