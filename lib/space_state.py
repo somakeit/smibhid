@@ -5,13 +5,13 @@ Classes related to space state management.
 from asyncio import Event, create_task, sleep, wait_for
 
 import config
-from .button import Button
-from .constants import CLOSED, OPEN
-from .error_handling import ErrorHandler
-from .module_config import ModuleConfig
-from .slack_api import Wrapper
-from .ulogging import uLogger
-from .utils import StatusLED
+from lib.button import Button
+from lib.constants import CLOSED, OPEN
+from lib.error_handling import ErrorHandler
+from lib.module_config import ModuleConfig
+from lib.slack_api import Wrapper
+from lib.ulogging import uLogger
+from lib.utils import StatusLED
 
 
 class SpaceState:
