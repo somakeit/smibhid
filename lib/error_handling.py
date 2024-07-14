@@ -1,5 +1,5 @@
-from display import Display
-from ulogging import uLogger
+from lib.display import Display
+from lib.ulogging import uLogger
 
 class ErrorHandler: # TODO add pytests for this class
     """

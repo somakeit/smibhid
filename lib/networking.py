@@ -7,7 +7,7 @@ import config
 from lib.ulogging import uLogger
 from lib.utils import StatusLED
 from asyncio import sleep, create_task
-from error_handling import ErrorHandler
+from lib.error_handling import ErrorHandler
 
 class WirelessNetwork:
 

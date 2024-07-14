@@ -1,8 +1,8 @@
-from display import Display
-from networking import WirelessNetwork
+from lib.display import Display
+from lib.networking import WirelessNetwork
 from asyncio import create_task
-from ulogging import uLogger
-from rfid.reader import RFIDReader
+from lib.ulogging import uLogger
+from lib.rfid.reader import RFIDReader
 
 class ModuleConfig:
     """

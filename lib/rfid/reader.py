@@ -1,9 +1,9 @@
 from lib.rfid.mfrc522 import MFRC522
 from lib.rfid.users import user_tag_mapping
 from asyncio import create_task, Event
-from ulogging import uLogger
+from lib.ulogging import uLogger
 from config import RFID_SCK, RFID_MOSI, RFID_MISO, RFID_RST, RFID_CS
-from error_handling import ErrorHandler
+from lib.error_handling import ErrorHandler
 
 class RFIDReader:
     def __init__(self, tag_read_event: Event, rfid_sck: int = RFID_SCK, rfid_mosi: int = RFID_MOSI, rfid_miso: int = RFID_MISO, rfid_rst: int = RFID_RST, rfid_cs: int = RFID_CS) -> None:

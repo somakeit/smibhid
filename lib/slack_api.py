@@ -1,6 +1,6 @@
 from lib.ulogging import uLogger
 import lib.uaiohttpclient as httpclient
-from networking import WirelessNetwork
+from lib.networking import WirelessNetwork
 from config import WEBSERVER_HOST, WEBSERVER_PORT
 import gc
 from json import loads, dumps

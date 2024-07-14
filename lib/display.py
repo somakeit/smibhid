@@ -1,6 +1,6 @@
-from ulogging import uLogger
-from registry import driver_registry
-from LCD1602 import LCD1602
+from lib.ulogging import uLogger
+from lib.registry import driver_registry
+from lib.LCD1602 import LCD1602
 from config import DISPLAY_DRIVERS
 
 class Display:
