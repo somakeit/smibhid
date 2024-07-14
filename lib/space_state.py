@@ -2,7 +2,7 @@
 Classes related to space state management.
 """
 
-from asyncio import Event, create_task, sleep, wait_for
+from asyncio import Event, create_task, sleep, wait_for, CancelledError
 
 import config
 from lib.button import Button
@@ -50,8 +50,8 @@ class SpaceState:
         self.space_state_poll_frequency = config.space_state_poll_frequency_s
         if self.space_state_poll_frequency != 0 and self.space_state_poll_frequency < 5:
             self.space_state_poll_frequency = 5
-        # self.state_check_error_open_led_flash_task = None
-        # self.state_check_error_closed_led_flash_task = None
+        self.state_check_error_open_led_flash_task = None
+        self.state_check_error_closed_led_flash_task = None
         self.configure_error_handling()
 
     def configure_error_handling(self) -> None:
@@ -135,8 +135,10 @@ class SpaceState:
         self.log.info("Space state check status error has cleared")
         if self.error_handler.is_error_enabled("CHK"):
             self.error_handler.disable_error("CHK")
-            self.state_check_error_open_led_flash_task.cancel()
-            self.state_check_error_closed_led_flash_task.cancel()
+            if self.state_check_error_open_led_flash_task is not None:
+                self.state_check_error_open_led_flash_task.cancel()
+            if self.state_check_error_closed_led_flash_task is not None:
+                self.state_check_error_closed_led_flash_task.cancel()
             self.space_open_led.off()
             self.space_closed_led.off()
             self._set_space_output(self.space_state)
