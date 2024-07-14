@@ -40,7 +40,8 @@ Below is a list of hardware ad links for my specific build:
 - [2x16 Character I2C display](https://thepihut.com/products/lcd1602-i2c-module?variant=42422810083523)
 
 ## Deployment
-Copy the files from the smibhib folder into the root of a Pico W running Micropython and update values in config.py as necessary
+Copy the files from the smibhib folder into the root of a Pico W running Micropython (minimum Pico W Micropython firmware v1.22.2 https://micropython.org/download/RPI_PICO_W/) and update values in config.py as necessary
+
 ### Configuration
 - Ensure the pins for the space open/closed LEDs and buttons are correctly specified for your wiring
 - Configure I2C pins for the display if using, display will detect automatically or disable if not found
