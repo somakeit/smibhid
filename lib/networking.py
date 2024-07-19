@@ -53,8 +53,9 @@ class WirelessNetwork:
         self.mac = hexlify(self.wlan.config('mac'),':').decode()
         self.mac_no_colons = self.mac.replace(":", "")
         self.log.info("MAC: " + self.mac)
-        self.hostname = config.CUSTOM_HOSTNAME
-        if not self.hostname:
+        if config.CUSTOM_HOSTNAME:
+            self.hostname = config.CUSTOM_HOSTNAME
+        else:
             self.hostname = "smibhid-" + self.mac_no_colons[-6:]
         self.log.info(f"Setting hostname to {self.hostname}")
         network.hostname(self.hostname)
