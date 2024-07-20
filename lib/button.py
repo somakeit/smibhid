@@ -1,17 +1,35 @@
-from machine import Pin
-from lib.ulogging import uLogger
+"""
+Classes relating to button use and management, leveraging asyncio Events to
+signal button presses.
+"""
+
 from asyncio import Event, sleep
 
-class Button:
+from machine import Pin
 
-    def __init__(self, GPIO_pin: int, button_name: str, button_pressed_event: Event) -> None:
-        self.logger = uLogger(f"Button {GPIO_pin}")
-        self.gpio = GPIO_pin
-        self.pin = Pin(GPIO_pin, Pin.IN, Pin.PULL_UP)
+from lib.ulogging import uLogger
+
+
+class Button:
+    """
+    Class to represent a button, with a name, GPIO pin, and an Event to signal
+    """
+
+    def __init__(
+        self, gpio_pin: int, button_name: str, button_pressed_event: Event
+    ) -> None:
+        self.logger = uLogger(f"Button {gpio_pin}")
+        self.gpio = gpio_pin
+        self.pin = Pin(gpio_pin, Pin.IN, Pin.PULL_UP)
         self.name = button_name
         self.button_pressed = button_pressed_event
-   
+
     async def wait_for_press(self) -> None:
+        """
+        Button press watcher, which will wait for a button press and then set
+        the event passed to the constructor.
+        Also logs button press and release.
+        """
         self.logger.info(f"Starting button press watcher for button: {self.name}")
 
         while True:
@@ -31,7 +49,9 @@ class Button:
                 self.logger.info(f"Button released: {self.name}")
 
     def get_name(self) -> str:
+        """Get the name of the button"""
         return self.name
-    
+
     def get_pin(self) -> int:
+        """Get the GPIO pin of the button"""
         return self.gpio
