@@ -60,7 +60,6 @@ The LED on the Pico W board is used to give feedback around network connectivity
 SMIB uses a class abstracted approach running an async loop using the built in asyncio library, a static copy of the uaiohttpclient for making async requests and my custom logging module.
 
 ### Logging
-
 #### Log level
 Set the LOG_LEVEL value in config.py for global log level output configuration where: 0 = Disabled, 1 = Critical, 2 = Error, 3 = Warning, 4 = Info
 
@@ -91,7 +90,12 @@ Use existing space state buttons, lights, slack API wrapper and watchers as an e
 - Display drivers can be added by creating a new display driver module
   - Ensure the driver registers itself with the driver registry, use LCD1602 as an example
   - Import the new driver module in display.py
-  - Update the config.py file to cinlude the option for your new driver 
+  - Update the config.py file to cinlude the option for your new driver
+- UIState machine
+  - A state machine exists and can be extended by various modules such as space_state to manage the state of the buttons and display output
+  - The current state instance is held in hid.ui_state_instance
+  - Enter a new UI state by caling the transition_to() method on a UIstate instance and pass any arguments needed by that state
+  - You will need to pass any core objects needed by the base UIState class and apply using super() as normal. These are currently HID (for managing the current state instance) and SpaceState so that the open and close buttons are avaialble in all UIs with default space open/closed behaviour.
 
 ## Version
 Ensure that the `HID` class version attribute is updated to match the version in `pyproject.toml`

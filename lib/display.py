@@ -46,6 +46,7 @@ class Display:
         for screen in self.screens:
             if hasattr(screen, command):
                 method = getattr(screen, command)
+                self.log.info(f"Executing command on screen: {screen}")
                 if callable(method):
                     method(*args)
 

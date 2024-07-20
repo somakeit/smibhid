@@ -12,23 +12,27 @@ from lib.module_config import ModuleConfig
 from lib.slack_api import Wrapper
 from lib.ulogging import uLogger
 from lib.utils import StatusLED
+from lib.uistate import UIState
 
 
 class SpaceState:
     """
-    Management of the space state, including the space state LED's, the space
+    Management of the space state, including driving the space state LED's, the space
     state display, and the space state buttons.
     Makes calls to the SMIB server to update the space state and to get the
     current space state.
+    Leverages a state machine to determine the current spacestate mode for menu interaction using the buttons where a display is present.
     """
 
-    def __init__(self, module_config: ModuleConfig) -> None:
+    def __init__(self, module_config: ModuleConfig, hid: object) -> None:
         """
-        Pass an asyncio event object to error_event and use a coroutine to
-        monitor for event triggers to handle errors in space state checking
-        by querying the is_in_error_state attribute.
+        Configures error handling for space state module.
+        ModuleConfig is used to get the display and wifi instances.
+        HID is used to call the appropriate UI state functions when the space
+        open and closed buttons are pressed as HID hosts the UI state.
         """
         self.log = uLogger("SpaceState")
+        self.hid = hid
         self.display = module_config.get_display()
         self.wifi = module_config.get_wifi()
         self.slack_api = Wrapper(self.wifi)
@@ -95,31 +99,42 @@ class SpaceState:
             self.log.info("Space state poller disabled by config")
 
     def set_output_space_open(self) -> None:
-        """Set LED's display etc to show the space as open"""
+        """
+        Set LED's and display to show the space as open.
+        """
         self.space_state = True
         self.space_open_led.on()
         self.space_closed_led.off()
         self.display.update_state("Open")
+        self.hid.ui_state_instance.transition_to(OpenState(self.hid, self))
         self.log.info("Space state is open.")
 
     def set_output_space_closed(self) -> None:
-        """Set LED's display etc to show the space as closed"""
+        """
+        Set LED's and display to show the space as closed.
+        """
         self.space_state = False
         self.space_open_led.off()
         self.space_closed_led.on()
         self.display.update_state("Closed")
+        self.hid.ui_state_instance.transition_to(ClosedState(self.hid, self))
         self.log.info("Space state is closed.")
 
     def set_output_space_none(self) -> None:
-        """Set LED's display etc to show the space as none"""
+        """
+        Set LED's and display to show the space as unknown.
+        """
         self.space_state = None
         self.space_open_led.off()
         self.space_closed_led.off()
         self.display.update_state("None")
+        self.hid.ui_state_instance.transition_to(NoneState(self.hid, self))
         self.log.info("Space state is none.")
 
     def _set_space_state_check_to_error(self) -> None:
-        """Activities relating to space_state check moving to error state"""
+        """
+        Activities relating to space_state check moving to error state.
+        """
         self.log.info("Space state check has errored.")
         if not self.error_handler.is_error_enabled("CHK"):
             self.error_handler.enable_error("CHK")
@@ -131,7 +146,9 @@ class SpaceState:
             )
 
     def _set_space_state_check_to_ok(self) -> None:
-        """Activities relating to space_state check moving to ok state"""
+        """
+        Activities relating to space_state check moving to ok state.
+        """
         self.log.info("Space state check status error has cleared")
         if self.error_handler.is_error_enabled("CHK"):
             self.error_handler.disable_error("CHK")
@@ -144,7 +161,9 @@ class SpaceState:
             self._set_space_output(self.space_state)
 
     def _free_to_check_space_state(self) -> bool:
-        """Check that we're not already checking for space state"""
+        """
+        Check that we're not already checking for space state.
+        """
         self.log.info("Checking space state check state")
         if self.checking_space_state:
             self.log.warn("Already checking space state")
@@ -159,7 +178,9 @@ class SpaceState:
             return True
 
     def _set_space_output(self, new_space_state: bool | None) -> None:
-        """Call appropriate space output configuration method for new space state."""
+        """
+        Call appropriate space output configuration method for new space state.
+        """
         if new_space_state is OPEN:
             self.set_output_space_open()
         elif new_space_state is CLOSED:
@@ -209,18 +230,8 @@ class SpaceState:
         while True:
             await self.space_open_button_event.wait()
             self.space_open_button_event.clear()
-            flash_task = create_task(self.space_open_led.async_constant_flash(4))
-            try:
-                await self.slack_api.async_space_open()
-                flash_task.cancel()
-                self.set_output_space_open()
-                create_task(self.async_update_space_state_output())
-            except Exception as e:
-                self.log.error(
-                    f"An exception was encountered trying to set SMIB space state: {e}"
-                )
-                flash_task.cancel()
-                self.space_open_led.off()
+            await self.hid.ui_state_instance.async_on_space_open_button()
+
 
     async def async_space_close_button_watcher(self) -> None:
         """
@@ -230,18 +241,7 @@ class SpaceState:
         while True:
             await self.space_closed_button_event.wait()
             self.space_closed_button_event.clear()
-            flash_task = create_task(self.space_closed_led.async_constant_flash(4))
-            try:
-                await self.slack_api.async_space_closed()
-                flash_task.cancel()
-                self.set_output_space_closed()
-                create_task(self.async_update_space_state_output())
-            except Exception as e:
-                self.log.error(
-                    f"An exception was encountered trying to set SMIB space state: {e}"
-                )
-                flash_task.cancel()
-                self.space_closed_led.off()
+            await self.hid.ui_state_instance.async_on_space_closed_button()
 
     async def async_space_state_watcher(self) -> None:
         """
@@ -265,3 +265,36 @@ class SpaceState:
                 self.log.info(f"State poller task cancelled: {e}")
             finally:
                 await sleep(self.space_state_poll_frequency)
+
+class OpenState(UIState):
+    """
+    UI state for open space state.
+    """
+
+    async def async_on_space_closed_button(self) -> None:
+        await super().async_on_space_closed_button()
+
+    async def async_on_space_open_button(self) -> None:
+        self.log.info("Space is already open")
+
+class ClosedState(UIState):
+    """
+    UI state for closed space state.
+    """
+
+    async def async_on_space_closed_button(self) -> None:
+        self.log.info("Space is already closed")
+
+    async def async_on_space_open_button(self) -> None:
+        await super().async_on_space_open_button()
+
+class NoneState(UIState):
+    """
+    UI state for unknown space state.
+    """
+
+    async def async_on_space_closed_button(self) -> None:
+        await super().async_on_space_closed_button()
+
+    async def async_on_space_open_button(self) -> None:
+        await super().async_on_space_open_button()
