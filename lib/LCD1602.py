@@ -154,13 +154,19 @@ class LCD1602:
             await async_sleep(0.1)
 
     def set_busy_output(self) -> None:
-        if self.spinner_task == None or self.spinner_task.done():
-            self.log.info("Setting busy output on LCD1602")
-            self.spinner_task = create_task(self._async_busy_spinner(15, 0))
+        self.log.info("Setting busy output on LCD1602")
+        if self.spinner_task is not None and not self.spinner_task.done():
+            self.log.info("Cancelling existing spinner task before creating a new one")
+            self.spinner_task.cancel()
+        self.spinner_task = create_task(self._async_busy_spinner(15, 0))
 
     def clear_busy_output(self) -> None:
         self.log.info("Clearing busy output on LCD1602")
-        self.spinner_task.cancel()
+        if self.spinner_task is not None and not self.spinner_task.done():
+            try:
+                self.spinner_task.cancel()
+            except Exception as e:
+                self.log.error(f"Error cancelling spinner task: {e}")
         self.setCursor(self.busy_col, self.busy_row)
         self.printout(" ")
 

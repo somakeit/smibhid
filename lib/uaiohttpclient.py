@@ -40,7 +40,7 @@ class ChunkedClientResponse(ClientResponse):
         return "<ChunkedClientResponse %d %s>" % (self.status, self.headers)
 
 
-async def request_raw(method, url, headers=None, json_data: str = None):
+async def request_raw(method, url, headers=None, json_data: str = ""):
     try:
         proto, dummy, host, path = url.split("/", 3)
     except ValueError:
@@ -75,7 +75,7 @@ async def request_raw(method, url, headers=None, json_data: str = None):
     return reader
 
 
-async def request(method, url, headers=None, json_data: str = None):
+async def request(method, url, headers=None, json_data: str = ""):
     redir_cnt = 0
     while redir_cnt < 2:
         reader = await request_raw(method, url, headers, json_data)
