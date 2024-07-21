@@ -52,13 +52,13 @@ class UIState:
             self.space_state.flash_task.cancel()
             self.space_state.space_closed_led.off()
     
-    async def _async_open_space(self) -> None:
+    async def _async_open_space(self, open_for_hours: int = 0) -> None:
         """
         Default action for opening the space.
         """
         self.space_state.flash_task = create_task(self.space_state.space_open_led.async_constant_flash(4))
         try:
-            await self.space_state.slack_api.async_space_open()
+            await self.space_state.slack_api.async_space_open(open_for_hours)
             self.space_state.flash_task.cancel()
             self.space_state.set_output_space_open()
             create_task(self.space_state.async_update_space_state_output())

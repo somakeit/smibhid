@@ -13,6 +13,7 @@ from lib.slack_api import Wrapper
 from lib.ulogging import uLogger
 from lib.utils import StatusLED
 from lib.uistate import UIState
+from time import ticks_ms
 
 
 class SpaceState:
@@ -56,6 +57,7 @@ class SpaceState:
             self.space_state_poll_frequency = 5
         self.state_check_error_open_led_flash_task = None
         self.state_check_error_closed_led_flash_task = None
+        self.last_button_press_ms = 0
         self.configure_error_handling()
 
     def configure_error_handling(self) -> None:
@@ -230,6 +232,7 @@ class SpaceState:
         while True:
             await self.space_open_button_event.wait()
             self.space_open_button_event.clear()
+            self.last_button_press_ms = ticks_ms()
             await self.hid.ui_state_instance.async_on_space_open_button()
 
 
@@ -241,6 +244,7 @@ class SpaceState:
         while True:
             await self.space_closed_button_event.wait()
             self.space_closed_button_event.clear()
+            self.last_button_press_ms = ticks_ms()
             await self.hid.ui_state_instance.async_on_space_closed_button()
 
     async def async_space_state_watcher(self) -> None:
@@ -265,6 +269,41 @@ class SpaceState:
                 self.log.info(f"State poller task cancelled: {e}")
             finally:
                 await sleep(self.space_state_poll_frequency)
+
+class SpaceStateUIState(UIState):
+    """
+    Base class for space state UI state.
+    """
+    def __init__(self, hid: object, space_state: SpaceState) -> None:
+        super().__init__(hid, space_state)
+        self.open_for_hours = 0
+
+    def last_button_press_x_seconds_ago(self, x: int = 2) -> bool:
+        """
+        Check if the last button press was x seconds ago.
+        """
+        now = ticks_ms()
+        return now - self.space_state.last_button_press_ms > (x * 1000)
+    
+    def increment_open_for_hours_single_digit(self) -> None:
+        """
+        Increment the open for hours counter.
+        """
+        if self.open_for_hours < 9:
+            self.open_for_hours += 1
+        else:
+            self.open_for_hours = 0
+        
+        self.hid.display.update_open_for_hours(self.open_for_hours) # TODO: make this display function
+    
+    async def _async_button_timeout_watcher(self) -> None:
+        """
+        Call open space with current open hours count if no button press for 2 seconds.
+        """
+        while not self.last_button_press_x_seconds_ago(2):
+            await sleep(0.1)
+
+        await self._async_open_space(self.open_for_hours)
 
 class OpenState(UIState):
     """
@@ -304,3 +343,26 @@ class NoneState(UIState):
 
     async def async_on_space_open_button(self) -> None:
         await super().async_on_space_open_button()
+
+class AddingHoursState(SpaceStateUIState):
+    """
+    UI state for adding hours to the open for hours counter.
+    """
+    def __init__(self, hid: object, space_state: SpaceState) -> None:
+        super().__init__(hid, space_state)
+        self.log.info("Entering AddingHoursState")
+        self.update_display_open_for_hours()
+
+    def on_enter(self) -> None:
+        super().on_enter()
+        self.hid.display.add_hours_screen(self.open_for_hours) # TODO make this display function
+        create_task(self._async_button_timeout_watcher())
+
+    async def async_on_space_closed_button(self) -> None:
+        self.hid.display.cancelling_update() # TODO make this display function
+        await sleep(2)
+        self.space_state._set_space_output(CLOSED)
+        self.hid.ui_state_instance.transition_to(ClosedState(self.hid, self.space_state))
+
+    async def async_on_space_open_button(self) -> None:
+        self.increment_open_for_hours_single_digit()
