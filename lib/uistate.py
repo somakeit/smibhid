@@ -35,10 +35,9 @@ class UIState:
         self.hid.set_ui_state(state)
         state.on_enter()
 
-    async def async_on_space_closed_button(self) -> None:
+    async def _async_close_space(self) -> None:
         """
-        Default action for space closed button press.
-        Updates SMIB space state to closed regardless of current space state.
+        Default action for closing the space.
         """
         self.space_state.flash_task = create_task(self.space_state.space_closed_led.async_constant_flash(4))
         try:
@@ -53,10 +52,9 @@ class UIState:
             self.space_state.flash_task.cancel()
             self.space_state.space_closed_led.off()
     
-    async def async_on_space_open_button(self) -> None:
+    async def _async_open_space(self) -> None:
         """
-        Default action for space open button press.
-        Updates SMIB space state to open regardless of current space state.
+        Default action for opening the space.
         """
         self.space_state.flash_task = create_task(self.space_state.space_open_led.async_constant_flash(4))
         try:
@@ -70,3 +68,15 @@ class UIState:
             )
             self.space_state.flash_task.cancel()
             self.space_state.space_open_led.off()
+    
+    async def async_on_space_closed_button(self) -> None:
+        """
+        Close space when space closed button pressed outside of space state UI.
+        """
+        await self._async_close_space()
+    
+    async def async_on_space_open_button(self) -> None:
+        """
+        Open space with no hours when when space open button pressed outside of space state UI.
+        """
+        await self._async_open_space()
