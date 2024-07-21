@@ -270,6 +270,8 @@ class OpenState(UIState):
     """
     UI state for open space state.
     """
+    def __init__(self, hid: object, space_state: SpaceState) -> None:
+        super().__init__(hid, space_state)
 
     async def async_on_space_closed_button(self) -> None:
         await super().async_on_space_closed_button()
@@ -281,6 +283,8 @@ class ClosedState(UIState):
     """
     UI state for closed space state.
     """
+    def __init__(self, hid: object, space_state: SpaceState) -> None:
+        super().__init__(hid, space_state)
 
     async def async_on_space_closed_button(self) -> None:
         self.log.info("Space is already closed")
@@ -292,7 +296,9 @@ class NoneState(UIState):
     """
     UI state for unknown space state.
     """
-
+    def __init__(self, hid: object, space_state: SpaceState) -> None:
+        super().__init__(hid, space_state)
+    
     async def async_on_space_closed_button(self) -> None:
         await super().async_on_space_closed_button()
 
