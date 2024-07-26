@@ -294,7 +294,7 @@ class SpaceStateUIState(UIState):
         else:
             self.open_for_hours = 0
         
-        self.hid.display.update_open_for_hours(self.open_for_hours) # TODO: make this display function
+        self.hid.display.add_hours(self.open_for_hours)
     
     async def _async_button_timeout_watcher(self) -> None:
         """
@@ -303,7 +303,7 @@ class SpaceStateUIState(UIState):
         while not self.last_button_press_x_seconds_ago(2):
             await sleep(0.1)
 
-        await self._async_open_space(self.open_for_hours)
+        await self._async_open_space(self.open_for_hours) # TODO change this so it cancels if closed button pressed
 
 class OpenState(UIState):
     """
@@ -329,7 +329,8 @@ class ClosedState(UIState):
         self.log.info("Space is already closed")
 
     async def async_on_space_open_button(self) -> None:
-        await super().async_on_space_open_button()
+        self.log.info("Adding hours to open for hours counter")
+        self.hid.ui_state_instance.transition_to(AddingHoursState(self.hid, self.space_state))
 
 class NoneState(UIState):
     """
@@ -350,17 +351,16 @@ class AddingHoursState(SpaceStateUIState):
     """
     def __init__(self, hid: object, space_state: SpaceState) -> None:
         super().__init__(hid, space_state)
-        self.log.info("Entering AddingHoursState")
-        self.update_display_open_for_hours()
 
     def on_enter(self) -> None:
         super().on_enter()
-        self.hid.display.add_hours_screen(self.open_for_hours) # TODO make this display function
-        create_task(self._async_button_timeout_watcher())
+        self.hid.display.add_hours(self.open_for_hours)
+        self.button_timeout_task = create_task(self._async_button_timeout_watcher())
 
     async def async_on_space_closed_button(self) -> None:
-        self.hid.display.cancelling_update() # TODO make this display function
-        await sleep(2)
+        self.hid.display.cancelling()
+        self.button_timeout_task.cancel()
+        await sleep(1)
         self.space_state._set_space_output(CLOSED)
         self.hid.ui_state_instance.transition_to(ClosedState(self.hid, self.space_state))
 

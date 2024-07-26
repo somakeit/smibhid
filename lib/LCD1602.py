@@ -184,6 +184,18 @@ class LCD1602:
                 self.printout(char)
                 await async_sleep(0.2)
 
+    def add_hours(self, open_for_hours: int) -> None:
+        """Display a screen for adding open for hours information."""
+        self.log.info(f"Adding hours screen: {open_for_hours}")
+        self.print_on_line(0, "Opening space")
+        self.print_on_line(1, f"for {open_for_hours} hours")
+
+    def cancelling(self) -> None:
+        """Display cancelling text."""
+        self.log.info("Cancelling")
+        self.print_on_line(0, "Cancelling")
+        self.print_on_line(1, "Please wait...")
+
     def _begin(self, lines: int) -> None:
         """Configure and set initial display output."""
         if (lines > 1):
