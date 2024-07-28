@@ -2,6 +2,7 @@ from lib.display import Display
 from lib.networking import WirelessNetwork
 from lib.ulogging import uLogger
 from lib.rfid.reader import RFIDReader
+from config import RFID_ENABLED
 
 class ModuleNotRegisteredError(Exception):
     """Exception raised when a required module is not registered."""
@@ -41,8 +42,8 @@ class ModuleConfig:
             raise ModuleNotRegisteredError("WiFi")
         return self.wifi
     
-    def get_rfid(self) -> RFIDReader:
-        if not self.reader:
+    def get_rfid(self) -> RFIDReader | None:
+        if not self.reader and RFID_ENABLED:
             self.log.warn("RFID module not registered")
             raise ModuleNotRegisteredError("RFID")
         return self.reader
