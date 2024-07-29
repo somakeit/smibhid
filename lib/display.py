@@ -80,3 +80,13 @@ class Display:
         """Clear all screens from busy output."""
         self.log.info("Clearing all screens of busy output")
         self._execute_command("clear_busy_output")
+
+    def add_hours(self, open_for_hours: int) -> None:
+        """Display a screen for adding open for hours information."""
+        self.log.info("Adding hours screen")
+        self._execute_command("add_hours", open_for_hours)
+    
+    def cancelling(self) -> None:
+        """Display cancelling text."""
+        self.log.info("Cancelling")
+        self._execute_command("cancelling")

@@ -79,7 +79,6 @@ class StartUIState(UIState):
     
     def __init__(self, hid: HID, space_state: SpaceState) -> None:
         super().__init__(hid, space_state)
-        self.hid = hid
         self.display = self.hid.display
         self.version = self.hid.version
 
