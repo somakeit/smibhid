@@ -17,7 +17,7 @@ class HID:
         Create HID instance and then run startup() to start services for button monitoring and LED output.
         """
         self.log = uLogger("HID")
-        self.version = "1.1.1"
+        self.version = "1.2.0"
         self.loop_running = False
         self.moduleConfig = ModuleConfig()
         self.moduleConfig.register_display(Display())
