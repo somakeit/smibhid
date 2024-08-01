@@ -35,6 +35,11 @@ class Wrapper:
             self.log.error(f"Unable to load space state from response data: {e}")
             raise
         return state
+    
+    async def async_upload_ui_log(self, log: list) -> None:
+        """Upload the UI log to the server."""
+        json_log = dumps({"log" : log})
+        await self._async_slack_api_request("POST", "ui_log", json_log)
         
     async def _async_slack_api_request(self, method: str, url_suffix: str, json_data: str = "") -> dict:
         """
@@ -48,7 +53,7 @@ class Wrapper:
     
     async def _async_api_request(self, method: str, url: str, json_data: str = "") -> dict:
         """Internal method to make a PUT or GET request to an API, provide the HTTP method and the full API URL"""
-        if method in ["GET", "PUT"]:
+        if method in ["GET", "PUT", "POST"]:
             response = await self._async_api_make_request(method, url, json_data)
             return response
         else:

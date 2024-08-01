@@ -13,7 +13,7 @@ from lib.slack_api import Wrapper
 from lib.ulogging import uLogger
 from lib.utils import StatusLED
 from lib.uistate import UIState
-from time import ticks_ms
+from time import ticks_ms, time
 
 
 class SpaceState:
@@ -233,6 +233,7 @@ class SpaceState:
             await self.space_open_button_event.wait()
             self.space_open_button_event.clear()
             self.last_button_press_ms = ticks_ms()
+            self.hid.ui_log.append({"Timestamp": time(), "Event": "Button Press", "Button": "Space Open"})
             await self.hid.ui_state_instance.async_on_space_open_button()
 
 
@@ -245,6 +246,7 @@ class SpaceState:
             await self.space_closed_button_event.wait()
             self.space_closed_button_event.clear()
             self.last_button_press_ms = ticks_ms()
+            self.hid.ui_log.append({"Timestamp": time(), "Event": "Button Press", "Button": "Space Closed"})
             await self.hid.ui_state_instance.async_on_space_closed_button()
 
     async def async_space_state_watcher(self) -> None:

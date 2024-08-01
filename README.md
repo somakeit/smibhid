@@ -10,12 +10,14 @@ Press the space_open or space_closed buttons to call the smib server endpoint ap
 
 ## Features
 - Space open and closed buttons with LED feedback that calls the S.M.I.B. space_open/space_closed endpoint
+- Press the open button multiple times to set the number of hours the space will be open for
 - LED flashes while trying to set state so you know it's trying to do something
 - Confirms the space state after change by calling space_state
 - Regularly polls for space state (polling period configurable in config.py) and updates the SMIBHID status appropriately to sync with other space state controls
 - Flashes both space state LEDs at 2Hz if space state cannot be determined
 - 2x16 character LCD display support
 - Error information shown on connected displays where configured in modules using ErrorHandler class
+- UI Logger captures timestamps of button presses and uploads to SMIB for logging and review of usage patterns
 
 ## Circuit diagram
 ### Pico W Connections
