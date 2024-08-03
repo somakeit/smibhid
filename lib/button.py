@@ -4,6 +4,7 @@ signal button presses.
 """
 
 from asyncio import Event, sleep
+from re import sub
 
 from machine import Pin
 
@@ -51,7 +52,11 @@ class Button:
     def get_name(self) -> str:
         """Get the name of the button"""
         return self.name
-
+    
+    def get_id(self) -> str:
+        """Get the ID of the button"""
+        return sub(r"\s+", "_", self.name).lower()
+    
     def get_pin(self) -> int:
         """Get the GPIO pin of the button"""
         return self.gpio

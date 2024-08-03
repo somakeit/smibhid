@@ -3,6 +3,7 @@ from lib.networking import WirelessNetwork
 from lib.ulogging import uLogger
 from lib.rfid.reader import RFIDReader
 from config import RFID_ENABLED
+from lib.ui_log import UILog
 
 class ModuleNotRegisteredError(Exception):
     """Exception raised when a required module is not registered."""
@@ -20,6 +21,7 @@ class ModuleConfig:
         self.display = None
         self.wifi = None
         self.reader = None
+        self.ui_log = None
 
     def register_display(self, display: Display) -> None:
         self.display = display
@@ -29,6 +31,9 @@ class ModuleConfig:
     
     def register_rfid(self, reader: RFIDReader) -> None:
         self.reader = reader
+    
+    def register_ui_log(self, ui_log: UILog) -> None:
+        self.ui_log = ui_log
 
     def get_display(self) -> Display:
         if not self.display:
@@ -47,4 +52,10 @@ class ModuleConfig:
             self.log.warn("RFID module not registered")
             raise ModuleNotRegisteredError("RFID")
         return self.reader
+    
+    def get_ui_log(self) -> UILog:
+        if not self.ui_log:
+            self.log.warn("UI Log module not registered")
+            raise ModuleNotRegisteredError("UI Log")
+        return self.ui_log
     

@@ -13,7 +13,7 @@ from lib.slack_api import Wrapper
 from lib.ulogging import uLogger
 from lib.utils import StatusLED
 from lib.uistate import UIState
-from time import ticks_ms, time
+from time import ticks_ms
 
 
 class SpaceState:
@@ -36,6 +36,7 @@ class SpaceState:
         self.hid = hid
         self.display = module_config.get_display()
         self.wifi = module_config.get_wifi()
+        self.ui_log = module_config.get_ui_log()
         self.slack_api = Wrapper(self.wifi)
         self.space_open_button_event = Event()
         self.space_closed_button_event = Event()
@@ -233,7 +234,7 @@ class SpaceState:
             await self.space_open_button_event.wait()
             self.space_open_button_event.clear()
             self.last_button_press_ms = ticks_ms()
-            self.hid.ui_log.append({"Timestamp": time(), "Event": "Button Press", "Button": "Space Open"})
+            self.ui_log.log_button_press(self.open_button)
             await self.hid.ui_state_instance.async_on_space_open_button()
 
 
@@ -246,7 +247,7 @@ class SpaceState:
             await self.space_closed_button_event.wait()
             self.space_closed_button_event.clear()
             self.last_button_press_ms = ticks_ms()
-            self.hid.ui_log.append({"Timestamp": time(), "Event": "Button Press", "Button": "Space Closed"})
+            self.ui_log.log_button_press(self.closed_button)
             await self.hid.ui_state_instance.async_on_space_closed_button()
 
     async def async_space_state_watcher(self) -> None:

@@ -1,14 +1,14 @@
 from lib.ulogging import uLogger
-from asyncio import get_event_loop, Event, create_task, sleep
+from asyncio import get_event_loop, Event
 from lib.space_state import SpaceState, NoneState, OpenState, ClosedState
 from lib.error_handling import ErrorHandler
 from lib.module_config import ModuleConfig
 from lib.display import Display
 from lib.networking import WirelessNetwork
 from lib.rfid.reader import RFIDReader
-from config import RFID_ENABLED, ENABLE_UI_LOGGING_UPLOAD
+from config import RFID_ENABLED
 from lib.uistate import UIState
-from lib.slack_api import Wrapper
+from lib.ui_log import UILog
 
 class HID:
     
@@ -27,26 +27,14 @@ class HID:
             self.moduleConfig.register_rfid(RFIDReader(Event()))
         self.display = self.moduleConfig.get_display()
         self.wifi = self.moduleConfig.get_wifi()
+        self.moduleConfig.register_ui_log(UILog(self.wifi))
         self.reader = self.moduleConfig.get_rfid()
+        self.ui_log = self.moduleConfig.get_ui_log()
         self.space_state = SpaceState(self.moduleConfig, self)
-        self.errorHandler = ErrorHandler("HID")
-        self.errorHandler.configure_display(self.display)
+        self.error_handler = ErrorHandler("HID")
+        self.error_handler.configure_display(self.display)
         self.ui_state_instance = StartUIState(self, self.space_state)
         self.ui_state_instance.on_enter()
-        self.slack = Wrapper(self.wifi)
-        self.ui_log = []
-        self.configure_error_handling()
-
-    def configure_error_handling(self) -> None:
-        """
-        Register errors with the error handler for the space state module.
-        """
-        self.errors = {
-            "UIL": "Failed to upload UI log"
-        }
-
-        for error_key, error_message in self.errors.items():
-            self.errorHandler.register_error(error_key, error_message)
 
     def set_ui_state(self, state):
         self.ui_state_instance = state
@@ -64,7 +52,7 @@ class HID:
         self.space_state.startup()
         if self.reader:
             self.reader.startup()
-        create_task(self.async_ui_log_uploader())
+        self.ui_log.startup()
       
         self.log.info("Entering main loop")        
         self.switch_to_appropriate_spacestate_uistate()
@@ -91,36 +79,6 @@ class HID:
             self.log.error("Space state is in an unexpected state")
             raise ValueError("Space state is in an unexpected state")
     
-    async def async_ui_log_uploader(self) -> None:
-        """
-        Periodically upload the UI log to the server.
-        """
-        while True:
-            self.log.info("Uploading UI log to server")
-            if self.ui_log:
-                if ENABLE_UI_LOGGING_UPLOAD:
-                    self.log.info("UI log contains data, uploading to server")
-                    try:
-                        await self.slack.async_upload_ui_log(self.ui_log)
-                        self.log.info("UI log uploaded successfully")
-                        self.log.info("Clearing UI log")
-                        self.ui_log = []
-                        self.errorHandler.disable_error("UIL")
-                    except Exception as e:
-                        self.log.error(f"Failed to upload UI log: {e}")
-                        self.errorHandler.enable_error("UIL")
-                
-                else:
-                    self.log.info("UI logging is disabled, no upload will occur")
-                    self.log.info(f"UI log: {self.ui_log}")
-                    self.log.info("Clearing UI log")
-                    self.ui_log = []
-
-            else:
-                self.log.info("UI log is empty, no upload required")
-            
-            await sleep(51)
-
 class StartUIState(UIState):
     
     def __init__(self, hid: HID, space_state: SpaceState) -> None:
