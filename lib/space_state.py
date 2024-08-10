@@ -41,10 +41,10 @@ class SpaceState:
         self.space_open_button_event = Event()
         self.space_closed_button_event = Event()
         self.open_button = Button(
-            config.SPACE_OPEN_BUTTON, "Space_open", self.space_open_button_event
+            config.SPACE_OPEN_BUTTON, "Space Open", self.space_open_button_event
         )
         self.closed_button = Button(
-            config.SPACE_CLOSED_BUTTON, "Space_closed", self.space_closed_button_event
+            config.SPACE_CLOSED_BUTTON, "Space Closed", self.space_closed_button_event
         )
         self.space_open_led = StatusLED(config.SPACE_OPEN_LED)
         self.space_closed_led = StatusLED(config.SPACE_CLOSED_LED)

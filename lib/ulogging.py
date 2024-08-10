@@ -1,5 +1,6 @@
 from gc import mem_free
 from os import stat, remove, rename
+from time import gmtime, time
 
 class uLogger:
     
@@ -57,7 +58,9 @@ class uLogger:
                 raise
 
     def decorate_message(self, message: str, level: str) -> str:
-        decorated_message = f"[Mem: {round(mem_free() / 1024)}kB free][{level}][{self.module_name}]: {message}"
+        time_str = gmtime(time())
+        timestamp = f"{time_str[0]}-{time_str[1]}-{time_str[2]} {time_str[3]}:{time_str[4]}:{time_str[5]}"
+        decorated_message = f"[{timestamp}][Mem: {round(mem_free() / 1024)}kB free][{level}][{self.module_name}]: {message}"
         return decorated_message
     
     def process_handlers(self, message: str) -> None:

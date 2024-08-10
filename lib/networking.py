@@ -1,4 +1,4 @@
-from utime import ticks_ms
+from utime import ticks_ms, gmtime, time
 from math import ceil
 import rp2
 import network
@@ -8,6 +8,9 @@ from lib.ulogging import uLogger
 from lib.utils import StatusLED
 from asyncio import sleep, create_task
 from lib.error_handling import ErrorHandler
+from machine import RTC
+from socket import getaddrinfo, socket, AF_INET, SOCK_DGRAM
+import struct
 
 class WirelessNetwork:
 
@@ -42,6 +45,7 @@ class WirelessNetwork:
         self.subnet = "Unknown"
         self.gateway = "Unknown"
         self.dns = "Unknown"
+        self.ntp_last_synced_timestamp = 0
 
         self.configure_wifi()
         self.configure_error_handling()
@@ -163,6 +167,9 @@ class WirelessNetwork:
 
         if self.get_status() == 3:
             self.log.info("Connected to wireless network")
+            if self.ntp_last_synced_timestamp == 0 or (time() - self.ntp_last_synced_timestamp) > config.NTP_SYNC_INTERVAL_SECONDS:
+                self.log.info("Syncing RTC from NTP as it has not been synced in {config.NTP_SYNC_INTERVAL_SECONDS} seconds.")
+                self.sync_rtc_from_ntp()
             return True
         else:
             self.log.warn("Unable to connect to wireless network")
@@ -190,3 +197,38 @@ class WirelessNetwork:
 
     def get_hostname(self) -> str:
         return self.hostname
+    
+    def get_timestamp_from_ntp(self) -> tuple:
+        ntp_host = "pool.ntp.org"
+
+        timestamp = None
+        try:
+            query = bytearray(48)
+            query[0] = 0x1b
+            address = getaddrinfo(ntp_host, 123)[0][-1]
+            udp_socket = socket(AF_INET, SOCK_DGRAM)
+            udp_socket.settimeout(10)
+            udp_socket.sendto(query, address)
+            data = udp_socket.recv(48)
+            udp_socket.close()
+            local_epoch = 2208988800
+            timestamp = struct.unpack("!I", data[40:44])[0] - local_epoch
+            timestamp = gmtime(timestamp)
+
+        except Exception as e:
+            self.log.error(f"Failed to get NTP time: {e}")
+            timestamp = (2000, 1, 1, 0, 0, 0, 0, 0)
+
+        return timestamp
+
+    def sync_rtc_from_ntp(self) -> tuple:
+        try:
+            timestamp = self.get_timestamp_from_ntp()
+            RTC().datetime((
+                timestamp[0], timestamp[1], timestamp[2], timestamp[6], 
+                timestamp[3], timestamp[4], timestamp[5], 0))
+            self.ntp_last_synced_timestamp = time()
+            self.log.info("RTC synced from NTP")
+        except Exception as e:
+            self.log.error(f"Failed to sync RTC from NTP: {e}")
+        return timestamp
