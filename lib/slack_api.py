@@ -38,7 +38,7 @@ class Wrapper:
     
     async def async_upload_ui_log(self, log: list) -> None:
         """Upload the UI log to the server."""
-        json_log = dumps({"log" : log})
+        json_log = dumps(log)
         await self._async_slack_api_request("POST", "smibhid_ui_log", json_log)
         
     async def _async_slack_api_request(self, method: str, url_suffix: str, json_data: str = "") -> dict:
