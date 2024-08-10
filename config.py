@@ -22,6 +22,8 @@ WIFI_RETRY_BACKOFF_SECONDS = 5
 # Leave as none for MAC based unique hostname or specify a custom hostname string
 CUSTOM_HOSTNAME = None
 
+NTP_SYNC_INTERVAL_SECONDS = 86400
+
 ## Web host
 WEBSERVER_HOST = ""
 WEBSERVER_PORT = "80"
