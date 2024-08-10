@@ -168,8 +168,8 @@ class WirelessNetwork:
         if self.get_status() == 3:
             self.log.info("Connected to wireless network")
             if self.ntp_last_synced_timestamp == 0 or (time() - self.ntp_last_synced_timestamp) > config.NTP_SYNC_INTERVAL_SECONDS:
-                self.log.info("Syncing RTC from NTP as it has not been synced in {config.NTP_SYNC_INTERVAL_SECONDS} seconds.")
-                self.sync_rtc_from_ntp()
+                self.log.info(f"Syncing RTC from NTP as it has not been synced in {config.NTP_SYNC_INTERVAL_SECONDS} seconds.")
+                await self.async_sync_rtc_from_ntp()
             return True
         else:
             self.log.warn("Unable to connect to wireless network")
@@ -198,32 +198,44 @@ class WirelessNetwork:
     def get_hostname(self) -> str:
         return self.hostname
     
-    def get_timestamp_from_ntp(self) -> tuple:
+    async def async_get_timestamp_from_ntp(self) -> tuple:
         ntp_host = "pool.ntp.org"
+        port = 123
+        buf_size = 48
+        ntp_request_id = 0x1b
+        timestamp = (2000, 1, 1, 0, 0, 0, 0, 0)
 
-        timestamp = None
         try:
-            query = bytearray(48)
-            query[0] = 0x1b
-            address = getaddrinfo(ntp_host, 123)[0][-1]
+            query = bytearray(buf_size)
+            query[0] = ntp_request_id
+            address = getaddrinfo(ntp_host, port)[0][-1]
             udp_socket = socket(AF_INET, SOCK_DGRAM)
-            udp_socket.settimeout(10)
-            udp_socket.sendto(query, address)
-            data = udp_socket.recv(48)
-            udp_socket.close()
-            local_epoch = 2208988800
-            timestamp = struct.unpack("!I", data[40:44])[0] - local_epoch
-            timestamp = gmtime(timestamp)
+            udp_socket.setblocking(False)
+            
+            socket.sendto(udp_socket, query, address)
+   
+            timeout_ms = 5000
+            start_time = ticks_ms()
+            while (ticks_ms() - start_time) < timeout_ms:
+                try:
+                    data, _ = udp_socket.recvfrom(buf_size)
+                    udp_socket.close()
+                    
+                    local_epoch = 2208988800
+                    timestamp = struct.unpack("!I", data[40:44])[0] - local_epoch
+                    timestamp = gmtime(timestamp)
+                    break
+                except OSError:
+                    await sleep(0.1)
 
         except Exception as e:
             self.log.error(f"Failed to get NTP time: {e}")
-            timestamp = (2000, 1, 1, 0, 0, 0, 0, 0)
 
         return timestamp
 
-    def sync_rtc_from_ntp(self) -> tuple:
+    async def async_sync_rtc_from_ntp(self) -> tuple:
         try:
-            timestamp = self.get_timestamp_from_ntp()
+            timestamp = await self.async_get_timestamp_from_ntp()
             RTC().datetime((
                 timestamp[0], timestamp[1], timestamp[2], timestamp[6], 
                 timestamp[3], timestamp[4], timestamp[5], 0))
