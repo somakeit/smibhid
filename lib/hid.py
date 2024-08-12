@@ -18,6 +18,7 @@ class HID:
         Create HID instance and then run startup() to start services for button monitoring and LED output.
         """
         self.log = uLogger("HID")
+        self.log.warn("SMIBHID has been restarted")
         self.version = "1.2.0"
         self.loop_running = False
         self.moduleConfig = ModuleConfig()
