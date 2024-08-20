@@ -303,10 +303,10 @@ class SpaceStateUIState(UIState):
         """
         Call open space with current open hours count if no button press for 2 seconds.
         """
-        while not self.last_button_press_x_seconds_ago(2):
+        while not self.last_button_press_x_seconds_ago(config.ADD_HOURS_INPUT_TIMEOUT):
             await sleep(0.1)
 
-        await self._async_open_space(self.open_for_hours) # TODO change this so it cancels if closed button pressed
+        await self._async_open_space(self.open_for_hours)
 
 class OpenState(UIState):
     """
