@@ -1,5 +1,6 @@
 from lib.ulogging import uLogger
-from asyncio import create_task
+from asyncio import create_task, sleep
+from time import ticks_ms, ticks_diff
 
 class UIState:
     """
@@ -14,6 +15,7 @@ class UIState:
         self.hid = hid
         self.space_state = space_state
         self.log = uLogger("UIState")
+        self.state_change_API_timeout_s = 4
 
     def on_enter(self) -> None:
         """
@@ -41,7 +43,8 @@ class UIState:
         """
         self.space_state.flash_task = create_task(self.space_state.space_closed_led.async_constant_flash(4))
         try:
-            await self.space_state.slack_api.async_space_closed()
+            self.change_state_task = create_task(self.space_state.slack_api.async_space_closed())
+            await self._async_space_state_change_timeout_check()
             self.space_state.flash_task.cancel()
             self.space_state.set_output_space_closed()
             create_task(self.space_state.async_update_space_state_output())
@@ -49,8 +52,7 @@ class UIState:
             self.log.error(
                 f"An exception was encountered trying to set SMIB space state: {e}"
             )
-            self.space_state.flash_task.cancel()
-            self.space_state.space_closed_led.off()
+            self._abort_space_state_change()
     
     async def _async_open_space(self, open_for_hours: int = 0) -> None:
         """
@@ -58,7 +60,8 @@ class UIState:
         """
         self.space_state.flash_task = create_task(self.space_state.space_open_led.async_constant_flash(4))
         try:
-            await self.space_state.slack_api.async_space_open(open_for_hours)
+            self.change_state_task = create_task(self.space_state.slack_api.async_space_open(open_for_hours))
+            await self._async_space_state_change_timeout_check()
             self.space_state.flash_task.cancel()
             self.space_state.set_output_space_open()
             create_task(self.space_state.async_update_space_state_output())
@@ -66,8 +69,25 @@ class UIState:
             self.log.error(
                 f"An exception was encountered trying to set SMIB space state: {e}"
             )
-            self.space_state.flash_task.cancel()
-            self.space_state.space_open_led.off()
+            self._abort_space_state_change()
+    
+    def _abort_space_state_change(self) -> None:
+        """
+        Cancel flash task and reset space state output to current state.
+        """
+        self.space_state.flash_task.cancel()
+        self.space_state._set_space_output(self.space_state.space_state)
+        create_task(self.space_state.async_update_space_state_output())
+
+    async def _async_space_state_change_timeout_check(self) -> None:
+        """
+        Timeout check for space state change API call and raise exception if timeout reached.
+        """
+        now = ticks_ms()
+        while not self.change_state_task.done():
+            if now + (self.state_change_API_timeout_s * 1000) < ticks_ms():
+                raise Exception("API call to change space state timed out")
+            await sleep(0.01)
     
     async def async_on_space_closed_button(self) -> None:
         """
