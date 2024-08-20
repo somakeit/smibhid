@@ -1,7 +1,7 @@
 from lib.display import Display
 from lib.ulogging import uLogger
 
-class ErrorHandler: # TODO add pytests for this class
+class ErrorHandler:
     """
     Register a module for error handling and provide methods for registering, enabling, disabling, and getting error messages.
     If a display is available, ensure your display handling module registers the display instance with the error handler using configure_display().
