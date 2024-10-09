@@ -192,10 +192,14 @@ class SpaceState:
             return False
         else:
             self.log.info("Free to check space state")
-            self.checking_space_state = True
-            if self.error_handler.is_error_enabled("API"):
-                self.error_handler.disable_error("API")
-            return True
+            if not isinstance(self.hid.ui_state_instance, AddingHoursState):
+                self.checking_space_state = True
+                if self.error_handler.is_error_enabled("API"):
+                    self.error_handler.disable_error("API")
+                return True
+            else:
+                self.log.info("Skipping space state check as in AddingHoursState")
+                return False
 
     def _set_space_output(self, new_space_state: bool | None) -> None:
         """
@@ -226,6 +230,9 @@ class SpaceState:
                     self.slack_api.async_get_space_state(),
                     self.checking_space_state_timeout_s,
                 )
+                while isinstance(self.hid.ui_state_instance, AddingHoursState):
+                    self.log.info("Waiting for AddingHoursState to complete")
+                    await sleep(1)
                 self.log.info(
                     f"Space state is: {new_space_state}, was: {self.space_state}"
                 )
