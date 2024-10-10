@@ -33,7 +33,7 @@ WEBSERVER_PORT = "80"
 
 ## Space state
 # Set the space state poll frequency in seconds (>= 5), set to 0 to disable the state poll
-space_state_poll_frequency_s = 5
+SPACE_STATE_POLL_FREQUENCY_S = 5
 # How long to wait for button press to accept extra hours when opening space
 ADD_HOURS_INPUT_TIMEOUT = 3
 
