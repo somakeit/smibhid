@@ -18,6 +18,7 @@ Press the space_open or space_closed buttons to call the smib server endpoint ap
 - 2x16 character LCD display support
 - Error information shown on connected displays where configured in modules using ErrorHandler class
 - UI Logger captures timestamps of button presses and uploads to SMIB for logging and review of usage patterns
+- Space open relay pin optionally sets a GPIO to high or low when the space is open
 
 ## Circuit diagram
 ### Pico W Connections
@@ -50,6 +51,7 @@ Copy the files from the smibhib folder into the root of a Pico W running Micropy
 - Populate Wifi SSID and password
 - Configure the webserver hostname/IP and port as per your smib.webserver configuration
 - Set the space state poll frequency in seconds (>= 5), set to 0 to disable the state poll
+- Configure the space open relay pin if required or else set to None, also choose if space open sets pin high or low
 
 ## Onboard status LED
 The LED on the Pico W board is used to give feedback around network connectivity if you are not able to connect to the terminal output for logs.

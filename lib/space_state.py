@@ -14,6 +14,7 @@ from lib.ulogging import uLogger
 from lib.utils import StatusLED
 from lib.uistate import UIState
 from time import ticks_ms
+from machine import Pin
 
 
 class SpaceState:
@@ -48,6 +49,9 @@ class SpaceState:
         )
         self.space_open_led = StatusLED(config.SPACE_OPEN_LED)
         self.space_closed_led = StatusLED(config.SPACE_CLOSED_LED)
+        if config.SPACE_OPEN_RELAY is not None:
+            self.space_state_relay = Pin(config.SPACE_OPEN_RELAY, Pin.OUT)
+            self.space_state_relay.value(0)
         self.space_open_led.off()
         self.space_closed_led.off()
         self.space_state = None
@@ -101,6 +105,16 @@ class SpaceState:
         else:
             self.log.info("Space state poller disabled by config")
 
+    def set_space_open_relay_state(self, state: bool) -> None:
+        """
+        Set the space state relay to the given state.
+        """
+        if config.SPACE_OPEN_RELAY is not None:
+            if state:
+                self.space_state_relay.value(config.SPACE_OPEN_RELAY_ACTIVE_HIGH)
+            else:
+                self.space_state_relay.value(not config.SPACE_OPEN_RELAY_ACTIVE_HIGH)
+    
     def set_output_space_open(self) -> None:
         """
         Set LED's and display to show the space as open.
@@ -108,6 +122,7 @@ class SpaceState:
         self.space_state = True
         self.space_open_led.on()
         self.space_closed_led.off()
+        self.set_space_open_relay_state(True)
         self.display.update_state("Open")
         self.hid.ui_state_instance.transition_to(OpenState(self.hid, self))
         self.log.info("Space state is open.")
@@ -119,6 +134,7 @@ class SpaceState:
         self.space_state = False
         self.space_open_led.off()
         self.space_closed_led.on()
+        self.set_space_open_relay_state(False)
         self.display.update_state("Closed")
         self.hid.ui_state_instance.transition_to(ClosedState(self.hid, self))
         self.log.info("Space state is closed.")
@@ -130,6 +146,7 @@ class SpaceState:
         self.space_state = None
         self.space_open_led.off()
         self.space_closed_led.off()
+        self.set_space_open_relay_state(False)
         self.display.update_state("None")
         self.hid.ui_state_instance.transition_to(NoneState(self.hid, self))
         self.log.info("Space state is none.")
@@ -139,7 +156,7 @@ class SpaceState:
         Activities relating to space_state check moving to error state.
         """
         self.log.info("Space state check has errored.")
-        if not self.error_handler.is_error_enabled("CHK"):
+        if not self.error_handler.is_error_enabled("CHK") and self.wifi.get_status() == self.wifi.CYW43_LINK_UP:
             self.error_handler.enable_error("CHK")
             self.state_check_error_open_led_flash_task = create_task(
                 self.space_open_led.async_constant_flash(2)
@@ -170,15 +187,19 @@ class SpaceState:
         self.log.info("Checking space state check state")
         if self.checking_space_state:
             self.log.warn("Already checking space state")
-            if not self.error_handler.is_error_enabled("API"):
+            if not self.error_handler.is_error_enabled("API") and self.wifi.get_status() == self.wifi.CYW43_LINK_UP:
                 self.error_handler.enable_error("API")
             return False
         else:
             self.log.info("Free to check space state")
-            self.checking_space_state = True
-            if self.error_handler.is_error_enabled("API"):
-                self.error_handler.disable_error("API")
-            return True
+            if not isinstance(self.hid.ui_state_instance, AddingHoursState):
+                self.checking_space_state = True
+                if self.error_handler.is_error_enabled("API"):
+                    self.error_handler.disable_error("API")
+                return True
+            else:
+                self.log.info("Skipping space state check as in AddingHoursState")
+                return False
 
     def _set_space_output(self, new_space_state: bool | None) -> None:
         """
@@ -209,6 +230,9 @@ class SpaceState:
                     self.slack_api.async_get_space_state(),
                     self.checking_space_state_timeout_s,
                 )
+                while isinstance(self.hid.ui_state_instance, AddingHoursState):
+                    self.log.info("Waiting for AddingHoursState to complete")
+                    await sleep(1)
                 self.log.info(
                     f"Space state is: {new_space_state}, was: {self.space_state}"
                 )
