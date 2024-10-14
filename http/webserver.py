@@ -65,7 +65,7 @@ class HTTPException(Exception):
         self.code = code
 
 
-class request:
+class Request:
     """HTTP Request class"""
 
     def __init__(self, _reader):
@@ -155,7 +155,7 @@ class request:
             raise HTTPException(400)
 
 
-class response:
+class Response:
     """HTTP Response class"""
 
     def __init__(self, _writer):
@@ -367,7 +367,7 @@ async def restful_resource_handler(req, resp, param=None):
         await resp.send(res_str)
 
 
-class webserver:
+class Webserver:
 
     def __init__(self, request_timeout=3, max_concurrency=3, backlog=16, debug=False):
         """Tiny Web Server class.
@@ -439,8 +439,8 @@ class webserver:
         gc.collect()
 
         try:
-            req = request(reader)
-            resp = response(writer)
+            req = Request(reader)
+            resp = Response(writer)
             # Read HTTP Request with timeout
             await asyncio.wait_for(self._handle_request(req, resp),
                                    self.request_timeout)

@@ -19,7 +19,7 @@ Press the space_open or space_closed buttons to call the smib server endpoint ap
 - Error information shown on connected displays where configured in modules using ErrorHandler class
 - UI Logger captures timestamps of button presses and uploads to SMIB for logging and review of usage patterns
 - Space open relay pin optionally sets a GPIO to high or low when the space is open
-- Web server for admin functions - at present only provides API for version and MAC address
+- Web server for admin functions - at present only provides API for version and MAC address (Check info log messages or DHCP server for IP and default port is 80)
 
 ## Circuit diagram
 ### Pico W Connections

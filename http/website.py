@@ -1,10 +1,10 @@
-from http.webserver import webserver
+from http.webserver import Webserver
 from lib.ulogging import uLogger
 from lib.module_config import ModuleConfig
 from json import dumps
 import uasyncio
 
-class Web_App:
+class WebApp:
 
     def __init__(self, module_config: ModuleConfig, hid: object) -> None:
         """
@@ -15,7 +15,7 @@ class Web_App:
         """
         self.log = uLogger("Web app")
         self.log.info("Init webserver")
-        self.app = webserver()
+        self.app = Webserver()
         self.hid = hid
         self.wifi = module_config.get_wifi()
         self.display = module_config.get_display()
@@ -51,10 +51,10 @@ class Web_App:
         async def api(request, response):
             await response.send_file('/http/www/api.html')
         
-        self.app.add_resource(wlan_mac, '/api/wlan/mac', wifi = self.wifi, logger = self.log)
-        self.app.add_resource(version, '/api/version', hid = self.hid, logger = self.log)
+        self.app.add_resource(WLANMAC, '/api/wlan/mac', wifi = self.wifi, logger = self.log)
+        self.app.add_resource(Version, '/api/version', hid = self.hid, logger = self.log)
     
-class wlan_mac():
+class WLANMAC():
 
     def get(self, data, wifi, logger: uLogger):
         logger.info("API request - wlan/mac")
@@ -62,7 +62,7 @@ class wlan_mac():
         logger.info(f"Return value: {html}")
         return html
     
-class version():
+class Version():
 
     def get(self, data, hid, logger: uLogger):
         logger.info("API request - version")
