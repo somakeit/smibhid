@@ -1,0 +1,18 @@
+body {
+    background-color: lightgreen;
+  }
+
+h1 {
+    color: darkgreen;
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+h2 {
+    color: darkslategray;
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+a {
+    color: purple;
+    font-family: Arial, Helvetica, sans-serif;
+}

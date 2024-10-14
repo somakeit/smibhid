@@ -19,6 +19,7 @@ Press the space_open or space_closed buttons to call the smib server endpoint ap
 - Error information shown on connected displays where configured in modules using ErrorHandler class
 - UI Logger captures timestamps of button presses and uploads to SMIB for logging and review of usage patterns
 - Space open relay pin optionally sets a GPIO to high or low when the space is open
+- Web server for admin functions - at present only provides API for version and MAC address
 
 ## Circuit diagram
 ### Pico W Connections
@@ -100,6 +101,10 @@ Use existing space state buttons, lights, slack API wrapper and watchers as an e
   - The current state instance is held in hid.ui_state_instance
   - Enter a new UI state by calling the transition_to() method on a UIstate instance and pass any arguments needed by that state
   - You will need to pass any core objects needed by the base UIState class and apply using super() as normal. These are currently HID (for managing the current state instance) and SpaceState so that the open and close buttons are available in all UIs with default space open/closed behaviour.
+
+### Web server
+The admin web interface is hosted by a customised version of [tinyweb](https://github.com/belyalov/tinyweb) server which is a flask like implementation of a asyncio web server in MicroPython.
+The website configuration and API definition is built out from the website.py module and all HTML/CSS/JS etc lives in the www subfolder.
 
 ### UI State diagram
 The space state UI state machine is described in this diagram:
