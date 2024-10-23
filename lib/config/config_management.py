@@ -35,7 +35,7 @@ class ConfigManagement:
                 setattr(config, key, getattr(config_template, key))
                 self.error_count += 1
             else:
-                if type(getattr(config_template, key)) != type(getattr(config, key)) and type(getattr(config_template, key)) != type(None):
+                if not isinstance(getattr(config, key), type(getattr(config_template, key))) and getattr(config_template, key) is not None:
                     self.log.error(f"Config item in config.py has incorrect type: {key}")
                     setattr(config, key, getattr(config_template, key))
                     self.error_count += 1
