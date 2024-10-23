@@ -9,6 +9,7 @@ from lib.rfid.reader import RFIDReader
 from config import RFID_ENABLED
 from lib.uistate import UIState
 from lib.ui_log import UILog
+from http.website import WebApp
 
 class HID:
     
@@ -34,6 +35,7 @@ class HID:
         self.space_state = SpaceState(self.moduleConfig, self)
         self.error_handler = ErrorHandler("HID")
         self.error_handler.configure_display(self.display)
+        self.web_app = WebApp(self.moduleConfig, self)
         self.ui_state_instance = StartUIState(self, self.space_state)
         self.ui_state_instance.on_enter()
 
@@ -54,6 +56,7 @@ class HID:
         if self.reader:
             self.reader.startup()
         self.ui_log.startup()
+        self.web_app.startup()
       
         self.log.info("Entering main loop")        
         self.switch_to_appropriate_spacestate_uistate()

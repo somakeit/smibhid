@@ -183,6 +183,9 @@ class WirelessNetwork:
     def get_mac(self) -> str:
         return self.mac
     
+    def get_ip(self) -> str:
+        return self.ip
+    
     def get_wlan_status_description(self, status) -> str:
         description = self.status_names[status]
         return description

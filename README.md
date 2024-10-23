@@ -20,6 +20,7 @@ Press the space_open or space_closed buttons to call the smib server endpoint ap
 - UI Logger captures timestamps of button presses and uploads to SMIB for logging and review of usage patterns
 - Space open relay pin optionally sets a GPIO to high or low when the space is open
 - Config file checker against config template - useful for upgrades missing config of new features
+- Web server for admin functions - at present only provides API for version and MAC address (Check info log messages or DHCP server for IP and default port is 80)
 
 ## Circuit diagram
 ### Pico W Connections
@@ -106,6 +107,10 @@ Use existing space state buttons, lights, slack API wrapper and watchers as an e
 
 #### Config template update
 If you add a new feature that has configuration options, ensure you set the constant and default value in the config.py file as well as in the config.config_template.py file to allow automated checking of config files to catch upgrade error and misconfigurations.
+
+### Web server
+The admin web interface is hosted by a customised version of [tinyweb](https://github.com/belyalov/tinyweb) server which is a flask like implementation of a asyncio web server in MicroPython.
+The website configuration and API definition is built out from the website.py module and all HTML/CSS/JS etc lives in the www subfolder.
 
 ### UI State diagram
 The space state UI state machine is described in this diagram:
