@@ -156,7 +156,7 @@ class SpaceState:
         Activities relating to space_state check moving to error state.
         """
         self.log.info("Space state check has errored.")
-        if not self.error_handler.is_error_enabled("CHK"):
+        if not self.error_handler.is_error_enabled("CHK") and self.wifi.get_status() == self.wifi.CYW43_LINK_UP:
             self.error_handler.enable_error("CHK")
             self.state_check_error_open_led_flash_task = create_task(
                 self.space_open_led.async_constant_flash(2)
@@ -187,7 +187,7 @@ class SpaceState:
         self.log.info("Checking space state check state")
         if self.checking_space_state:
             self.log.warn("Already checking space state")
-            if not self.error_handler.is_error_enabled("API"):
+            if not self.error_handler.is_error_enabled("API") and self.wifi.get_status() == self.wifi.CYW43_LINK_UP:
                 self.error_handler.enable_error("API")
             return False
         else:
