@@ -57,7 +57,7 @@ class SpaceState:
         self.space_state = None
         self.checking_space_state = False
         self.checking_space_state_timeout_s = 30
-        self.space_state_poll_frequency = config.space_state_poll_frequency_s
+        self.space_state_poll_frequency = config.SPACE_STATE_POLL_FREQUENCY_S
         if self.space_state_poll_frequency != 0 and self.space_state_poll_frequency < 5:
             self.space_state_poll_frequency = 5
         self.state_check_error_open_led_flash_task = None

@@ -19,6 +19,7 @@ Press the space_open or space_closed buttons to call the smib server endpoint ap
 - Error information shown on connected displays where configured in modules using ErrorHandler class
 - UI Logger captures timestamps of button presses and uploads to SMIB for logging and review of usage patterns
 - Space open relay pin optionally sets a GPIO to high or low when the space is open
+- Config file checker against config template - useful for upgrades missing config of new features
 - Web server for admin functions - at present only provides API for version and MAC address (Check info log messages or DHCP server for IP and default port is 80)
 
 ## Circuit diagram
@@ -53,6 +54,8 @@ Copy the files from the smibhib folder into the root of a Pico W running Micropy
 - Configure the webserver hostname/IP and port as per your smib.webserver configuration
 - Set the space state poll frequency in seconds (>= 5), set to 0 to disable the state poll
 - Configure the space open relay pin if required or else set to None, also choose if space open sets pin high or low
+
+If you miss any configuration options, a default will be applied, an error output in the log detailing the configuration item missed including the default value configured and if connected, an error displayed on displays.
 
 ## Onboard status LED
 The LED on the Pico W board is used to give feedback around network connectivity if you are not able to connect to the terminal output for logs.
@@ -101,6 +104,9 @@ Use existing space state buttons, lights, slack API wrapper and watchers as an e
   - The current state instance is held in hid.ui_state_instance
   - Enter a new UI state by calling the transition_to() method on a UIstate instance and pass any arguments needed by that state
   - You will need to pass any core objects needed by the base UIState class and apply using super() as normal. These are currently HID (for managing the current state instance) and SpaceState so that the open and close buttons are available in all UIs with default space open/closed behaviour.
+
+#### Config template update
+If you add a new feature that has configuration options, ensure you set the constant and default value in the config.py file as well as in the config.config_template.py file to allow automated checking of config files to catch upgrade error and misconfigurations.
 
 ### Web server
 The admin web interface is hosted by a customised version of [tinyweb](https://github.com/belyalov/tinyweb) server which is a flask like implementation of a asyncio web server in MicroPython.
