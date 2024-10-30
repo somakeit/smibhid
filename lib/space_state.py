@@ -343,7 +343,8 @@ class OpenState(UIState):
         await super().async_on_space_closed_button()
 
     async def async_on_space_open_button(self) -> None:
-        self.log.info("Space is already open")
+        self.log.info("Space open - Topping up hours - Adding hours to open for hours counter")
+        self.hid.ui_state_instance.transition_to(AddingHoursState(self.hid, self.space_state))
 
 class ClosedState(UIState):
     """
