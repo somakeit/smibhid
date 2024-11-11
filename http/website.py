@@ -3,6 +3,7 @@ from lib.ulogging import uLogger
 from lib.module_config import ModuleConfig
 from json import dumps
 import uasyncio
+from lib.updater import Updater
 
 class WebApp:
 
@@ -19,6 +20,7 @@ class WebApp:
         self.hid = hid
         self.wifi = module_config.get_wifi()
         self.display = module_config.get_display()
+        self.updater = Updater()
         self.port = 80
         self.running = False
         self.create_style_css()
@@ -53,6 +55,8 @@ class WebApp:
         
         self.app.add_resource(WLANMAC, '/api/wlan/mac', wifi = self.wifi, logger = self.log)
         self.app.add_resource(Version, '/api/version', hid = self.hid, logger = self.log)
+        self.app.add_resource(Update, '/api/update', updater = self.updater, logger = self.log)
+        self.app.add_resource(Reset, '/api/reset', updater = self.updater, logger = self.log)
     
 class WLANMAC():
 
@@ -69,3 +73,18 @@ class Version():
         html = dumps(hid.version)
         logger.info(f"Return value: {html}")
         return html
+
+class Update():
+
+    def get(self, data, updater: Updater, logger: uLogger):
+        logger.info("API request - update")
+        html = dumps(updater.apply_files())
+        logger.info(f"Return value: {html}")
+        return html
+    
+class Reset():
+
+    def get(self, data, updater: Updater, logger: uLogger):
+        logger.info("API request - reset")
+        updater.reset()
+        return
