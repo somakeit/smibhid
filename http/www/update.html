@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title>SMIBHID - Update</title>
+        <link rel="stylesheet" href="css/style.css">
+    </head>
+    <body>
+        <h1>SMIBHID - Firmware update</h1>
+        <p>Firmware can be downloaded to SMIBHID over the air here and restarted to apply.
+        </p>
+
+        <h2>Update file</h2>
+        <h3>Upload a new firmware file here:</h3>
+        <form action="/api/download" method="post">
+            <label for="update">Enter file URL:</label>
+            <input type="text" name="url" id="url" />
+            <input type="submit" value="Download" />
+        </form>
+
+        <h3>Apply uploaded files</h3>
+        <form action="/api/update" method="post">
+            <input type="submit" value="Apply" />
+        </form>
+
+        <h3>Restart SMIBHID</h3>
+        <form action="/api/reset" method="post">
+            <input type="submit" value="Restart" />
+        </form>
+
+    </body>
+</html>

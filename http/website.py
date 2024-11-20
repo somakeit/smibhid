@@ -25,6 +25,7 @@ class WebApp:
         self.running = False
         self.create_style_css()
         self.create_homepage()
+        self.create_update()
         self.create_api()
 
     def startup(self):
@@ -48,6 +49,11 @@ class WebApp:
         async def index(request, response):
             await response.send_file('/http/www/index.html')
 
+    def create_update(self) -> None:
+        @self.app.route('/update')
+        async def index(request, response):
+            await response.send_file('/http/www/update.html')
+
     def create_api(self) -> None:
         @self.app.route('/api')
         async def api(request, response):
@@ -55,12 +61,14 @@ class WebApp:
         
         self.app.add_resource(WLANMAC, '/api/wlan/mac', wifi = self.wifi, logger = self.log)
         self.app.add_resource(Version, '/api/version', hid = self.hid, logger = self.log)
+        #self.app.add_resource(UploadFile, '/api/upload', updater = self.updater, logger = self.log)
+        self.app.add_resource(DownloadFile, '/api/download', updater = self.updater, logger = self.log)
         self.app.add_resource(Update, '/api/update', updater = self.updater, logger = self.log)
         self.app.add_resource(Reset, '/api/reset', updater = self.updater, logger = self.log)
     
 class WLANMAC():
 
-    def get(self, data, wifi, logger: uLogger):
+    def get(self, data, wifi, logger: uLogger) -> str:
         logger.info("API request - wlan/mac")
         html = dumps(wifi.get_mac())
         logger.info(f"Return value: {html}")
@@ -68,15 +76,31 @@ class WLANMAC():
     
 class Version():
 
-    def get(self, data, hid, logger: uLogger):
+    def get(self, data, hid, logger: uLogger) -> str:
         logger.info("API request - version")
         html = dumps(hid.version)
         logger.info(f"Return value: {html}")
         return html
 
+class DownloadFile():
+    
+        def post(self, data, updater: Updater, logger: uLogger) -> str:
+            logger.info("API request - download file")
+            html = dumps(updater.download_file(data))
+            logger.info(f"Return value: {html}")
+            return html
+
+# class UploadFile():
+
+#     def post(self, data, updater: Updater, logger: uLogger):
+#         logger.info("API request - upload file")
+#         html = dumps(updater.upload_file(data["file"]))
+#         logger.info(f"Return value: {html}")
+#         return html
+
 class Update():
 
-    def get(self, data, updater: Updater, logger: uLogger):
+    def post(self, data, updater: Updater, logger: uLogger) -> str:
         logger.info("API request - update")
         html = dumps(updater.apply_files())
         logger.info(f"Return value: {html}")
@@ -84,7 +108,7 @@ class Update():
     
 class Reset():
 
-    def get(self, data, updater: Updater, logger: uLogger):
+    def post(self, data, updater: Updater, logger: uLogger) -> None:
         logger.info("API request - reset")
         updater.reset()
         return
