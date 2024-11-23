@@ -10,8 +10,13 @@
         <ul>
             <li>MAC address (GET): <a href="/api/wlan/mac">/api/wlan/mac</a></li>
             <li>Firmware version (GET): <a href="/api/version">/api/version</a></li>
-            <li>Download (POST): <a href="/api/download">/api/download - Download a file from a URl to the update staging directory</a></li>
-            <li>Update (POST): <a href="/api/update">/api/update - Copy files in the update staging directory to the lib folder</a></li>
+            <li>Firmware files (GET,POST): <a href="/api/firmware_files">/api/firmware_files - List, add or remove URLs staged for download and patch on reset</a>
+                <ul>
+                    <li>List files: GET</li>
+                    <li>Add file: POST: Submit Value = "Add", URL = Str: id = "url" </li>
+                    <li>Remove file: POST: Submit Value = "Remove", Str: URL </li>
+                </ul>
+            </li>
             <li>Reset (POST): <a href="/api/reset">/api/reset - reset SMIBHID</a></li>
         </ul>
 

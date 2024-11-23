@@ -6,26 +6,31 @@
     </head>
     <body>
         <h1>SMIBHID - Firmware update</h1>
-        <p>Firmware can be downloaded to SMIBHID over the air here and restarted to apply.
+        <p>Firmware can be uploaded to SMIBHID over the air here and restarted to apply.
         </p>
 
-        <h2>Update file</h2>
-        <h3>Upload a new firmware file here:</h3>
-        <form action="/api/download" method="post">
-            <label for="update">Enter file URL:</label>
-            <input type="text" name="url" id="url" />
-            <input type="submit" value="Download" />
+        <h2>Update files</h2>
+
+        <h3>Delete files pending update</h3>
+        <button onclick="fetchURLs()">Refresh URLs</button>
+        <form action="/api/firmware_files" method="post" enctype="application/x-www-form-urlencoded">
+            <ul id="url-list">
+            </ul>
+            <input type="submit" name="action" value="Remove" id="Remove"/>
         </form>
 
-        <h3>Apply uploaded files</h3>
-        <form action="/api/update" method="post">
-            <input type="submit" value="Apply" />
+        <h3>Provide the URL for a new firmware file here:</h3>
+        <form action="/api/firmware_files" method="post" enctype="application/x-www-form-urlencoded">
+            <label for="url">Enter file URL:</label>
+            <input type="text" name="url" id="url" />
+            <input type="submit" name="action" value="Add" id="Add"/>
         </form>
 
         <h3>Restart SMIBHID</h3>
         <form action="/api/reset" method="post">
-            <input type="submit" value="Restart" />
+            <input type="submit" name="action" value="Restart" id="Restart"/>
         </form>
 
     </body>
+    <script type="module" src="js/update.js?v=0.0.9"></script>
 </html>

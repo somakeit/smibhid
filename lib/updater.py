@@ -36,8 +36,8 @@ class Updater:
                 for url in urls:
                     self.download_file(url)
                 
-                #self.apply_files() # TODO: Disabling applying files while connected to the device
-                #self.reset()
+                self.apply_files()
+                self.reset()
                 return True
             
             except Exception as e:
@@ -51,22 +51,29 @@ class Updater:
         known normal run state.
         """
         self.log.error("Cannot apply updates - future code will revert to backed up files - clearing update flag to reboot into normal mode")
-        #os.remove(self.update_path + ".updating") #TODO Disabling removing the update flag while connected to the device
-        #self.reset() #TODO Disabling reset while connected to the device
+        os.remove(self.update_path + ".updating")
+        self.reset()
 
     def process_update_file(self) -> list:
         """
         Process updates.
         """
         self.log.info("Processing updates")
-        with open(self.update_path + ".updating", "r") as f:
-            update_data = f.read()
-        self.log.info(f"Update data: {update_data}")
         urls = []
-        for update in update_data.split("\n"):
-            urls.append(update)
-        self.log.info(f"URLs: {urls}")
-        return urls
+        try:
+            with open(self.update_path + ".updating", "r") as f:
+                update_data = f.read()
+            self.log.info(f"Update data: {update_data}")
+            
+            for update in update_data.split("\n"):
+                urls.append(update)
+            self.log.info(f"URLs: {urls}")
+        
+        except Exception as e:
+            self.log.error(f"Failed to process updates: {e}")
+        
+        finally:
+            return urls
     
     def connect_wifi(self) -> bool:
         """
@@ -83,6 +90,38 @@ class Updater:
         
         self.log.info("Connected to wifi")
         return True
+    
+    def stage_update_url(self, url: str) -> bool:
+        """
+        Stage an update file.
+        """
+        self.log.info(f"Staging update file: {url}")
+        try:
+            with open(self.update_path + ".updating", "a") as f:
+                f.write(url + "\n")
+            self.log.info("Update file staged")
+            return True
+        except Exception as e:
+            self.log.error(f"Failed to stage update file: {e}")
+            return False
+    
+    def unstage_update_url(self, url: str) -> bool:
+        """
+        Unstage an update file.
+        """
+        self.log.info(f"Unstaging update file: {url}")
+        try:
+            with open(self.update_path + ".updating", "r") as f:
+                update_data = f.read()
+            with open(self.update_path + ".updating", "w") as f:
+                for update in update_data.split("\n"):
+                    if update != url:
+                        f.write(update + "\n")
+            self.log.info("Update file unstaged")
+            return True
+        except Exception as e:
+            self.log.error(f"Failed to unstage update file: {e}")
+            return False
 
     def download_file(self, url: str) -> bool:
         """
@@ -116,7 +155,6 @@ class Updater:
         """
         try:
             self.log.info(f"Saving file: {filename}")
-            self.log.info(f"Data: {data}")
             with open(self.update_path + filename, "wb") as f:
                 f.write(data)
             self.log.info(f"File saved: {filename}")
@@ -124,20 +162,6 @@ class Updater:
         except Exception as e:
             self.log.error(f"Failed to save file '{filename}': {e}")
             return False
-    
-    # def upload_file(self, file) -> bool:
-    #     """
-    #     Upload a file to the /updates/ directory.
-    #     """
-    #     self.log.info(f"Uploading file: {file}")
-    #     try:
-    #         with open(self.update_path + file, "wb") as f:
-    #             f.write(file)
-    #         self.log.info(f"File uploaded: {file}")
-    #         return True
-    #     except Exception as e:
-    #         self.log.error(f"Failed to upload file: {e}")
-    #         return False
     
     def apply_files(self) -> bool:
         """

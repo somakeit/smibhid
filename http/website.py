@@ -24,6 +24,7 @@ class WebApp:
         self.port = 80
         self.running = False
         self.create_style_css()
+        self.create_update_js()
         self.create_homepage()
         self.create_update()
         self.create_api()
@@ -43,6 +44,11 @@ class WebApp:
         @self.app.route('/css/style.css')
         async def index(request, response):
             await response.send_file('/http/www/css/style.css', content_type='text/css')
+
+    def create_update_js(self):
+        @self.app.route('/js/update.js')
+        async def index(request, response):
+            await response.send_file('/http/www/js/update.js', content_type='application/javascript')
     
     def create_homepage(self) -> None:
         @self.app.route('/')
@@ -61,9 +67,7 @@ class WebApp:
         
         self.app.add_resource(WLANMAC, '/api/wlan/mac', wifi = self.wifi, logger = self.log)
         self.app.add_resource(Version, '/api/version', hid = self.hid, logger = self.log)
-        #self.app.add_resource(UploadFile, '/api/upload', updater = self.updater, logger = self.log)
-        self.app.add_resource(DownloadFile, '/api/download', updater = self.updater, logger = self.log)
-        self.app.add_resource(Update, '/api/update', updater = self.updater, logger = self.log)
+        self.app.add_resource(FirmwareFiles, '/api/firmware_files', updater = self.updater, logger = self.log)
         self.app.add_resource(Reset, '/api/reset', updater = self.updater, logger = self.log)
     
 class WLANMAC():
@@ -82,29 +86,26 @@ class Version():
         logger.info(f"Return value: {html}")
         return html
 
-class DownloadFile():
-    
-        def post(self, data, updater: Updater, logger: uLogger) -> str:
-            logger.info("API request - download file")
-            html = dumps(updater.download_file(data))
-            logger.info(f"Return value: {html}")
-            return html
+class FirmwareFiles():
 
-# class UploadFile():
-
-#     def post(self, data, updater: Updater, logger: uLogger):
-#         logger.info("API request - upload file")
-#         html = dumps(updater.upload_file(data["file"]))
-#         logger.info(f"Return value: {html}")
-#         return html
-
-class Update():
-
-    def post(self, data, updater: Updater, logger: uLogger) -> str:
-        logger.info("API request - update")
-        html = dumps(updater.apply_files())
+    def get(self, data, updater: Updater, logger: uLogger) -> str:
+        logger.info("API request - GET Firmware files")
+        html = dumps(updater.process_update_file())
         logger.info(f"Return value: {html}")
         return html
+    
+    def post(self, data, updater: Updater, logger: uLogger) -> str:
+        logger.info("API request - POST Firmware files")
+        logger.info(f"Data: {data}")
+        if data["action"] == "Add":
+            logger.info("Adding update - data: {data}")
+            html = updater.stage_update_url(data["url"])
+        elif data["action"] == "Remove":
+            logger.info("Removing update - data: {data}")
+            html = updater.unstage_update_url(data["url"])
+        else:
+            html = f"Invalid request: {data["action"]}"
+        return str(html)
     
 class Reset():
 
