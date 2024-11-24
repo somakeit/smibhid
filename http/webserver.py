@@ -521,7 +521,7 @@ class Webserver:
         # Initial params for route
         params = {'methods': ['GET'],
                   'save_headers': [],
-                  'max_body_size': 20480,
+                  'max_body_size': 1024,
                   'allowed_access_control_headers': '*',
                   'allowed_access_control_origins': '*',
                   }
