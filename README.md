@@ -122,13 +122,11 @@ The website configuration and API definition is built out from the website.py mo
 - Add files to update
   - Enter a URL to download the raw python file that will be moved into the lib folder overwriting any existing files with that name (Best approach is reference the raw file version on a github branch)
   - Press "Add"
-  - Press back or otherwise navigate back to /upload
-  - Press "Refresh URLs" to confirm the file is now staged
   - Repeat above as needed until all files are staged
-  - Select a file and press "Remove" to remove a URL if not needed or to correct an error and re-add the URL (Press back or manually navigate to /update on removing a file)
+  - Select a file and press "Remove" to remove a URL if not needed or to correct an error and re-add the URL
   - When all files are staged ready to update, press "Restart" to reboot SMIBHID
 
-If any files are staged (.updating file exists in updates folder on the device) SMIBHID will reboot into update mode, download, copy over, then cealr out the staging directory and restart again.
+If any files are staged (.updating file exists in updates folder on the device) SMIBHID will reboot into update mode, download, copy over, then clear out the staging directory and restart again.
 There is currently no display output on updating so be patient for a minute or two and if successful the new firmware will load shortly.
 If errors are encountered such as no wifi on the update process, the staging file is deleted and SMIBHID will reboot back into normal mode.
 

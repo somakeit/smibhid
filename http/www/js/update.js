@@ -1,4 +1,87 @@
-const version = '0.0.9';
+const version = '0.0.28';
+
+document.getElementById('add_file_form').addEventListener('submit', function(event) {
+    console.log('File staging update form submitted.');
+    event.preventDefault();
+
+    var request_body = JSON.stringify({"action": "add", "url": document.getElementById('url').value});
+
+    fetch('/api/firmware_files', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: request_body
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Network response was not ok ' + response.statusText);
+        }
+        return response.json();
+    })
+    .then(data => {
+        console.log('Request data returned:', data);
+        if (data === true) {
+            var result_message = "Firmware staging list updated successfully";
+        }
+
+        else {
+            var result_message = "Error updating firmware staging list. API return:", data;
+        }
+        
+        document.getElementById('result').innerText = result_message;
+
+        fetchURLs();
+    })
+    .catch(error => {
+        console.error('Error encountered updating firmware staging list:', error);
+        document.getElementById('result').innerText = "Error updating firmware staging list: " + error.message;
+    });
+
+});
+
+document.getElementById('remove_file_form').addEventListener('submit', function(event) {
+    console.log('File staging update form submitted.');
+    event.preventDefault();
+
+    var selectedUrl = document.querySelector('input[name="url"]:checked').value;
+    
+    var request_body = JSON.stringify({"action": "remove", "url": selectedUrl});
+
+    fetch('/api/firmware_files', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: request_body
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Network response was not ok ' + response.statusText);
+        }
+        return response.json();
+    })
+    .then(data => {
+        console.log('Request data returned:', data);
+        if (data === true) {
+            var result_message = "Firmware staging list updated successfully";
+        }
+
+        else {
+            var result_message = "Error updating firmware staging list. API return:", data;
+        }
+        
+        document.getElementById('result').innerText = result_message;
+
+        fetchURLs();
+    })
+    .catch(error => {
+        console.error('Error encountered updating firmware staging list:', error);
+        document.getElementById('result').innerText = "Error updating firmware staging list: " + error.message;
+    });
+
+});
+
 
 document.addEventListener("DOMContentLoaded", function() {
     function fetchURLs() {
@@ -36,5 +119,5 @@ document.addEventListener("DOMContentLoaded", function() {
     }
 
         window.fetchURLs = fetchURLs;
-        //fetchURLs();
+        fetchURLs();
 });

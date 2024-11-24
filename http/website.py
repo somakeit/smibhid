@@ -97,15 +97,15 @@ class FirmwareFiles():
     def post(self, data, updater: Updater, logger: uLogger) -> str:
         logger.info("API request - POST Firmware files")
         logger.info(f"Data: {data}")
-        if data["action"] == "Add":
+        if data["action"] == "add":
             logger.info("Adding update - data: {data}")
             html = updater.stage_update_url(data["url"])
-        elif data["action"] == "Remove":
+        elif data["action"] == "remove":
             logger.info("Removing update - data: {data}")
             html = updater.unstage_update_url(data["url"])
         else:
             html = f"Invalid request: {data["action"]}"
-        return str(html)
+        return dumps(html)
     
 class Reset():
 

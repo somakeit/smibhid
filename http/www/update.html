@@ -13,24 +13,28 @@
 
         <h3>Delete files pending update</h3>
         <button onclick="fetchURLs()">Refresh URLs</button>
-        <form action="/api/firmware_files" method="post" enctype="application/x-www-form-urlencoded">
+        <form action="/api/firmware_files" method="post" enctype="application/x-www-form-urlencoded" id="remove_file_form">
             <ul id="url-list">
             </ul>
             <input type="submit" name="action" value="Remove" id="Remove"/>
         </form>
 
         <h3>Provide the URL for a new firmware file here:</h3>
-        <form action="/api/firmware_files" method="post" enctype="application/x-www-form-urlencoded">
+        <form action="" id="add_file_form">
             <label for="url">Enter file URL:</label>
-            <input type="text" name="url" id="url" />
-            <input type="submit" name="action" value="Add" id="Add"/>
+            <input type="text" id="url" />
+            <input type="submit" value="Add" />
         </form>
+
+        <span id="result"></span>
 
         <h3>Restart SMIBHID</h3>
         <form action="/api/reset" method="post">
             <input type="submit" name="action" value="Restart" id="Restart"/>
         </form>
 
+        <p>Return to <a href="/">home</a></p>
+
     </body>
-    <script type="module" src="js/update.js?v=0.0.9"></script>
+    <script type="module" src="js/update.js?v=0.0.28"></script>
 </html>
