@@ -66,7 +66,8 @@ class Updater:
             self.log.info(f"Update data: {update_data}")
             
             for update in update_data.split("\n"):
-                urls.append(update)
+                if update != "":
+                    urls.append(update)
             self.log.info(f"URLs: {urls}")
         
         except Exception as e:
@@ -114,10 +115,15 @@ class Updater:
             with open(self.update_path + ".updating", "r") as f:
                 update_data = f.read()
             with open(self.update_path + ".updating", "w") as f:
+                line_count = 0
                 for update in update_data.split("\n"):
-                    if update != url:
+                    if update != url and update != "":
+                        line_count += 1
                         f.write(update + "\n")
             self.log.info("Update file unstaged")
+            if line_count == 0:
+                os.remove(self.update_path + ".updating")
+                self.log.info("No updates staged - removing update file")
             return True
         except Exception as e:
             self.log.error(f"Failed to unstage update file: {e}")
