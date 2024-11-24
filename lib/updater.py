@@ -5,17 +5,22 @@ import requests
 from gc import collect
 from lib.networking import WirelessNetwork
 from asyncio import run
+from lib.display import Display
+from time import sleep
 
 class Updater:
     def __init__(self) -> None:
         self.log = uLogger("Updater")
         self.update_path = "/updates/"
+        self.display = Display()
 
     def enter_update_mode(self) -> bool:
         """
         Enter update mode.
         """
         self.log.info("Entering update mode")
+        self.display.clear()
+        self.display.print_update_startup()
         wifi_connected = self.connect_wifi()
         
         if not wifi_connected:
@@ -33,11 +38,15 @@ class Updater:
                     self.exit_with_failure()
                     return False
                 
+                current_file = 0
+                
                 for url in urls:
+                    current_file += 1
+                    self.display.print_download_progress(current_file, len(urls))
                     self.download_file(url)
                 
                 self.apply_files()
-                self.reset()
+                self.exit_with_success()
                 return True
             
             except Exception as e:
@@ -45,6 +54,20 @@ class Updater:
                 self.exit_with_failure()
                 return False
 
+    def exit_with_success(self) -> None:
+        """
+        Clears update flag and reboots into normal run state.
+        """
+        self.log.info("Updates applied successfully - clearing update flag to reboot into normal mode")
+        try:
+            os.remove(self.update_path + ".updating")
+        except Exception as e:
+            self.log.warn(f"Unable to delete .updating file, may already be removed - this is unusual, but not fatal: {e}")
+        self.display.clear()
+        self.display.print_update_status("Success")
+        sleep(2)
+        self.reset()
+    
     def exit_with_failure(self) -> None:
         """
         Clears update flag and restores backups if present to reboot into best
@@ -52,6 +75,9 @@ class Updater:
         """
         self.log.error("Cannot apply updates - future code will revert to backed up files - clearing update flag to reboot into normal mode")
         os.remove(self.update_path + ".updating")
+        self.display.clear()
+        self.display.print_update_status("Failed")
+        sleep(2)
         self.reset()
 
     def process_update_file(self) -> list:
@@ -177,6 +203,8 @@ class Updater:
 
         try:
             for file_name in os.listdir(self.update_path):
+                if file_name == ".updating":
+                    continue
                 self.log.info(f"Updating {file_name}")
                 update_path = self.update_path + file_name
                 target_path = "/lib/" + file_name

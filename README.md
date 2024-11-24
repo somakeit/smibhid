@@ -20,7 +20,7 @@ Press the space_open or space_closed buttons to call the smib server endpoint ap
 - UI Logger captures timestamps of button presses and uploads to SMIB for logging and review of usage patterns
 - Space open relay pin optionally sets a GPIO to high or low when the space is open
 - Config file checker against config template - useful for upgrades missing config of new features
-- Over the air firmware updates
+- Over the air firmware updates - Web based management and display output on status
 - Web server for admin functions (Check info log messages or DHCP server for IP and default port is 80)
   - Home page with list of available functions
   - API page that details API endpoints available and their usage
@@ -118,16 +118,16 @@ The website configuration and API definition is built out from the website.py mo
 
 ### OTA firmware updates
 - Load the admin web page and navigate to /update
-- Press "Refresh URLS" to confirm the currently staged files (likely to be none as these are applied and cleared on startup)
 - Add files to update
   - Enter a URL to download the raw python file that will be moved into the lib folder overwriting any existing files with that name (Best approach is reference the raw file version on a github branch)
   - Press "Add"
   - Repeat above as needed until all files are staged
   - Select a file and press "Remove" to remove a URL if not needed or to correct an error and re-add the URL
   - When all files are staged ready to update, press "Restart" to reboot SMIBHID
+  - Display will show update status and result before restarting into normal mode with the new firmware
 
 If any files are staged (.updating file exists in updates folder on the device) SMIBHID will reboot into update mode, download, copy over, then clear out the staging directory and restart again.
-There is currently no display output on updating so be patient for a minute or two and if successful the new firmware will load shortly.
+
 If errors are encountered such as no wifi on the update process, the staging file is deleted and SMIBHID will reboot back into normal mode.
 
 ### UI State diagram
