@@ -38,7 +38,7 @@ class WebApp:
             self.log.info(f"Web server started: {self.wifi.get_ip()}:{self.port}")
             self.running = True
         else:
-            self.ulogger.error("No network access - web server not started")
+            self.log.error("No network access - web server not started")
     
     def create_style_css(self):
         @self.app.route('/css/style.css')
