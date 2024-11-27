@@ -247,3 +247,6 @@ class WirelessNetwork:
         except Exception as e:
             self.log.error(f"Failed to sync RTC from NTP: {e}")
         return timestamp
+    
+    def is_connected(self) -> bool:
+        return self.get_status() == 3
