@@ -1,6 +1,6 @@
 from lib.ulogging import uLogger
 from lib.registry import driver_registry
-from lib.LCD1602 import LCD1602
+from lib.LCD1602 import LCD1602 # Importing the module registers the driver - do not remove this  # noqa: F401
 from config import DISPLAY_DRIVERS
 
 class Display:
@@ -53,6 +53,18 @@ class Display:
     def clear(self) -> None:
         """Clear all screens."""
         self._execute_command("clear")
+    
+    def print_update_startup(self) -> None:
+        """Display update startup information on all screens."""
+        self._execute_command("print_update_startup")
+
+    def print_download_progress(self, current: int, total: int) -> None:
+        """Display download progress information on all screens."""
+        self._execute_command("print_download_progress", current, total)
+    
+    def print_update_status(self, status: str) -> None:
+        """Display update status information on all screens."""
+        self._execute_command("print_update_status", status)
     
     def print_startup(self, version: str) -> None:
         """Display startup information on all screens."""
