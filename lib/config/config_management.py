@@ -1,4 +1,4 @@
-from ulogging import uLogger
+from lib.ulogging import uLogger
 import lib.config.config_template as config_template
 import config
 
