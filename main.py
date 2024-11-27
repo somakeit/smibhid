@@ -6,7 +6,11 @@ HID class and running.
 
 from os import listdir
 
-updates_dir_list = listdir("/updates/")
+updates_dir_list = []
+try:
+    updates_dir_list = listdir("/updates/")
+except Exception:
+    pass
 if ".updating" in updates_dir_list:
     from lib.updater import Updater
     updater = Updater()
