@@ -20,7 +20,7 @@ class HID:
         """
         self.log = uLogger("HID")
         self.log.warn("SMIBHID has been restarted")
-        self.version = "1.2.0"
+        self.version = "1.3.0"
         self.loop_running = False
         self.moduleConfig = ModuleConfig()
         self.moduleConfig.register_display(Display())
