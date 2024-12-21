@@ -13,7 +13,7 @@ SPACE_OPEN_LED = 15
 SPACE_CLOSED_LED = 16
 # Set to None if no relay/transistor is connected
 SPACE_OPEN_RELAY = None
-SPACE_OPEN_RELAY_ACTIVE_HIGH = True
+SPACE_OPEN_RELAY_ACTIVE_HIGH = False
 
 ## WIFI
 WIFI_SSID = ""
