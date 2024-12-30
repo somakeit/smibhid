@@ -2,7 +2,7 @@
 
 from lib.ulogging import uLogger
 from lib.module_config import ModuleConfig
-from config import PINGER_WATCHDOG_IP, PINGER_WATCHDOG_INTERVAL_SECONDS, PINGER_WATCHDOG_RETRY_COUNT, PINGER_WATCHDOG_RELAY_PIN, PINGER_WATCHDOG_RELAY_ACTIVE_HIGH
+from config import PINGER_WATCHDOG_IP, PINGER_WATCHDOG_INTERVAL_SECONDS, PINGER_WATCHDOG_RETRY_COUNT, PINGER_WATCHDOG_RELAY_PIN, PINGER_WATCHDOG_RELAY_ACTIVE_HIGH, PINGER_WATCHDOG_TOGGLE_DURATION_MS
 from asyncio import sleep_ms, get_event_loop
 from machine import Pin
 
@@ -20,6 +20,7 @@ class Pinger:
             self.retry_count = PINGER_WATCHDOG_RETRY_COUNT
             self.ip = PINGER_WATCHDOG_IP
             self.retries = 0
+            self.relay_toggle_duration_ms = PINGER_WATCHDOG_TOGGLE_DURATION_MS
             self.loop = get_event_loop()
             self.log.info("Pinger initialised")
             self.loop.create_task(self.watchdog())
@@ -38,7 +39,7 @@ class Pinger:
                     self.log.warn(f"Failed to ping {self.ip} {self.retry_count} times")
                     self.log.info(f"Relay switching to {self.relay_off}")
                     self.relay.value(self.relay_off)
-                    await sleep_ms(5000)
+                    await sleep_ms(self.relay_toggle_duration_ms)
                     self.log.info(f"Relay switching to {self.relay_on}")
                     self.relay.value(self.relay_on)
                     self.log.warn("Ping watchdog restarted relay")
