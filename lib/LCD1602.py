@@ -87,6 +87,21 @@ class LCD1602:
         self._command(LCD_CLEARDISPLAY)
         sleep(0.002)
             
+    def print_update_startup(self) -> None:
+        """Render update startup information on screen."""
+        self.print_on_line(0, "S.M.I.B.H.I.D.")
+        self.print_on_line(1, "Updating...")
+
+    def print_download_progress(self, current: int, total: int) -> None:
+        """Render update file count information on screen."""
+        self.print_on_line(0, "Downloading:")
+        self.print_on_line(1, f"{current}/{total}")
+
+    def print_update_status(self, status: str) -> None:
+        """Render update status information on screen."""
+        self.print_on_line(0, "Updating...")
+        self.print_on_line(1, status)
+    
     def print_startup(self, version: str) -> None:
         """Render startup information on screen."""
         self.print_on_line(0, "S.M.I.B.H.I.D.")
@@ -142,7 +157,7 @@ class LCD1602:
 
         self.print_on_line(state_line, f"State: {status["state"]}")
 
-        if self.error_loop_task == None or self.error_loop_task.done():
+        if self.error_loop_task is None or self.error_loop_task.done():
             self.error_loop_task = create_task(self.async_error_printing_loop())
 
     async def async_error_printing_loop(self) -> None:
