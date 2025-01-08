@@ -10,6 +10,7 @@ from config import RFID_ENABLED
 from lib.uistate import UIState
 from lib.ui_log import UILog
 from http.website import WebApp
+from lib.pinger import Pinger
 
 class HID:
     
@@ -33,6 +34,7 @@ class HID:
         self.reader = self.moduleConfig.get_rfid()
         self.ui_log = self.moduleConfig.get_ui_log()
         self.space_state = SpaceState(self.moduleConfig, self)
+        self.pinger = Pinger(self.moduleConfig, self)
         self.error_handler = ErrorHandler("HID")
         self.error_handler.configure_display(self.display)
         self.web_app = WebApp(self.moduleConfig, self)

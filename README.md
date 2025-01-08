@@ -25,6 +25,7 @@ Press the space_open or space_closed buttons to call the smib server endpoint ap
   - Home page with list of available functions
   - API page that details API endpoints available and their usage
   - Update page for performing over the air firmware updates and remote reset to apply them
+- Pinger watchdog - Optionally ping an IP address and toggle a GPIO pin on ping failure. Useful for network device monitoring and reset.
 
 ## Circuit diagram
 ### Pico W Connections
@@ -58,6 +59,7 @@ Copy the files from the smibhib folder into the root of a Pico W running Micropy
 - Configure the webserver hostname/IP and port as per your smib.webserver configuration
 - Set the space state poll frequency in seconds (>= 5), set to 0 to disable the state poll
 - Configure the space open relay pin if required or else set to None, also choose if space open sets pin high or low
+- Configure the pinger watchdog and associated pin (example relay with transistor for coil current provided in circuit diagram)
 
 If you miss any configuration options, a default will be applied, an error output in the log detailing the configuration item missed including the default value configured and if connected, an error displayed on displays.
 
