@@ -64,3 +64,6 @@ RFID_RST = 21
 RFID_CS = 17
 
 ENABLE_UI_LOGGING_UPLOAD = False
+
+## Overclocking - Pico1 default 133MHz, Pico2 default 150MHz
+CLOCK_FREQUENCY = 250000000
