@@ -57,7 +57,7 @@ class SpaceState:
         self.space_state = None
         self.checking_space_state = False
         self.checking_space_state_timeout_s = 30
-        self.space_state_poll_frequency = config.space_state_poll_frequency_s
+        self.space_state_poll_frequency = config.SPACE_STATE_POLL_FREQUENCY_S
         if self.space_state_poll_frequency != 0 and self.space_state_poll_frequency < 5:
             self.space_state_poll_frequency = 5
         self.state_check_error_open_led_flash_task = None
@@ -343,7 +343,8 @@ class OpenState(UIState):
         await super().async_on_space_closed_button()
 
     async def async_on_space_open_button(self) -> None:
-        self.log.info("Space is already open")
+        self.log.info("Space open - Topping up hours - Adding hours to open for hours counter")
+        self.hid.ui_state_instance.transition_to(AddingHoursState(self.hid, self.space_state))
 
 class ClosedState(UIState):
     """

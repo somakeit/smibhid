@@ -19,6 +19,13 @@ Press the space_open or space_closed buttons to call the smib server endpoint ap
 - Error information shown on connected displays where configured in modules using ErrorHandler class
 - UI Logger captures timestamps of button presses and uploads to SMIB for logging and review of usage patterns
 - Space open relay pin optionally sets a GPIO to high or low when the space is open
+- Config file checker against config template - useful for upgrades missing config of new features
+- Over the air firmware updates - Web based management and display output on status
+- Web server for admin functions (Check info log messages or DHCP server for IP and default port is 80)
+  - Home page with list of available functions
+  - API page that details API endpoints available and their usage
+  - Update page for performing over the air firmware updates and remote reset to apply them
+- Pinger watchdog - Optionally ping an IP address and toggle a GPIO pin on ping failure. Useful for network device monitoring and reset.
 
 ## Circuit diagram
 ### Pico W Connections
@@ -52,6 +59,9 @@ Copy the files from the smibhib folder into the root of a Pico W running Micropy
 - Configure the webserver hostname/IP and port as per your smib.webserver configuration
 - Set the space state poll frequency in seconds (>= 5), set to 0 to disable the state poll
 - Configure the space open relay pin if required or else set to None, also choose if space open sets pin high or low
+- Configure the pinger watchdog and associated pin (example relay with transistor for coil current provided in circuit diagram)
+
+If you miss any configuration options, a default will be applied, an error output in the log detailing the configuration item missed including the default value configured and if connected, an error displayed on displays.
 
 ## Onboard status LED
 The LED on the Pico W board is used to give feedback around network connectivity if you are not able to connect to the terminal output for logs.
@@ -100,6 +110,27 @@ Use existing space state buttons, lights, slack API wrapper and watchers as an e
   - The current state instance is held in hid.ui_state_instance
   - Enter a new UI state by calling the transition_to() method on a UIstate instance and pass any arguments needed by that state
   - You will need to pass any core objects needed by the base UIState class and apply using super() as normal. These are currently HID (for managing the current state instance) and SpaceState so that the open and close buttons are available in all UIs with default space open/closed behaviour.
+
+#### Config template update
+If you add a new feature that has configuration options, ensure you set the constant and default value in the config.py file as well as in the config.config_template.py file to allow automated checking of config files to catch upgrade error and misconfigurations.
+
+### Web server
+The admin web interface is hosted by a customised version of [tinyweb](https://github.com/belyalov/tinyweb) server which is a flask like implementation of a asyncio web server in MicroPython.
+The website configuration and API definition is built out from the website.py module and all HTML/CSS/JS etc lives in the www subfolder.
+
+### OTA firmware updates
+- Load the admin web page and navigate to /update
+- Add files to update
+  - Enter a URL to download the raw python file that will be moved into the lib folder overwriting any existing files with that name (Best approach is reference the raw file version on a github branch)
+  - Press "Add"
+  - Repeat above as needed until all files are staged
+  - Select a file and press "Remove" to remove a URL if not needed or to correct an error and re-add the URL
+  - When all files are staged ready to update, press "Restart" to reboot SMIBHID
+  - Display will show update status and result before restarting into normal mode with the new firmware
+
+If any files are staged (.updating file exists in updates folder on the device) SMIBHID will reboot into update mode, download, copy over, then clear out the staging directory and restart again.
+
+If errors are encountered such as no wifi on the update process, the staging file is deleted and SMIBHID will reboot back into normal mode.
 
 ### UI State diagram
 The space state UI state machine is described in this diagram:

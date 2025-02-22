@@ -183,6 +183,9 @@ class WirelessNetwork:
     def get_mac(self) -> str:
         return self.mac
     
+    def get_ip(self) -> str:
+        return self.ip
+    
     def get_wlan_status_description(self, status) -> str:
         description = self.status_names[status]
         return description
@@ -244,3 +247,6 @@ class WirelessNetwork:
         except Exception as e:
             self.log.error(f"Failed to sync RTC from NTP: {e}")
         return timestamp
+    
+    def is_connected(self) -> bool:
+        return self.get_status() == 3

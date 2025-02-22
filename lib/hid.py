@@ -9,6 +9,8 @@ from lib.rfid.reader import RFIDReader
 from config import RFID_ENABLED
 from lib.uistate import UIState
 from lib.ui_log import UILog
+from http.website import WebApp
+from lib.pinger import Pinger
 
 class HID:
     
@@ -19,7 +21,7 @@ class HID:
         """
         self.log = uLogger("HID")
         self.log.warn("SMIBHID has been restarted")
-        self.version = "1.2.0"
+        self.version = "1.3.0"
         self.loop_running = False
         self.moduleConfig = ModuleConfig()
         self.moduleConfig.register_display(Display())
@@ -32,8 +34,10 @@ class HID:
         self.reader = self.moduleConfig.get_rfid()
         self.ui_log = self.moduleConfig.get_ui_log()
         self.space_state = SpaceState(self.moduleConfig, self)
+        self.pinger = Pinger(self.moduleConfig, self)
         self.error_handler = ErrorHandler("HID")
         self.error_handler.configure_display(self.display)
+        self.web_app = WebApp(self.moduleConfig, self)
         self.ui_state_instance = StartUIState(self, self.space_state)
         self.ui_state_instance.on_enter()
 
@@ -54,6 +58,7 @@ class HID:
         if self.reader:
             self.reader.startup()
         self.ui_log.startup()
+        self.web_app.startup()
       
         self.log.info("Entering main loop")        
         self.switch_to_appropriate_spacestate_uistate()
