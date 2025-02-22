@@ -6,11 +6,12 @@ from lib.module_config import ModuleConfig
 from lib.display import Display
 from lib.networking import WirelessNetwork
 from lib.rfid.reader import RFIDReader
-from config import RFID_ENABLED
+from config import RFID_ENABLED, CLOCK_FREQUENCY
 from lib.uistate import UIState
 from lib.ui_log import UILog
 from http.website import WebApp
 from lib.pinger import Pinger
+from machine import freq
 
 class HID:
     
@@ -22,6 +23,8 @@ class HID:
         self.log = uLogger("HID")
         self.log.warn("SMIBHID has been restarted")
         self.version = "1.3.0"
+        self.log.info("Setting CPU frequency to: " + str(CLOCK_FREQUENCY / 1000000) + "MHz")
+        freq(CLOCK_FREQUENCY)
         self.loop_running = False
         self.moduleConfig = ModuleConfig()
         self.moduleConfig.register_display(Display())
