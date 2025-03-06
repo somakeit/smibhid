@@ -44,6 +44,8 @@ Implementation Notes
 import math
 import time
 from micropython import const
+from lib.ulogging import uLogger
+from lib.sensors.sensor_module import SensorModule
 
 __version__ = "0.0.0-auto.0"
 __repo__ = "https://github.com/alexmrqt/Adafruit_CircuitPython_SGP30.git"
@@ -59,7 +61,7 @@ _SGP30_CRC8_INIT         = const(0xFF)
 _SGP30_WORD_LEN          = const(2)
 # pylint: enable=bad-whitespace
 
-class SGP30:
+class SGP30(SensorModule):
     """
     A driver for the SGP30 gas sensor.
 
@@ -69,6 +71,9 @@ class SGP30:
 
     def __init__(self, i2c, address=_SGP30_DEFAULT_I2C_ADDR):
         """Initialize the sensor, get the serial # and verify that we found a proper SGP30"""
+        super().__init__(["co2eq", "tvoc"])
+        self.log = uLogger("SGP30")
+        self.log.info("SGP30 sensor module loaded")
         self._i2c = i2c
         self._addr = address
 
@@ -193,6 +198,11 @@ class SGP30:
                 else:
                     crc <<= 1
         return crc & 0xFF
-    
+
     def get_reading(self):
-        return self.iaq_measure()
+        reading = self.iaq_measure()
+        data = {
+            "co2eq": reading[0],
+            "tvoc": reading[1]
+        }
+        return data
