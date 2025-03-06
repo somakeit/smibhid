@@ -12,6 +12,7 @@ from lib.ui_log import UILog
 from http.website import WebApp
 from lib.pinger import Pinger
 from machine import freq
+from lib.sensors import Sensors
 
 class HID:
     
@@ -38,6 +39,7 @@ class HID:
         self.ui_log = self.moduleConfig.get_ui_log()
         self.space_state = SpaceState(self.moduleConfig, self)
         self.pinger = Pinger(self.moduleConfig, self)
+        self.sensors = Sensors()
         self.error_handler = ErrorHandler("HID")
         self.error_handler.configure_display(self.display)
         self.web_app = WebApp(self.moduleConfig, self)
@@ -60,6 +62,7 @@ class HID:
         self.space_state.startup()
         if self.reader:
             self.reader.startup()
+        self.sensors.startup()
         self.ui_log.startup()
         self.web_app.startup()
       

@@ -50,6 +50,9 @@ SDA_PIN = 8
 SCL_PIN = 9
 I2C_ID = 0
 
+## Sensors - Populate driver list with connected sensors from this supported list: ["SGP30"]
+SENSORS = ["SGP30"]
+
 ## Displays - Populate driver list with connected displays from this supported list: ["LCD1602"]
 DISPLAY_DRIVERS = ["LCD1602"]
 # Scroll speed for text on displays in characters per second
