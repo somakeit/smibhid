@@ -30,6 +30,7 @@ class HID:
         self.moduleConfig = ModuleConfig()
         self.moduleConfig.register_display(Display())
         self.moduleConfig.register_wifi(WirelessNetwork())
+        self.moduleConfig.register_sensors(Sensors())
         if RFID_ENABLED:
             self.moduleConfig.register_rfid(RFIDReader(Event()))
         self.display = self.moduleConfig.get_display()
@@ -39,7 +40,7 @@ class HID:
         self.ui_log = self.moduleConfig.get_ui_log()
         self.space_state = SpaceState(self.moduleConfig, self)
         self.pinger = Pinger(self.moduleConfig, self)
-        self.sensors = Sensors()
+        self.sensors = self.moduleConfig.get_sensors()
         self.error_handler = ErrorHandler("HID")
         self.error_handler.configure_display(self.display)
         self.web_app = WebApp(self.moduleConfig, self)

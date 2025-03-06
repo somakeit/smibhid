@@ -10,6 +10,10 @@
         <ul>
             <li>MAC address (GET): <a href="/api/wlan/mac">/api/wlan/mac</a></li>
             <li>Firmware version (GET): <a href="/api/version">/api/version</a></li>
+            <li>List sensor modules (GET): <a href="/api/sensors/modules">/api/sensors/modules</a></li>
+            <li>List module sensors (GET): <a href="/api/sensors/{module}">/api/sensors/{module}</a></li>
+            <li>Get latest module sensor readings (GET): <a href="/api/sensors/readings/{module}">/api/sensors/readings/{module}</a></li>
+            <li>Get latest sensor readings from all modules (GET): <a href="/api/sensors/readings">/api/sensors/readings</a></li>
             <li>Firmware files (GET,POST): <a href="/api/firmware_files">/api/firmware_files - List, add or remove URLs staged for download and patch on reset</a>
                 <ul>
                     <li>List files: GET</li>

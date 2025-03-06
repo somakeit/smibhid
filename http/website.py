@@ -20,6 +20,7 @@ class WebApp:
         self.hid = hid
         self.wifi = module_config.get_wifi()
         self.display = module_config.get_display()
+        self.sensors = module_config.get_sensors()
         self.updater = Updater()
         self.port = 80
         self.running = False
@@ -69,6 +70,10 @@ class WebApp:
         self.app.add_resource(Version, '/api/version', hid = self.hid, logger = self.log)
         self.app.add_resource(FirmwareFiles, '/api/firmware_files', updater = self.updater, logger = self.log)
         self.app.add_resource(Reset, '/api/reset', updater = self.updater, logger = self.log)
+        self.app.add_resource(Modules, '/api/sensors/modules', sensors = self.sensors, logger = self.log)
+        self.app.add_resource(Sensors, '/api/sensors/<module>', sensors = self.sensors, logger = self.log)
+        self.app.add_resource(Readings, '/api/sensors/readings/<module>', sensors = self.sensors, logger = self.log)
+        self.app.add_resource(Readings, '/api/sensors/readings', module = "", sensors = self.sensors, logger = self.log)
     
 class WLANMAC():
 
@@ -113,3 +118,27 @@ class Reset():
         logger.info("API request - reset")
         updater.reset()
         return
+    
+class Modules():
+
+    def get(self, data, sensors, logger: uLogger) -> str:
+        logger.info("API request - sensors/modules")
+        html = dumps(sensors.get_modules())
+        logger.info(f"Return value: {html}")
+        return html
+
+class Sensors():
+
+    def get(self, data, module: str, sensors, logger: uLogger) -> str:
+        logger.info(f"API request - sensors/{module}")
+        html = dumps(sensors.get_sensors(module))
+        logger.info(f"Return value: {html}")
+        return html
+
+class Readings():
+
+    def get(self, data, module: str, sensors, logger: uLogger) -> str:
+        logger.info(f"API request - sensors/readings - Module: {module}")
+        html = dumps(sensors.get_readings(module))
+        logger.info(f"Return value: {html}")
+        return html

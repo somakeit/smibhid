@@ -22,7 +22,7 @@ class Sensors:
                 self.log.info(f"Found driver for {sensor_module}")
                 self.configured_modules[sensor_module] = self.available_modules[sensor_module]
                 self.log.info(f"Loaded {sensor_module} sensor module")
-                self.log.info(f"Available sensors: {self.configured_modules[sensor_module].get_sensors()}")
+                self.log.info(f"Available sensors: {self.get_sensors(sensor_module)}")
             else:
                 self.log.error(f"Driver not found for {sensor_module}")
 
@@ -49,11 +49,12 @@ class Sensors:
         """
         return list(self.configured_modules.keys())
 
-    def get_sensors(self, module: SensorModule) -> list:
+    def get_sensors(self, module: str) -> list:
         """
-        Return list of sensors for a specific module.
+        Return list of sensors for a specific module name.
         """
-        return module.get_sensors()
+        module_object = self.configured_modules[module]
+        return module_object.get_sensors()
 
     def get_readings(self, module: str = "") -> dict:
         """
