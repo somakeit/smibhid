@@ -26,6 +26,9 @@ Press the space_open or space_closed buttons to call the smib server endpoint ap
   - API page that details API endpoints available and their usage
   - Update page for performing over the air firmware updates and remote reset to apply them
 - Pinger watchdog - Optionally ping an IP address and toggle a GPIO pin on ping failure. Useful for network device monitoring and reset.
+- Extensible sensor module framework for async polling of I2C sensors (currently only writes to log out) and presentation of sensors and readings on the web API
+  - Supported sensors
+    - SGP30 (Equivalent CO2 and VOC)
 
 ## Circuit diagram
 ### Pico W Connections
@@ -41,20 +44,23 @@ Press the space_open or space_closed buttons to call the smib server endpoint ap
 
 
 ## Hardware
-Below is a list of hardware ad links for my specific build:
+Below is a list of hardware and links for my specific build:
 - [Raspberry Pi Pico W](https://thepihut.com/products/raspberry-pi-pico-w?variant=41952994754755)
 - [Prototype board](https://thepihut.com/products/pico-proto-pcb?variant=41359085568195)
 - [LED push button switch - Red](https://thepihut.com/products/rugged-metal-pushbutton-with-red-led-ring?variant=27740444561)
 - [LED push button switch - Green](https://thepihut.com/products/rugged-metal-pushbutton-with-green-led-ring?variant=27740444625)
 - [JST connectors](https://www.amazon.co.uk/dp/B07449V33P)
 - [2x16 Character I2C display](https://thepihut.com/products/lcd1602-i2c-module?variant=42422810083523)
+- [SGP30 I2C sensor](https://thepihut.com/products/sgp30-air-quality-sensor-breakout)
 
 ## Deployment
 Copy the files from the smibhib folder into the root of a Pico W running Micropython (minimum Pico W Micropython firmware v1.22.2 https://micropython.org/download/RPI_PICO_W/) and update values in config.py as necessary
 
 ### Configuration
 - Ensure the pins for the space open/closed LEDs and buttons are correctly specified for your wiring
-- Configure I2C pins for the display if using, display will detect automatically or disable if not found
+- Configure I2C pins for the display and sensors if using, display will detect automatically or disable if not found
+- Populate the display list with displays in use (must have appropriate driver module)
+- Populate the sensors list with sensors in use (must have appropriate driver module)
 - Populate Wifi SSID and password
 - Configure the webserver hostname/IP and port as per your smib.webserver configuration
 - Set the space state poll frequency in seconds (>= 5), set to 0 to disable the state poll
@@ -104,6 +110,12 @@ Use existing space state buttons, lights, slack API wrapper and watchers as an e
 - Display drivers can be added by creating a new display driver module
   - Ensure the driver registers itself with the driver registry, use LCD1602 as an example
   - Import the new driver module in display.py
+  - Update the config.py file to include the option for your new driver
+- I2C Sensor boards can be added by providing a driver module that extends the SensorModule base class
+  - Copy an appropriate python driver module into the sensors sub folder
+  - Modify the driver module to extend SensorModule
+  - Provide a list of sensor names on this module to class super init
+  - Overload the get_reading() method to return a dictionary of sensor name - reading value pairs
   - Update the config.py file to include the option for your new driver
 - UIState machine
   - A state machine exists and can be extended by various modules such as space_state to manage the state of the buttons and display output
