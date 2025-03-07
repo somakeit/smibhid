@@ -13,7 +13,10 @@ except Exception:
     pass
 if ".updating" in updates_dir_list:
     from lib.updater import Updater
-    updater = Updater()
+    from machine import I2C
+    from config import SDA_PIN, SCL_PIN, I2C_ID, I2C_FREQ
+    i2c = I2C(I2C_ID, sda = SDA_PIN, scl = SCL_PIN, freq = I2C_FREQ)
+    updater = Updater(i2c)
     updater.enter_update_mode()
 
 else:

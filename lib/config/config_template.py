@@ -49,6 +49,7 @@ ADD_HOURS_INPUT_TIMEOUT = 3
 SDA_PIN = 8
 SCL_PIN = 9
 I2C_ID = 0
+I2C_FREQ = 400000
 
 ## Sensors - Populate driver list with connected sensor modules from this supported list: ["SGP30"]
 SENSOR_MODULES = ["SGP30"]

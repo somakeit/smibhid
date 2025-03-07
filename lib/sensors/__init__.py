@@ -6,9 +6,9 @@ from lib.sensors.SGP30 import SGP30
 from lib.sensors.sensor_module import SensorModule
 
 class Sensors:
-    def __init__(self) -> None:
+    def __init__(self, i2c) -> None:
         self.log = uLogger("Sensors")
-        self.i2c = I2C(I2C_ID, sda = SDA_PIN, scl = SCL_PIN, freq = 400000) # TODO: load from HID for here and display
+        self.i2c = i2c
         self.SENSOR_MODULES = SENSOR_MODULES
         self.available_modules: dict[str, SensorModule] = {}
         self.available_modules["SGP30"] = SGP30(self.i2c)
