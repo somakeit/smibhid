@@ -29,6 +29,7 @@ Press the space_open or space_closed buttons to call the smib server endpoint ap
 - Extensible sensor module framework for async polling of I2C sensors (currently only writes to log out) and presentation of sensors and readings on the web API
   - Supported sensors
     - SGP30 (Equivalent CO2 and VOC)
+    - BME280
 
 ## Circuit diagram
 ### Pico W Connections
@@ -52,6 +53,7 @@ Below is a list of hardware and links for my specific build:
 - [JST connectors](https://www.amazon.co.uk/dp/B07449V33P)
 - [2x16 Character I2C display](https://thepihut.com/products/lcd1602-i2c-module?variant=42422810083523)
 - [SGP30 I2C sensor](https://thepihut.com/products/sgp30-air-quality-sensor-breakout)
+- [BME280 sensor](https://thepihut.com/products/bme280-breakout-temperature-pressure-humidity-sensor)
 
 ## Deployment
 Copy the files from the smibhib folder into the root of a Pico 2 W running Micropython (minimum Pico 2 W Micropython firmware v1.25.0-preview.365 https://micropython.org/download/RPI_PICO2_W/) and update values in config.py as necessary.
@@ -115,10 +117,14 @@ Use existing space state buttons, lights, slack API wrapper and watchers as an e
   - Update the config.py file to include the option for your new driver
 - I2C Sensor boards can be added by providing a driver module that extends the SensorModule base class
   - Copy an appropriate python driver module into the sensors sub folder
+  - Ensure the init method takes one mandatory parameter for the I2C interface
   - Modify the driver module to extend SensorModule
   - Provide a list of sensor names on this module to class super init
+  - Ensure the init method raises an error if device not found or has nay configuration error to be caught by the sensors module driver load method
   - Overload the get_reading() method to return a dictionary of sensor name - reading value pairs
   - Update the config.py file to include the option for your new driver
+  - Add the module import to sensors.\_\_init\_\_.py
+  - Copy and adjust appropriately the try except block in sensors.\_\_init\_\_.load_modules method
 - UIState machine
   - A state machine exists and can be extended by various modules such as space_state to manage the state of the buttons and display output
   - The current state instance is held in hid.ui_state_instance

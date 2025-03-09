@@ -1,12 +1,13 @@
 from asyncio import create_task, sleep
 from machine import I2C
-from config import SENSOR_MODULES, SDA_PIN, SCL_PIN, I2C_ID
+from config import SENSOR_MODULES
 from lib.ulogging import uLogger
 from lib.sensors.SGP30 import SGP30
+from lib.sensors.BME280 import BME280
 from lib.sensors.sensor_module import SensorModule
 
 class Sensors:
-    def __init__(self, i2c) -> None:
+    def __init__(self, i2c: I2C) -> None:
         self.log = uLogger("Sensors")
         self.i2c = i2c
         self.SENSOR_MODULES = SENSOR_MODULES
@@ -24,6 +25,15 @@ class Sensors:
             self.log.error(f"Failed to load SGP30 sensor module: {e}")
         except Exception as e:
             self.log.error(f"Failed to load SGP30 sensor module: {e}")
+        
+        try:
+            self.log.info("Loading BME280 sensor module")
+            self.available_modules["BME280"] = BME280(self.i2c)
+            self.log.info("Loaded BME280 sensor module")
+        except RuntimeError as e:
+            self.log.error(f"Failed to load BME280 sensor module: {e}")
+        except Exception as e:
+            self.log.error(f"Failed to load BME280 sensor module: {e}")
     
     def _configure_modules(self) -> None:
         self.log.info(f"Attempting to locate drivers for: {self.SENSOR_MODULES}")
