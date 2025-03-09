@@ -34,8 +34,8 @@ Press the space_open or space_closed buttons to call the smib server endpoint ap
 ### Pico W Connections
 ![Circuit diagram](images/SMIBHID%20circuit%20diagram.drawio.png)
 
-### Pico W pinout
-![Pico W pinout](images/pico_w_pinout.png)
+### Pico 2 W pinout
+![Pico 2 W pinout](images/pico_2_w_pinout.png)
 
 ### Example breadboard build
 ![Breadboard photo](images/breadboard.jpg)
@@ -54,7 +54,9 @@ Below is a list of hardware and links for my specific build:
 - [SGP30 I2C sensor](https://thepihut.com/products/sgp30-air-quality-sensor-breakout)
 
 ## Deployment
-Copy the files from the smibhib folder into the root of a Pico W running Micropython (minimum Pico W Micropython firmware v1.22.2 https://micropython.org/download/RPI_PICO_W/) and update values in config.py as necessary
+Copy the files from the smibhib folder into the root of a Pico 2 W running Micropython (minimum Pico 2 W Micropython firmware v1.25.0-preview.365 https://micropython.org/download/RPI_PICO2_W/) and update values in config.py as necessary.
+
+This project should work on a Pico W on recent firmware, but we have moved development, testing and our production SMIBHIDs to Pico 2 Ws.
 
 ### Configuration
 - Ensure the pins for the space open/closed LEDs and buttons are correctly specified for your wiring
