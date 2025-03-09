@@ -34,14 +34,13 @@ class Sensors:
 
     async def _poll_sensors(self) -> None:
         """
-        Asynchronously poll sensors and log readings every X seconds as per
-        config.
+        Asynchronously poll sensors and log readings every 60 seconds.
         """
         while True:
             readings = self.get_readings()
             for reading in readings:
                 self.log.info(f"Module: {reading}: {readings[reading]}")
-            await sleep(5)
+            await sleep(60)
     
     def get_modules(self) -> list:
         """
