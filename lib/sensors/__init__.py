@@ -5,6 +5,7 @@ from lib.ulogging import uLogger
 from lib.sensors.SGP30 import SGP30
 from lib.sensors.BME280 import BME280
 from lib.sensors.sensor_module import SensorModule
+from lib.sensors.file_logging import FileLogger
 
 class Sensors:
     def __init__(self, i2c: I2C) -> None:
@@ -13,6 +14,7 @@ class Sensors:
         self.SENSOR_MODULES = SENSOR_MODULES
         self.available_modules: dict[str, SensorModule] = {}
         self.configured_modules: dict[str, SensorModule] = {}
+        self.file_logger = FileLogger()
         self.load_modules()
         self._configure_modules()   
 
@@ -58,8 +60,12 @@ class Sensors:
         """
         while True:
             readings = self.get_readings()
+            
             for reading in readings:
                 self.log.info(f"Module: {reading}: {readings[reading]}")
+            
+            self.file_logger.log_minute_entry(readings)
+            
             await sleep(60)
     
     def get_modules(self) -> list:
