@@ -11,17 +11,27 @@ class Sensors:
         self.i2c = i2c
         self.SENSOR_MODULES = SENSOR_MODULES
         self.available_modules: dict[str, SensorModule] = {}
-        self.available_modules["SGP30"] = SGP30(self.i2c)
         self.configured_modules: dict[str, SensorModule] = {}
-        self._load_modules()   
+        self.load_modules()
+        self._configure_modules()   
 
-    def _load_modules(self) -> None:
+    def load_modules(self) -> None:
+        try:
+            self.log.info("Loading SGP30 sensor module")
+            self.available_modules["SGP30"] = SGP30(self.i2c)
+            self.log.info("Loaded SGP30 sensor module")
+        except RuntimeError as e:
+            self.log.error(f"Failed to load SGP30 sensor module: {e}")
+        except Exception as e:
+            self.log.error(f"Failed to load SGP30 sensor module: {e}")
+    
+    def _configure_modules(self) -> None:
         self.log.info(f"Attempting to locate drivers for: {self.SENSOR_MODULES}")
         for sensor_module in self.SENSOR_MODULES:
             if sensor_module in self.available_modules:
                 self.log.info(f"Found driver for {sensor_module}")
                 self.configured_modules[sensor_module] = self.available_modules[sensor_module]
-                self.log.info(f"Loaded {sensor_module} sensor module")
+                self.log.info(f"Configured {sensor_module} sensor module")
                 self.log.info(f"Available sensors: {self.get_sensors(sensor_module)}")
             else:
                 self.log.error(f"Driver not found for {sensor_module}")

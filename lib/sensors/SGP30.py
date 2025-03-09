@@ -44,7 +44,6 @@ Implementation Notes
 import math
 import time
 from micropython import const
-from lib.ulogging import uLogger
 from lib.sensors.sensor_module import SensorModule
 
 __version__ = "0.0.0-auto.0"
@@ -72,8 +71,6 @@ class SGP30(SensorModule):
     def __init__(self, i2c, address=_SGP30_DEFAULT_I2C_ADDR):
         """Initialize the sensor, get the serial # and verify that we found a proper SGP30"""
         super().__init__(["co2eq", "tvoc"])
-        self.log = uLogger("SGP30")
-        self.log.info("SGP30 sensor module loaded")
         self._i2c = i2c
         self._addr = address
 
