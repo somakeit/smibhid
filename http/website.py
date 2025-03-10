@@ -4,6 +4,7 @@ from lib.module_config import ModuleConfig
 from json import dumps
 import uasyncio
 from lib.updater import UpdateCore
+from lib.sensors.file_logging import FileLogger
 
 class WebApp:
 
@@ -74,6 +75,7 @@ class WebApp:
         self.app.add_resource(Sensors, '/api/sensors/<module>', sensors = self.sensors, logger = self.log)
         self.app.add_resource(Readings, '/api/sensors/readings/<module>', sensors = self.sensors, logger = self.log)
         self.app.add_resource(Readings, '/api/sensors/readings', module = "", sensors = self.sensors, logger = self.log)
+        self.app.add_resource(SensorData, '/api/sensors/readings/log/<log_type>', logger = self.log)
     
 class WLANMAC():
 
@@ -140,5 +142,17 @@ class Readings():
     def get(self, data, module: str, sensors, logger: uLogger) -> str:
         logger.info(f"API request - sensors/readings - Module: {module}")
         html = dumps(sensors.get_readings(module))
+        logger.info(f"Return value: {html}")
+        return html
+
+class SensorData():
+
+    def get(self, data, log_type: str, logger: uLogger) -> str:
+        logger.info(f"API request - sensors/readings/{log_type}")
+        try:
+            html = FileLogger().get_log(log_type)
+        except Exception as e:
+            logger.error(f"Failed to get {log_type} log: {e}")
+            html = "Failed to get log"
         logger.info(f"Return value: {html}")
         return html

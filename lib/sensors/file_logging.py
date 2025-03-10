@@ -1,7 +1,6 @@
 #TODO: Add max file size limit to log files
 #TODO: Add smib last upload preserve cache to minute log
 #TODO: Test hour logger
-#TODO: Add file data GETs to API
 
 from lib.ulogging import uLogger
 from os import listdir, mkdir
@@ -115,3 +114,36 @@ class FileLogger:
             self.last_hour_log_timestamp = time()
             return True
         return False
+
+    def get_log(self, log_type: str) -> str:
+        """
+        Return the requested log as a JSON string.
+        """
+        if log_type == "minute":
+            return self.get_minute_log()
+        elif log_type == "hour":
+            return self.get_hour_log()
+        else:
+            return "Invalid log type"
+    
+    def get_minute_log(self) -> str:
+        """
+        Return the minute log as a JSON string.
+        """
+        try:
+            with open("/data/sensors/minute_log.txt", "r") as f:
+                return dumps(f.read())
+        except Exception as e:
+            self.log.error(f"Failed to get minute log: {e}")
+            return "Failed to get minute log"
+    
+    def get_hour_log(self) -> str:
+        """
+        Return the hour log as a JSON string.
+        """
+        try:
+            with open("/data/sensors/hour_log.txt", "r") as f:
+                return dumps(f.read())
+        except Exception as e:
+            self.log.error(f"Failed to get hour log: {e}")
+            return "Failed to get hour log"
