@@ -4,6 +4,7 @@ from config import SENSOR_MODULES
 from lib.ulogging import uLogger
 from lib.sensors.SGP30 import SGP30
 from lib.sensors.BME280 import BME280
+from lib.sensors.SCD30 import SCD30
 from lib.sensors.sensor_module import SensorModule
 
 class Sensors:
@@ -34,6 +35,15 @@ class Sensors:
             self.log.error(f"Failed to load BME280 sensor module: {e}")
         except Exception as e:
             self.log.error(f"Failed to load BME280 sensor module: {e}")
+
+        try:
+            self.log.info("Loading SCD30 sensor module")
+            self.available_modules["SCD30"] = SCD30(self.i2c)
+            self.log.info("Loaded SCD30 sensor module")
+        except RuntimeError as e:
+            self.log.error(f"Failed to load SCD30 sensor module: {e}")
+        except Exception as e:
+            self.log.error(f"Failed to load SCD30 sensor module: {e}")
     
     def _configure_modules(self) -> None:
         self.log.info(f"Attempting to locate drivers for: {self.SENSOR_MODULES}")

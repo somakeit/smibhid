@@ -51,7 +51,7 @@ SCL_PIN = 9
 I2C_ID = 0
 I2C_FREQ = 400000
 
-## Sensors - Populate driver list with connected sensor modules from this supported list: ["SGP30", "BME280"]
+## Sensors - Populate driver list with connected sensor modules from this supported list: ["SGP30", "BME280", "SCD30"]
 SENSOR_MODULES = []
 
 ## Displays - Populate driver list with connected displays from this supported list: ["LCD1602"]
