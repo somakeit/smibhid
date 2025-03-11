@@ -120,7 +120,7 @@ Use existing space state buttons, lights, slack API wrapper and watchers as an e
   - Ensure the init method takes one mandatory parameter for the I2C interface
   - Modify the driver module to extend SensorModule
   - Provide a list of sensor names on this module to class super init
-  - Ensure the init method raises an error if device not found or has nay configuration error to be caught by the sensors module driver load method
+  - Ensure the init method raises an error if device not found or has any configuration error to be caught by the sensors module driver load method
   - Overload the get_reading() method to return a dictionary of sensor name - reading value pairs
   - Update the config.py file to include the option for your new driver
   - Add the module import to sensors.\_\_init\_\_.py
