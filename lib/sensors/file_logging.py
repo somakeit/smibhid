@@ -1,6 +1,6 @@
 #TODO: Add max file size limit to log files
 #TODO: Add smib last upload preserve cache to minute log
-#TODO: Test hour logger
+#TODO: Test hour logger - hour data is not generating - no errors
 
 from lib.ulogging import uLogger
 from os import listdir, mkdir
@@ -42,12 +42,12 @@ class FileLogger:
         entry = dumps({"unixtime": unixtime, "timestamp": timestamp, "data": data})
         try:
             with open("/data/sensors/minute_log.txt", "a") as f:
-                f.write(entry)
+                f.write(entry + "\n")
             self.log.info(f"Minute entry logged {entry}")
         except Exception as e:
             self.log.error(f"Failed to log minute entry: {e}")
         
-        if self.is_it_time_generate_hour_log():
+        if self.is_it_time_to_generate_hour_log():
             try:
                 self.log.info("Generating hour log")
                 self.process_hour_logs()
@@ -102,18 +102,24 @@ class FileLogger:
 
         return processed_data
     
-    def is_it_time_generate_hour_log(self) -> bool:
+    def is_it_time_to_generate_hour_log(self) -> bool:
         """
         Return True if current time is greater than the last hour log timestamp + 3600 seconds.
         """
         if self.last_hour_log_timestamp is None:
+            self.log.info("Setting hour log timestamp from None")
             self.last_hour_log_timestamp = time()
             return False
         
         if time() > self.last_hour_log_timestamp + 3600:
+            self.log.info("It's time to generate hour log")
             self.last_hour_log_timestamp = time()
+            self.log.info(f"Last hour log timestamp updated to {self.last_hour_log_timestamp}")
             return True
-        return False
+        else:
+            seconds_since_last_hour_log = time() - self.last_hour_log_timestamp
+            self.log.info(f"Seconds since last hour log: {seconds_since_last_hour_log}")
+            return False
 
     def get_log(self, log_type: str) -> str:
         """
