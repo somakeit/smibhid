@@ -30,6 +30,7 @@ Press the space_open or space_closed buttons to call the smib server endpoint ap
   - Supported sensors
     - SGP30 (Equivalent CO2 and VOC)
     - BME280
+    - SCD30
 
 ## Circuit diagram
 ### Pico W Connections
@@ -54,6 +55,7 @@ Below is a list of hardware and links for my specific build:
 - [2x16 Character I2C display](https://thepihut.com/products/lcd1602-i2c-module?variant=42422810083523)
 - [SGP30 I2C sensor](https://thepihut.com/products/sgp30-air-quality-sensor-breakout)
 - [BME280 sensor](https://thepihut.com/products/bme280-breakout-temperature-pressure-humidity-sensor)
+- [SCD30 sensor](https://thepihut.com/products/adafruit-scd-30-ndir-co2-temperature-and-humidity-sensor)
 
 ## Deployment
 Copy the files from the smibhib folder into the root of a Pico 2 W running Micropython (minimum Pico 2 W Micropython firmware v1.25.0-preview.365 https://micropython.org/download/RPI_PICO2_W/) and update values in config.py as necessary.
