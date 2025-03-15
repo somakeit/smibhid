@@ -158,7 +158,7 @@ class BME280(SensorModule):
         raw_hum = (readout[6] << 8) | readout[7]
 
         result[0] = raw_temp
-        result[1] = raw_press / 100
+        result[1] = raw_press
         result[2] = raw_hum
 
     def read_compensated_data(self, result=None):
@@ -251,7 +251,7 @@ class BME280(SensorModule):
         return 243.12 * h / (17.62 - h)
 
     @property
-    def values(self):
+    def values(self) -> tuple:
         """ human readable values """
 
         t, p, h = self.read_compensated_data()
@@ -260,7 +260,7 @@ class BME280(SensorModule):
                 "{:.2f}%".format(h))
     
     def get_reading(self) -> dict:
-        data = self.read_compensated_data()
+        data = self.values
         reading = {
             "temp": data[0],
             "pressure": data[1],
