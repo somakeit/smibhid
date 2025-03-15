@@ -70,7 +70,7 @@ class SGP30(SensorModule):
 
     def __init__(self, i2c, address=_SGP30_DEFAULT_I2C_ADDR):
         """Initialize the sensor, get the serial # and verify that we found a proper SGP30"""
-        super().__init__(["co2eq", "tvoc"])
+        super().__init__([{"name": "co2eq", "unit": "ppm"}, {"name": "tvoc", "unit": "ppm"}])        
         self._i2c = i2c
         self._addr = address
 
@@ -195,9 +195,13 @@ class SGP30(SensorModule):
                 else:
                     crc <<= 1
         return crc & 0xFF
+    
+    def get_formatted_reading(self) -> tuple:
+        co2eq, tvoc = self.iaq_measure()
+        return (int(co2eq), int(tvoc))
 
-    def get_reading(self):
-        reading = self.iaq_measure()
+    def get_reading(self) -> dict:
+        reading = self.get_formatted_reading()
         data = {
             "co2eq": reading[0],
             "tvoc": reading[1]

@@ -56,7 +56,7 @@ class SCD30(SensorModule):
         ]
 
     def __init__(self, i2c: I2C, pause=1000):
-        super().__init__(["co2", "temperature", "relative_humidity"])
+        super().__init__([{"name": "co2", "unit": "ppm"}, {"name": "temperature", "unit": "°C"}, {"name": "relative_humidity", "unit": "%"}])
         self.i2c = i2c
         self.pause = pause
         self.addr = 0x61
@@ -176,6 +176,11 @@ class SCD30(SensorModule):
             crc = self.CRC_TABLE[crc]
         return crc
 
-    def get_reading(self) -> dict:
+    def get_formatted_reading(self):
         co2, temperature, relative_humidity = self.read_measurement()
+        return (int(co2), "{:.2f}".format(temperature),
+                "{:.2f}".format(relative_humidity))
+    
+    def get_reading(self) -> dict:
+        co2, temperature, relative_humidity = self.get_formatted_reading()
         return {"co2": co2, "temperature": temperature, "relative_humidity": relative_humidity}
