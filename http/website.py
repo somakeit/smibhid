@@ -78,8 +78,8 @@ class WebApp:
         #self.app.add_resource(Readings, '/api/sensors/modules/<module>/readings/latest', sensors = self.sensors, logger = self.log) #TODO: Fix tinyweb to allow for multiple parameters https://github.com/belyalov/tinyweb/pull/51
         self.app.add_resource(Readings, '/api/sensors/readings/latest', module = "", sensors = self.sensors, logger = self.log)
         self.app.add_resource(SensorData, '/api/sensors/readings/log/<log_type>', logger = self.log)
-        self.app.add_resource(SCD30, '/api/sensors/scd30/auto_measure', sensors = self.sensors, logger = self.log)
-        self.app.add_resource(SCD30, '/api/sensors/scd30/auto_measure/<start_stop>', sensors = self.sensors, logger = self.log)
+        self.app.add_resource(SCD30, '/api/sensors/modules/SCD30/auto_measure', sensors = self.sensors, logger = self.log)
+        self.app.add_resource(SCD30, '/api/sensors/modules/SCD30/auto_measure/<start_stop>', sensors = self.sensors, logger = self.log)
     
 class WLANMAC():
 
