@@ -56,7 +56,7 @@ class SCD30(SensorModule):
         ]
 
     def __init__(self, i2c: I2C, pause=1000):
-        super().__init__([{"name": "co2", "unit": "ppm"}, {"name": "temperature", "unit": "°C"}, {"name": "relative_humidity", "unit": "%"}])
+        super().__init__([{"name": "co2", "unit": "ppm"}, {"name": "temperature", "unit": "C"}, {"name": "relative_humidity", "unit": "%"}]) # Don't use degrees sign, it breaks json.dumps()
         self.i2c = i2c
         self.pause = pause
         self.addr = 0x61

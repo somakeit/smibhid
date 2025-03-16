@@ -271,7 +271,7 @@ class BME280(SensorModule):
     def get_reading(self) -> dict:
         data = self.values_no_units
         reading = {
-            "temp": data[0],
+            "temperature": data[0],
             "pressure": data[1],
             "humidity": data[2]
         }
