@@ -73,7 +73,7 @@ class BME280(SensorModule):
                  mode=BME280_OSAMPLE_8,
                  address=BME280_I2CADDR,
                  **kwargs):
-        super().__init__([{"name": "pressure", "unit": "hPa"}, {"name": "temperature", "unit": "°C"}, {"name": "humidity", "unit": "%"}])
+        super().__init__([{"name": "pressure", "unit": "hPa"}, {"name": "temperature", "unit": "C"}, {"name": "humidity", "unit": "%"}]) # Don't use degrees sign, it breaks json.dumps()
         # Check that mode is valid.
         if type(mode) is tuple and len(mode) == 3:
             self._mode_hum, self._mode_temp, self._mode_press = mode

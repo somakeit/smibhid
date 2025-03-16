@@ -19,7 +19,7 @@ class Sensors:
         self.load_modules()
         self._configure_modules()   
 
-    def load_modules(self) -> None:
+    def load_modules(self) -> None: #TODO DRY this out
         try:
             self.log.info("Loading SGP30 sensor module")
             self.available_modules["SGP30"] = SGP30(self.i2c)
@@ -89,7 +89,9 @@ class Sensors:
         Return list of sensors for a specific module name.
         """
         module_object = self.configured_modules[module]
-        return module_object.get_sensors()
+        sensors = module_object.get_sensors()
+        self.log.info(f"Available sensors for {module}: {sensors}")
+        return sensors
 
     def get_readings(self, module: str = "") -> dict:
         """

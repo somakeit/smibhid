@@ -137,7 +137,9 @@ class Sensors():
 
     def get(self, data, module: str, sensors, logger: uLogger) -> str:
         logger.info(f"API request - sensors/{module}")
-        html = dumps(sensors.get_sensors(module))
+        sensor_list = sensors.get_sensors(module)
+        logger.info(f"Available sensors: {sensor_list}")
+        html = dumps(sensor_list)
         logger.info(f"Return value: {html}")
         return html
 
