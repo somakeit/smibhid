@@ -5,7 +5,7 @@
 from lib.ulogging import uLogger
 from os import listdir, mkdir
 from time import time, localtime
-from json import dumps
+from json import dumps, loads
 
 class FileLogger:
     def __init__(self):
@@ -39,10 +39,11 @@ class FileLogger:
         self.log.info(f"Logging minute entry {data}")
         unixtime = time()
         timestamp = localtime(unixtime)
-        entry = dumps({"unixtime": unixtime, "timestamp": timestamp, "data": data})
+        entry = dumps({"unixtime": unixtime, "timestamp": timestamp, "data": data}) + "\n"
+        self.log.info(f"Minute entry: {entry}")
         try:
             with open("/data/sensors/minute_log.txt", "a") as f:
-                f.write(entry + "\n")
+                f.write(entry)
             self.log.info(f"Minute entry logged {entry}")
         except Exception as e:
             self.log.error(f"Failed to log minute entry: {e}")
@@ -137,8 +138,16 @@ class FileLogger:
         Return the minute log as a JSON string.
         """
         try:
+            data = []
             with open("/data/sensors/minute_log.txt", "r") as f:
-                return dumps(f.read())
+                for line in f:
+                    self.log.info(f"Minute log line: {line}")
+                    data.append(loads(line))
+            self.log.info(f"Minute log data: {data}")
+            json_data = dumps(data)
+            self.log.info(f"Minute log json data: {json_data}")
+            return json_data
+
         except Exception as e:
             self.log.error(f"Failed to get minute log: {e}")
             return "Failed to get minute log"
@@ -149,7 +158,7 @@ class FileLogger:
         """
         try:
             with open("/data/sensors/hour_log.txt", "r") as f:
-                return dumps(f.read())
+                return f.read()
         except Exception as e:
             self.log.error(f"Failed to get hour log: {e}")
             return "Failed to get hour log"
