@@ -6,12 +6,13 @@ from lib.module_config import ModuleConfig
 from lib.display import Display
 from lib.networking import WirelessNetwork
 from lib.rfid.reader import RFIDReader
-from config import RFID_ENABLED, CLOCK_FREQUENCY
+from config import RFID_ENABLED, CLOCK_FREQUENCY, SDA_PIN, SCL_PIN, I2C_ID, I2C_FREQ
 from lib.uistate import UIState
 from lib.ui_log import UILog
 from http.website import WebApp
 from lib.pinger import Pinger
-from machine import freq
+from machine import freq, I2C
+from lib.sensors import Sensors
 
 class HID:
     
@@ -26,9 +27,11 @@ class HID:
         self.log.info("Setting CPU frequency to: " + str(CLOCK_FREQUENCY / 1000000) + "MHz")
         freq(CLOCK_FREQUENCY)
         self.loop_running = False
+        self.i2c = I2C(I2C_ID, sda = SDA_PIN, scl = SCL_PIN, freq = I2C_FREQ)
         self.moduleConfig = ModuleConfig()
-        self.moduleConfig.register_display(Display())
+        self.moduleConfig.register_display(Display(self.i2c))
         self.moduleConfig.register_wifi(WirelessNetwork())
+        self.moduleConfig.register_sensors(Sensors(self.i2c))
         if RFID_ENABLED:
             self.moduleConfig.register_rfid(RFIDReader(Event()))
         self.display = self.moduleConfig.get_display()
@@ -38,6 +41,7 @@ class HID:
         self.ui_log = self.moduleConfig.get_ui_log()
         self.space_state = SpaceState(self.moduleConfig, self)
         self.pinger = Pinger(self.moduleConfig, self)
+        self.sensors = self.moduleConfig.get_sensors()
         self.error_handler = ErrorHandler("HID")
         self.error_handler.configure_display(self.display)
         self.web_app = WebApp(self.moduleConfig, self)
@@ -60,6 +64,7 @@ class HID:
         self.space_state.startup()
         if self.reader:
             self.reader.startup()
+        self.sensors.startup()
         self.ui_log.startup()
         self.web_app.startup()
       

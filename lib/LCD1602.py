@@ -50,7 +50,7 @@ LCD_5x8DOTS = 0x00
 class LCD1602:
     """Driver for the LCD1602 16x2 character LED display"""
 
-    def __init__(self) -> None:
+    def __init__(self, i2c) -> None:
         """Configure and connect to display via I2C, throw error on connection issue."""
         self.log = uLogger("LCD1602")
         self.log.info("Init LCD1602 display driver")
@@ -60,7 +60,7 @@ class LCD1602:
         self.spinner_task = None
 
         try:
-            self.LCD1602_I2C = I2C(I2C_ID, sda = SDA_PIN, scl = SCL_PIN, freq = 400000)
+            self.LCD1602_I2C = i2c
             self._showfunction = LCD_4BITMODE | LCD_1LINE | LCD_5x8DOTS
             self._begin(self._row)
         except BaseException:

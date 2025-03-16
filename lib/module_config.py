@@ -22,6 +22,7 @@ class ModuleConfig:
         self.wifi = None
         self.reader = None
         self.ui_log = None
+        self.sensors = None
 
     def register_display(self, display: Display) -> None:
         self.display = display
@@ -34,6 +35,9 @@ class ModuleConfig:
     
     def register_ui_log(self, ui_log: UILog) -> None:
         self.ui_log = ui_log
+    
+    def register_sensors(self, sensors) -> None:
+        self.sensors = sensors
 
     def get_display(self) -> Display:
         if not self.display:
@@ -59,3 +63,8 @@ class ModuleConfig:
             raise ModuleNotRegisteredError("UI Log")
         return self.ui_log
     
+    def get_sensors(self):
+        if not self.sensors:
+            self.log.warn("Sensors module not registered")
+            raise ModuleNotRegisteredError("Sensors")
+        return self.sensors
