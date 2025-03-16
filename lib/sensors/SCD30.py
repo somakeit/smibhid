@@ -2,6 +2,7 @@ from machine import I2C
 import utime
 import struct
 from lib.sensors.sensor_module import SensorModule
+from math import isnan
 
 class SCD30(SensorModule):
 
@@ -176,8 +177,11 @@ class SCD30(SensorModule):
             crc = self.CRC_TABLE[crc]
         return crc
 
-    def get_formatted_reading(self):
+    def get_formatted_reading(self) -> tuple:
         co2, temperature, relative_humidity = self.read_measurement()
+        if isnan(co2) or isnan(temperature) or isnan(relative_humidity):
+            self.log.warn("SCD30 sensor returning NaN as not collecting samples, dropping reading")
+            return (None, None, None)
         return (int(co2), "{:.2f}".format(temperature),
                 "{:.2f}".format(relative_humidity))
     
