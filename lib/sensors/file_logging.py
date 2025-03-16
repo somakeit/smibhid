@@ -32,14 +32,21 @@ class FileLogger:
             self.log.error(f"Failed to check for {folder} in {path}: {e}")
             return False
     
+    def localtime_to_iso8601(self, localtime_tuple) -> str:
+        """
+        Convert a localtime tuple to an ISO 8601 formatted string.
+        """
+        year, month, day, hour, minute, second, *_ = localtime_tuple
+        return f"{year:04d}-{month:02d}-{day:02d}T{hour:02d}:{minute:02d}:{second:02d}Z"
+    
     def log_minute_entry(self, data: dict) -> None:
         """
         Add a unixtime and tuple timestamp to the provided minute log entries in and append to the minute_log.txt file.
         """
         self.log.info(f"Logging minute entry {data}")
-        unixtime = time()
-        timestamp = localtime(unixtime)
-        entry = dumps({"unixtime": unixtime, "timestamp": timestamp, "data": data}) + "\n"
+        timestamp = time()
+        human_timestamp = self.localtime_to_iso8601(localtime(timestamp))
+        entry = dumps({"timestamp": timestamp, "human_timestamp": human_timestamp, "data": data}) + "\n"
         self.log.info(f"Minute entry: {entry}")
         try:
             with open("/data/sensors/minute_log.txt", "a") as f:
@@ -70,14 +77,14 @@ class FileLogger:
         minute_log = [eval(entry) for entry in minute_log if entry != ""]
         hour_log = {}
         for entry in minute_log:
-            if entry["unixtime"] < time() - 3600:
+            if entry["timestamp"] < time() - 3600:
                 new_minute_log.append(entry)
                 for module in entry["data"]:
                     for sensor in module:
                         hour_data[module][sensor].append(entry["data"][module][sensor])
         
         hour_log_data = self.process_hour_data_values(hour_data)
-        hour_log = {"unixtime": time(), "timestamp": localtime(time()), "data": hour_log_data}
+        hour_log = {"timestamp": time(), "human_timestamp": localtime(time()), "data": hour_log_data}
         
         with open("/data/sensors/hour_log.txt", "a") as f:
             f.write(dumps(hour_log) + "\n")
