@@ -1,6 +1,4 @@
-#TODO: Add max file size limit to log files
-#TODO: Add smib last upload preserve cache to minute log
-#TODO: Test hour logger - hour data is not generating - no errors
+#TODO: Add max file size limit to log files - same as logger
 
 from lib.ulogging import uLogger
 from os import listdir, mkdir
@@ -69,22 +67,28 @@ class FileLogger:
         Truncate the minute log to last 60 minutes.
         """
         new_minute_log = []
-        hour_data = []
-        with open("/data/sensors/minute_log.txt", "r") as f:
-            minute_log = f.read()
-        minute_log = minute_log.split("\n")
+        hour_data = {}
+        minute_log: list = self.get_minute_log()
         
-        minute_log = [eval(entry) for entry in minute_log if entry != ""]
-        hour_log = {}
-        for entry in minute_log:
-            if entry["timestamp"] < time() - 3600:
-                new_minute_log.append(entry)
-                for module in entry["data"]:
-                    for sensor in module:
-                        hour_data[module][sensor].append(entry["data"][module][sensor])
+        for minute in minute_log:
+            if minute["timestamp"] > time() - 3600:
+                new_minute_log.append(minute)
+            for module, data in minute["data"].items():
+                if module not in hour_data:
+                    hour_data[module] = {}
+                self.log.info(f"Module: {module}")
+                self.log.info(f"Data: {data}")
+                for sensor, value in data.items():
+                    if sensor not in hour_data[module]:
+                        hour_data[module][sensor] = []
+                    self.log.info(f"Sensor: {sensor}")
+                    self.log.info(f"Value: {value}")
+                    hour_data[module][sensor].append(value)
         
+        self.log.info(f"Hour data: {hour_data}")
         hour_log_data = self.process_hour_data_values(hour_data)
-        hour_log = {"timestamp": time(), "human_timestamp": localtime(time()), "data": hour_log_data}
+        self.log.info(f"Hour log data: {hour_log_data}")
+        hour_log = {"timestamp": time(), "human_timestamp": self.localtime_to_iso8601(localtime(time())), "data": hour_log_data}
         
         with open("/data/sensors/hour_log.txt", "a") as f:
             f.write(dumps(hour_log) + "\n")
@@ -95,18 +99,19 @@ class FileLogger:
             for entry in new_minute_log:
                 f.write(dumps(entry) + "\n")
     
-    def process_hour_data_values(self, data: list) -> list:
+    def process_hour_data_values(self, data: dict) -> dict:
         """
         Process the min, max and average values for each sensor in the hour log.
         """
-        processed_data = []
-        
-        for module in data:
-            for sensor in module:
-                min_value = min(module[sensor])
-                max_value = max(module[sensor])
-                average_value = sum(module[sensor]) / len(module[sensor])
-                processed_data[module][sensor] = {"min": min_value, "max": max_value, "average": average_value}
+        processed_data = {}
+
+        for module, sensors in data.items():
+            processed_data[module] = {}
+            for sensor, values in sensors.items():
+                processed_data[module][sensor] = {}
+                processed_data[module][sensor]["avg"] = round(sum(values) / len(values), 2)
+                processed_data[module][sensor]["max"] = max(values)
+                processed_data[module][sensor]["min"] = min(values)
 
         return processed_data
     
@@ -120,7 +125,7 @@ class FileLogger:
             return False
         
         if time() > self.last_hour_log_timestamp + 3600:
-            self.log.info("It's time to generate hour log")
+            self.log.info("It's time to generate the hour log")
             self.last_hour_log_timestamp = time()
             self.log.info(f"Last hour log timestamp updated to {self.last_hour_log_timestamp}")
             return True
@@ -129,7 +134,7 @@ class FileLogger:
             self.log.info(f"Seconds since last hour log: {seconds_since_last_hour_log}")
             return False
 
-    def get_log(self, log_type: str) -> str:
+    def get_log(self, log_type: str) -> list:
         """
         Return the requested log as a JSON string.
         """
@@ -138,34 +143,36 @@ class FileLogger:
         elif log_type == "hour":
             return self.get_hour_log()
         else:
-            return "Invalid log type"
+            return ["Invalid log type"]
     
-    def get_minute_log(self) -> str:
+    def get_minute_log(self) -> list: # TODO: DRY minute and hour log methods
         """
-        Return the minute log as a JSON string.
+        Return the minute log as a list of data readings dictionaries.
         """
         try:
             data = []
             with open("/data/sensors/minute_log.txt", "r") as f:
                 for line in f:
-                    self.log.info(f"Minute log line: {line}")
                     data.append(loads(line))
-            self.log.info(f"Minute log data: {data}")
-            json_data = dumps(data)
-            self.log.info(f"Minute log json data: {json_data}")
-            return json_data
+            return data
 
         except Exception as e:
             self.log.error(f"Failed to get minute log: {e}")
-            return "Failed to get minute log"
+            return ["Failed to get minute log"]
     
-    def get_hour_log(self) -> str:
+    def get_hour_log(self) -> list:
         """
         Return the hour log as a JSON string.
         """
         try:
+            data = []
             with open("/data/sensors/hour_log.txt", "r") as f:
-                return f.read()
+                for line in f:
+                    self.log.info(f"Hour log line: {line}")
+                    data.append(loads(line))
+            self.log.info(f"Hour log data: {data}")
+            return data
+
         except Exception as e:
             self.log.error(f"Failed to get hour log: {e}")
-            return "Failed to get hour log"
+            return ["Failed to get hour log"]

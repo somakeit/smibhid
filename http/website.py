@@ -156,7 +156,7 @@ class SensorData():
     def get(self, data, log_type: str, logger: uLogger) -> str:
         logger.info(f"API request - sensors/readings/{log_type}")
         try:
-            html = FileLogger().get_log(log_type)
+            html = dumps(FileLogger().get_log(log_type))
         except Exception as e:
             logger.error(f"Failed to get {log_type} log: {e}")
             html = "Failed to get log"
