@@ -1,7 +1,5 @@
-#TODO: Add max file size limit to log files - same as logger
-
 from lib.ulogging import uLogger
-from os import listdir, mkdir
+from os import listdir, mkdir, stat, remove, rename
 from time import time, localtime
 from json import dumps, loads
 
@@ -11,6 +9,13 @@ class FileLogger:
         self.check_and_create_folder("/", "data")
         self.check_and_create_folder("/data/", "sensors")
         self.last_hour_log_timestamp = None
+        self.minute_log_file = "/data/sensors/minute_log.txt"
+        self.hour_log_file = "/data/sensors/hour_log.txt"
+        self.second_hour_log_file = "/data/sensors/hour_log2.txt"
+        self.check_and_create_file("/data/sensors/", "minute_log.txt")
+        self.check_and_create_file("/data/sensors/", "hour_log.txt")
+        self.check_and_create_file("/data/sensors/", "hour_log2.txt")
+        self.LOG_FILE_MAX_SIZE = 7500
     
     def check_and_create_folder(self, path: str, folder: str) -> bool:
         """
@@ -28,6 +33,25 @@ class FileLogger:
             return True
         except Exception as e:
             self.log.error(f"Failed to check for {folder} in {path}: {e}")
+            return False
+    
+    def check_and_create_file(self, path: str, file: str) -> bool:
+        """
+        Check if a file exists in a given path.
+        File should be provided with a fully qualified path as strings.
+        """
+        self.log.info(f"Checking for {file} in {path}")
+        try:
+            if file not in listdir(path):
+                self.log.info(f"{file} does not exist in {path} - creating")
+                with open(path + file, "w") as f:
+                    f.write("")
+                self.log.info(f"{file} created in {path}")
+            else:
+                self.log.info(f"{file} exists in {path}")
+            return True
+        except Exception as e:
+            self.log.error(f"Failed to check for {file} in {path}: {e}")
             return False
     
     def localtime_to_iso8601(self, localtime_tuple) -> str:
@@ -93,6 +117,8 @@ class FileLogger:
         with open("/data/sensors/hour_log.txt", "a") as f:
             f.write(dumps(hour_log) + "\n")
         
+        self.check_for_hour_log_rotate()
+        
         with open("/data/sensors/minute_log.txt", "w") as f:
             f.write("")
         with open("/data/sensors/minute_log.txt", "a") as f:
@@ -145,34 +171,57 @@ class FileLogger:
         else:
             return ["Invalid log type"]
     
-    def get_minute_log(self) -> list: # TODO: DRY minute and hour log methods
+    def get_minute_log(self) -> list[dict]:
         """
         Return the minute log as a list of data readings dictionaries.
         """
         try:
             data = []
-            with open("/data/sensors/minute_log.txt", "r") as f:
+            with open(self.minute_log_file, "r") as f:
                 for line in f:
                     data.append(loads(line))
             return data
 
         except Exception as e:
             self.log.error(f"Failed to get minute log: {e}")
-            return ["Failed to get minute log"]
+            return [{}]
     
-    def get_hour_log(self) -> list:
+    def get_hour_log(self) -> list[dict]:
         """
-        Return the hour log as a JSON string.
+        Return the hour log as a list of hour summary dictionaries.
         """
         try:
             data = []
-            with open("/data/sensors/hour_log.txt", "r") as f:
+            with open(self.hour_log_file, "r") as f:
                 for line in f:
                     self.log.info(f"Hour log line: {line}")
+                    data.append(loads(line))
+            with open(self.second_hour_log_file, "r") as f:
+                for line in f:
+                    self.log.info(f"Second hour log line: {line}")
                     data.append(loads(line))
             self.log.info(f"Hour log data: {data}")
             return data
 
         except Exception as e:
             self.log.error(f"Failed to get hour log: {e}")
-            return ["Failed to get hour log"]
+            return [{}]
+    
+    def check_for_hour_log_rotate(self) -> None:
+        hour_log_file_size = stat(self.hour_log_file)[6]
+        if hour_log_file_size > self.LOG_FILE_MAX_SIZE:
+            self.rotate_file(self.hour_log_file, self.second_hour_log_file)
+
+    def rotate_file(self, log_file: str, new_log_file: str) -> None:
+        try:
+            self.log.info(f"Rotating {log_file} to {new_log_file}")
+            remove(new_log_file)
+        except OSError:
+            print(f"{new_log_file} did not exist to be deleted.")
+        
+        try:
+            rename(log_file, new_log_file)
+            with open(log_file, "w") as f:
+                f.write("")
+        except Exception as e:
+            self.log.error(f"Failed to rotate {log_file} to {new_log_file}: {e}")
