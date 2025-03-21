@@ -271,7 +271,7 @@ class BME280(SensorModule):
     def get_reading(self) -> dict[str, float]:
         data = self.read_compensated_data()
         reading = {
-            "temp": round(data[0], 2),
+            "temperature": round(data[0], 2),
             "pressure": round((data[1] / 100), 1),
             "humidity": round(data[2], 2)
         }
