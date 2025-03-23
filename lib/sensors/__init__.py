@@ -15,9 +15,9 @@ class Sensors:
         self.SENSOR_MODULES = SENSOR_MODULES
         self.available_modules: dict[str, SensorModule] = {}
         self.configured_modules: dict[str, SensorModule] = {}
-        self.file_logger = FileLogger()
+        self.file_logger = FileLogger(init_files=True)
         self.load_modules()
-        self._configure_modules()   
+        self._configure_modules() 
 
     def load_modules(self) -> None: #TODO DRY this out
         try:

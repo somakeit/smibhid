@@ -1,21 +1,29 @@
+#TODO: Test log rotation
+
 from lib.ulogging import uLogger
 from os import listdir, mkdir, stat, remove, rename
 from time import time, localtime
 from json import dumps, loads
+from config import SENSOR_LOG_FILE_MAX_SIZE, SENSOR_LOG_CACHE_ENABLED
 
 class FileLogger:
-    def __init__(self):
+    def __init__(self, init_files: bool = False) -> None:
         self.log = uLogger("file_logger")
-        self.check_and_create_folder("/", "data")
-        self.check_and_create_folder("/data/", "sensors")
+        self.enabled = SENSOR_LOG_CACHE_ENABLED
+        if init_files is True:
+            self.init_file_structure()
         self.last_hour_log_timestamp = None
         self.minute_log_file = "/data/sensors/minute_log.txt"
         self.hour_log_file = "/data/sensors/hour_log.txt"
-        self.second_hour_log_file = "/data/sensors/hour_log2.txt"
+        self.LOG_FILE_MAX_SIZE = SENSOR_LOG_FILE_MAX_SIZE
+    
+    def init_file_structure(self) -> None:
+        self.check_and_create_folder("/", "data")
+        self.check_and_create_folder("/data/", "sensors")
         self.check_and_create_file("/data/sensors/", "minute_log.txt")
+        self.check_and_create_file("/data/sensors/", "minute_log2.txt")
         self.check_and_create_file("/data/sensors/", "hour_log.txt")
         self.check_and_create_file("/data/sensors/", "hour_log2.txt")
-        self.LOG_FILE_MAX_SIZE = 7500
     
     def check_and_create_folder(self, path: str, folder: str) -> bool:
         """
@@ -57,19 +65,31 @@ class FileLogger:
     def localtime_to_iso8601(self, localtime_tuple) -> str:
         """
         Convert a localtime tuple to an ISO 8601 formatted string.
+        Assumes UTC time zone for the localtime_tuple.
         """
-        year, month, day, hour, minute, second, *_ = localtime_tuple
+        try:
+            year, month, day, hour, minute, second, *_ = localtime_tuple
+        
+        except Exception as e:
+            self.log.error(f"Failed to convert localtime to ISO 8601: {e}")
+            return "0000-00-00T00:00:00Z"
+        
         return f"{year:04d}-{month:02d}-{day:02d}T{hour:02d}:{minute:02d}:{second:02d}Z"
     
     def log_minute_entry(self, data: dict) -> None:
         """
         Add a unixtime and tuple timestamp to the provided minute log entries in and append to the minute_log.txt file.
         """
+        if self.enabled is False:
+            self.log.info("Sensor log cache is disabled, skipping minute log entry")
+            return
+        
         self.log.info(f"Logging minute entry {data}")
-        timestamp = time()
-        human_timestamp = self.localtime_to_iso8601(localtime(timestamp))
-        entry = dumps({"timestamp": timestamp, "human_timestamp": human_timestamp, "data": data}) + "\n"
-        self.log.info(f"Minute entry: {entry}")
+
+        self.check_for_log_rotate(self.minute_log_file)
+
+        entry = self.create_minute_timestamped_entry(data)
+
         try:
             with open("/data/sensors/minute_log.txt", "a") as f:
                 f.write(entry)
@@ -80,66 +100,21 @@ class FileLogger:
         if self.is_it_time_to_generate_hour_log():
             try:
                 self.log.info("Generating hour log")
-                self.process_hour_logs()
+                self.process_hour_log()
                 self.log.info("Hour log generated")
             except Exception as e:
                 self.log.error(f"Failed to generate hour log: {e}")
-    
-    def process_hour_logs(self) -> None:
-        """
-        Create min, max and averge values for each sensor in the minute log and append to the hour log.
-        Truncate the minute log to last 60 minutes.
-        """
-        new_minute_log = []
-        hour_data = {}
-        minute_log: list = self.get_minute_log()
-        
-        for minute in minute_log:
-            if minute["timestamp"] > time() - 3600:
-                new_minute_log.append(minute)
-            for module, data in minute["data"].items():
-                if module not in hour_data:
-                    hour_data[module] = {}
-                self.log.info(f"Module: {module}")
-                self.log.info(f"Data: {data}")
-                for sensor, value in data.items():
-                    if sensor not in hour_data[module]:
-                        hour_data[module][sensor] = []
-                    self.log.info(f"Sensor: {sensor}")
-                    self.log.info(f"Value: {value}")
-                    hour_data[module][sensor].append(value)
-        
-        self.log.info(f"Hour data: {hour_data}")
-        hour_log_data = self.process_hour_data_values(hour_data)
-        self.log.info(f"Hour log data: {hour_log_data}")
-        hour_log = {"timestamp": time(), "human_timestamp": self.localtime_to_iso8601(localtime(time())), "data": hour_log_data}
-        
-        with open("/data/sensors/hour_log.txt", "a") as f:
-            f.write(dumps(hour_log) + "\n")
-        
-        self.check_for_hour_log_rotate()
-        
-        with open("/data/sensors/minute_log.txt", "w") as f:
-            f.write("")
-        with open("/data/sensors/minute_log.txt", "a") as f:
-            for entry in new_minute_log:
-                f.write(dumps(entry) + "\n")
-    
-    def process_hour_data_values(self, data: dict) -> dict:
-        """
-        Process the min, max and average values for each sensor in the hour log.
-        """
-        processed_data = {}
 
-        for module, sensors in data.items():
-            processed_data[module] = {}
-            for sensor, values in sensors.items():
-                processed_data[module][sensor] = {}
-                processed_data[module][sensor]["avg"] = round(sum(values) / len(values), 2)
-                processed_data[module][sensor]["max"] = max(values)
-                processed_data[module][sensor]["min"] = min(values)
+    def create_minute_timestamped_entry(self, data: dict) -> str:
+        """
+        Create a timestamped entry for the minute log file.
+        """
+        timestamp = time()
+        human_timestamp = self.localtime_to_iso8601(localtime(timestamp))
+        entry = dumps({"timestamp": timestamp, "human_timestamp": human_timestamp, "data": data}) + "\n"
+        self.log.info(f"Minute entry: {entry}")
 
-        return processed_data
+        return entry
     
     def is_it_time_to_generate_hour_log(self) -> bool:
         """
@@ -159,58 +134,141 @@ class FileLogger:
             seconds_since_last_hour_log = time() - self.last_hour_log_timestamp
             self.log.info(f"Seconds since last hour log: {seconds_since_last_hour_log}")
             return False
+    
+    def process_hour_log(self) -> None:
+        """
+        Create min, max and average values for each sensor in the minute log and append to the hour log.
+        Truncate the minute log to last 60 minutes.
+        """
+        
+        minute_log: list = self.get_specific_log(self.minute_log_file)
+        
+        new_minute_log, hour_data = self.process_minute_log(minute_log)
+        self.log.info(f"New minute log: {new_minute_log}")
+        self.log.info(f"Hour data: {hour_data}")
 
+        hour_log_data = self.process_hour_data_values(hour_data)
+        self.log.info(f"Hour log data: {hour_log_data}")
+
+        hour_log = {"timestamp": time(), "human_timestamp": self.localtime_to_iso8601(localtime(time())), "data": hour_log_data}
+        
+        self.write_out_logs(new_minute_log, hour_log)
+    
+    def process_minute_log(self, minute_log: list) -> tuple[list, dict]:
+        """
+        Process the minute log to return lists of results by sensor and return
+        a truncated minute log to the last 60 minutes.
+        """
+        new_minute_log = []
+        hour_data = {}
+
+        try: 
+            for minute in minute_log:
+                if minute["timestamp"] > time() - 3600:
+                    new_minute_log.append(minute)
+                for module, data in minute["data"].items():
+                    if module not in hour_data:
+                        hour_data[module] = {}
+                    self.log.info(f"Module: {module}")
+                    self.log.info(f"Data: {data}")
+                    for sensor, value in data.items():
+                        if sensor not in hour_data[module]:
+                            hour_data[module][sensor] = []
+                        self.log.info(f"Sensor: {sensor}")
+                        self.log.info(f"Value: {value}")
+                        hour_data[module][sensor].append(value)
+        
+        except Exception as e:
+            self.log.error(f"Failed to process minute log: {e}")
+            return minute_log, {}
+        
+        return new_minute_log, hour_data
+    
+    def process_hour_data_values(self, data: dict) -> dict:
+        """
+        Process the min, max and average values for each sensor in the hour log.
+        """
+        processed_data = {}
+
+        for module, sensors in data.items():
+            processed_data[module] = {}
+            for sensor, values in sensors.items():
+                processed_data[module][sensor] = {}
+                processed_data[module][sensor]["avg"] = round(sum(values) / len(values), 2)
+                processed_data[module][sensor]["max"] = max(values)
+                processed_data[module][sensor]["min"] = min(values)
+
+        return processed_data
+    
+    def write_out_logs(self, new_minute_log: list, hour_log: dict) -> None:
+        """
+        Write out the hour log rotating as necessary.
+        Write out the new minute log.
+        """
+        try:
+            with open("/data/sensors/hour_log.txt", "a") as f:
+                f.write(dumps(hour_log) + "\n")
+            
+            self.check_for_log_rotate(self.hour_log_file)
+            
+            with open("/data/sensors/minute_log.txt", "w") as f:
+                f.write("")
+            with open("/data/sensors/minute_log.txt", "a") as f:
+                for entry in new_minute_log:
+                    f.write(dumps(entry) + "\n")
+
+        except Exception as e:
+            self.log.error(f"Failed to write out logs: {e}")
+            self.check_for_log_rotate(self.hour_log_file)
+            self.check_for_log_rotate(self.minute_log_file)
+    
     def get_log(self, log_type: str) -> list:
         """
         Return the requested log as a JSON string.
         """
+        if self.enabled is False:
+            self.log.info("Sensor log cache is disabled - No log data to return")
+            return ["Sensor log cache is disabled"]
+
         if log_type == "minute":
-            return self.get_minute_log()
+            return self.get_specific_log(self.minute_log_file)
         elif log_type == "hour":
-            return self.get_hour_log()
+            return self.get_specific_log(self.hour_log_file)
         else:
             return ["Invalid log type"]
     
-    def get_minute_log(self) -> list[dict]:
+    def get_specific_log(self, log_file: str) -> list[dict]:
         """
-        Return the minute log as a list of data readings dictionaries.
+        Return the requested log file (fullly qualified path) as a list of dictionaries.
         """
+        self.log.info(f"Getting log file contents: {log_file}")
         try:
             data = []
-            with open(self.minute_log_file, "r") as f:
+            with open(log_file, "r") as f:
                 for line in f:
+                    self.log.info(f"Log line: {line}")
                     data.append(loads(line))
+            second_log_file = log_file.replace(".txt", "2.txt")
+            with open(second_log_file, "r") as f:
+                for line in f:
+                    self.log.info(f"Second log line: {line}")
+                    data.append(loads(line))
+            self.log.info(f"Log data: {data}")
             return data
 
         except Exception as e:
-            self.log.error(f"Failed to get minute log: {e}")
+            self.log.error(f"Failed to get {log_file} log: {e}")
             return [{}]
     
-    def get_hour_log(self) -> list[dict]:
-        """
-        Return the hour log as a list of hour summary dictionaries.
-        """
+    def check_for_log_rotate(self, log_file: str) -> None:
         try:
-            data = []
-            with open(self.hour_log_file, "r") as f:
-                for line in f:
-                    self.log.info(f"Hour log line: {line}")
-                    data.append(loads(line))
-            with open(self.second_hour_log_file, "r") as f:
-                for line in f:
-                    self.log.info(f"Second hour log line: {line}")
-                    data.append(loads(line))
-            self.log.info(f"Hour log data: {data}")
-            return data
-
+            log_file_size = stat(log_file)[6]
+            if log_file_size > self.LOG_FILE_MAX_SIZE:
+                new_log_file = log_file.replace(".txt", "2.txt")
+                self.rotate_file(log_file, new_log_file)
+        
         except Exception as e:
-            self.log.error(f"Failed to get hour log: {e}")
-            return [{}]
-    
-    def check_for_hour_log_rotate(self) -> None:
-        hour_log_file_size = stat(self.hour_log_file)[6]
-        if hour_log_file_size > self.LOG_FILE_MAX_SIZE:
-            self.rotate_file(self.hour_log_file, self.second_hour_log_file)
+            self.log.error(f"Failed to check for and execute log rotation: {e}")
 
     def rotate_file(self, log_file: str, new_log_file: str) -> None:
         try:
