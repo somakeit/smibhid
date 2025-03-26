@@ -23,7 +23,7 @@ class HID:
         """
         self.log = uLogger("HID")
         self.log.warn("SMIBHID has been restarted")
-        self.version = "1.3.0"
+        self.version = "1.4.0"
         self.log.info("Setting CPU frequency to: " + str(CLOCK_FREQUENCY / 1000000) + "MHz")
         freq(CLOCK_FREQUENCY)
         self.loop_running = False
