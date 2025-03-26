@@ -16,36 +16,28 @@ class Sensors:
         self.available_modules: dict[str, SensorModule] = {}
         self.configured_modules: dict[str, SensorModule] = {}
         self.file_logger = FileLogger(init_files=True)
-        self.load_modules()
+        modules = ["SGP30", "BME280", "SCD30"]
+        self.load_modules(modules)
         self._configure_modules() 
 
-    def load_modules(self) -> None: #TODO DRY this out
-        try:
-            self.log.info("Loading SGP30 sensor module")
-            self.available_modules["SGP30"] = SGP30(self.i2c)
-            self.log.info("Loaded SGP30 sensor module")
-        except RuntimeError as e:
-            self.log.error(f"Failed to load SGP30 sensor module: {e}")
-        except Exception as e:
-            self.log.error(f"Failed to load SGP30 sensor module: {e}")
-        
-        try:
-            self.log.info("Loading BME280 sensor module")
-            self.available_modules["BME280"] = BME280(self.i2c)
-            self.log.info("Loaded BME280 sensor module")
-        except RuntimeError as e:
-            self.log.error(f"Failed to load BME280 sensor module: {e}")
-        except Exception as e:
-            self.log.error(f"Failed to load BME280 sensor module: {e}")
+    def load_modules(self, modules: list[str]) -> None:
+        """
+        Load a list of sensor modules by name passed as a list of strings.
+        """
+        for module in modules:
+            try:
+                self.log.info(f"Loading {module} sensor module")
+                module_class = globals().get(module)
+                if module_class is None:
+                    raise ValueError(f"Sensor module '{module}' not imported.")
+                self.available_modules[module] = module_class(self.i2c)
+                self.log.info(f"Loaded {module} sensor module")
 
-        try:
-            self.log.info("Loading SCD30 sensor module")
-            self.available_modules["SCD30"] = SCD30(self.i2c)
-            self.log.info("Loaded SCD30 sensor module")
-        except RuntimeError as e:
-            self.log.error(f"Failed to load SCD30 sensor module: {e}")
-        except Exception as e:
-            self.log.error(f"Failed to load SCD30 sensor module: {e}")
+            except RuntimeError as e:
+                self.log.error(f"Failed to load {module} sensor module: {e}")
+
+            except Exception as e:
+                self.log.error(f"Failed to load {module} sensor module: {e}")
     
     def _configure_modules(self) -> None:
         self.log.info(f"Attempting to locate drivers for: {self.SENSOR_MODULES}")
