@@ -14,7 +14,7 @@ class SensorModule:
         """
         return self.sensors
     
-    def get_reading(self) -> dict:
+    def get_reading(self) -> dict[str, float]:
         """
         Return a dictionary of sensor name and value pairs
         """

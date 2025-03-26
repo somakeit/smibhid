@@ -4,6 +4,7 @@ from lib.module_config import ModuleConfig
 from json import dumps
 import uasyncio
 from lib.updater import UpdateCore
+from lib.sensors.file_logging import FileLogger
 
 class WebApp:
 
@@ -76,6 +77,9 @@ class WebApp:
         self.app.add_resource(Sensors, '/api/sensors/modules/<module>', sensors = self.sensors, logger = self.log)
         #self.app.add_resource(Readings, '/api/sensors/modules/<module>/readings/latest', sensors = self.sensors, logger = self.log) #TODO: Fix tinyweb to allow for multiple parameters https://github.com/belyalov/tinyweb/pull/51
         self.app.add_resource(Readings, '/api/sensors/readings/latest', module = "", sensors = self.sensors, logger = self.log)
+        self.app.add_resource(SensorData, '/api/sensors/readings/log/<log_type>', logger = self.log)
+        self.app.add_resource(SCD30, '/api/sensors/modules/SCD30/auto_measure', sensors = self.sensors, logger = self.log)
+        self.app.add_resource(SCD30, '/api/sensors/modules/SCD30/auto_measure/<start_stop>', sensors = self.sensors, logger = self.log)
     
 class WLANMAC():
 
@@ -111,7 +115,7 @@ class FirmwareFiles():
             logger.info("Removing update - data: {data}")
             html = update_core.unstage_update_url(data["url"])
         else:
-            html = f"Invalid request: {data["action"]}"
+            html = f"Invalid request: {data['action']}"
         return dumps(html)
     
 class Reset():
@@ -146,3 +150,43 @@ class Readings():
         html = dumps(sensors.get_readings(module))
         logger.info(f"Return value: {html}")
         return html
+
+class SensorData():
+
+    def get(self, data, log_type: str, logger: uLogger) -> str:
+        logger.info(f"API request - sensors/readings/{log_type}")
+        try:
+            html = dumps(FileLogger().get_log(log_type))
+        except Exception as e:
+            logger.error(f"Failed to get {log_type} log: {e}")
+            html = "Failed to get log"
+        logger.info(f"Return value: {html}")
+        return html
+
+class SCD30():
+        
+        def get(self, data, sensors, logger: uLogger) -> str:
+            logger.info("API request - sensors/scd30/auto_measure")
+            try:
+                scd30 = sensors.configured_modules["SCD30"]
+                html = str(scd30.get_status_ready())
+            except Exception as e:
+                logger.error(f"Failed to get SCD30 automatic measurement status: {e}")
+                html = "Failed to get automatic measurement status"
+            logger.info(f"Return value: {html}")
+            return html
+        
+        def put(self, data, start_stop, sensors, logger: uLogger) -> str:
+            logger.info(f"API request - sensors/scd30/auto_measure/{start_stop}")
+            try:
+                scd30 = sensors.configured_modules["SCD30"]
+                if start_stop == "start":
+                    scd30.start_continuous_measurement()
+                if start_stop == "stop":
+                    scd30.stop_continuous_measurement()
+                html = "success"
+            except Exception as e:
+                logger.error(f"Failed to start/stop SCD30 measurement: {e}")
+                html = f"Incorrect URL suffix: {start_stop}, expected 'start' or 'stop'"
+            logger.info(f"Return value: {html}")
+            return html

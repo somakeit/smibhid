@@ -260,7 +260,7 @@ class BME280(SensorModule):
                 "{:.2f}%".format(h))
     
     @property
-    def values_no_units(self) -> tuple:
+    def values_no_units(self) -> tuple[str, str, str]:
         """ human readable values """
 
         t, p, h = self.read_compensated_data()
@@ -268,11 +268,11 @@ class BME280(SensorModule):
         return ("{:.2f}".format(t), "{:.2f}".format(p/100),
                 "{:.2f}".format(h))
     
-    def get_reading(self) -> dict:
-        data = self.values_no_units
+    def get_reading(self) -> dict[str, float]:
+        data = self.read_compensated_data()
         reading = {
-            "temperature": data[0],
-            "pressure": data[1],
-            "humidity": data[2]
+            "temperature": round(data[0], 2),
+            "pressure": round((data[1] / 100), 1),
+            "humidity": round(data[2], 2)
         }
         return reading
