@@ -49,6 +49,14 @@ ADD_HOURS_INPUT_TIMEOUT = 3
 SDA_PIN = 8
 SCL_PIN = 9
 I2C_ID = 0
+I2C_FREQ = 400000
+
+## Sensors - Populate driver list with connected sensor modules from this supported list: ["SGP30", "BME280", "SCD30"]
+SENSOR_MODULES = []
+
+## Enable sensor log cache (Pico 1 will likely need this disabled due to memory constraints)
+SENSOR_LOG_CACHE_ENABLED = False
+SENSOR_LOG_FILE_MAX_SIZE = 50000
 
 ## Displays - Populate driver list with connected displays from this supported list: ["LCD1602"]
 DISPLAY_DRIVERS = ["LCD1602"]
@@ -64,3 +72,6 @@ RFID_RST = 21
 RFID_CS = 17
 
 ENABLE_UI_LOGGING_UPLOAD = False
+
+## Overclocking - Pico1 default 133MHz, Pico2 default 150MHz
+CLOCK_FREQUENCY = 250000000

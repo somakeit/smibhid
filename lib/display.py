@@ -12,11 +12,12 @@ class Display:
     Example:
     If an LCD1602 driver is configured to load, then issuing the command Display.print_startup() will render startup information appropriately on the 2x16 display if connected.
     """
-    def __init__(self) -> None:
+    def __init__(self, i2c) -> None:
         self.log = uLogger("Display")
         self.drivers = DISPLAY_DRIVERS
         self.log.info("Init display")
         self.enabled = False
+        self.i2c = i2c
         self.screens = []
         self._load_configured_drivers()
         self.state = "Unknown"
@@ -30,7 +31,7 @@ class Display:
                 if driver_class is None:
                     raise ValueError(f"Display driver class '{driver}' not registered.")
 
-                self.screens.append(driver_class())
+                self.screens.append(driver_class(self.i2c))
 
             except Exception as e:
                 print(f"An error occurred while confguring display driver '{driver}': {e}")
