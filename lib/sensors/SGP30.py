@@ -196,11 +196,11 @@ class SGP30(SensorModule):
                     crc <<= 1
         return crc & 0xFF
     
-    def get_formatted_reading(self) -> tuple:
+    def get_formatted_reading(self) -> tuple[float,float]:
         co2eq, tvoc = self.iaq_measure()
-        return (int(co2eq), int(tvoc))
+        return (float(co2eq), float(tvoc))
 
-    def get_reading(self) -> dict:
+    def get_reading(self) -> dict[str, float]:
         reading = self.get_formatted_reading()
         data = {
             "co2eq": reading[0],

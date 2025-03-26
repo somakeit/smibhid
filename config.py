@@ -54,6 +54,10 @@ I2C_FREQ = 400000
 ## Sensors - Populate driver list with connected sensor modules from this supported list: ["SGP30", "BME280", "SCD30"]
 SENSOR_MODULES = []
 
+## Enable sensor log cache (Pico 1 will likely need this disabled due to memory constraints)
+SENSOR_LOG_CACHE_ENABLED = False
+SENSOR_LOG_FILE_MAX_SIZE = 50000
+
 ## Displays - Populate driver list with connected displays from this supported list: ["LCD1602"]
 DISPLAY_DRIVERS = ["LCD1602"]
 # Scroll speed for text on displays in characters per second
