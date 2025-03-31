@@ -62,11 +62,13 @@ class Sensors:
         """
         while True:
             readings = self.get_readings()
+            self.log.info(f"Sensor readings: {readings}")
             
-            for reading in readings:
-                self.log.info(f"Module: {reading}: {readings[reading]}")
+            if len(readings) > 0:
+                self.file_logger.log_minute_entry(readings)
             
-            self.file_logger.log_minute_entry(readings)
+            else:
+                self.log.error("No sensor readings available")
             
             await sleep(60)
     
