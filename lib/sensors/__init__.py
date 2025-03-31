@@ -1,6 +1,6 @@
 from asyncio import create_task, sleep
 from machine import I2C
-from config import SENSOR_MODULES
+from config import SENSOR_MODULES, SENSOR_LOG_CACHE_ENABLED
 from lib.ulogging import uLogger
 from lib.sensors.SGP30 import SGP30
 from lib.sensors.BME280 import BME280
@@ -53,8 +53,12 @@ class Sensors:
         self.log.info(f"Configured modules: {self.get_modules()}")
 
     def startup(self) -> None:
-        self.log.info(f"Starting sensors: {self.configured_modules}")
-        create_task(self._poll_sensors())
+        if SENSOR_LOG_CACHE_ENABLED:
+            self.log.info(f"Starting sensors: {self.configured_modules}")
+            create_task(self._poll_sensors())
+            self.log.info("Sensor polling started")
+        else:
+            self.log.info("Sensor log cache disabled, skipping sensor startup")
 
     async def _poll_sensors(self) -> None:
         """
