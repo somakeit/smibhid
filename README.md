@@ -58,7 +58,7 @@ Below is a list of hardware and links for my specific build:
 - [SCD30 sensor](https://thepihut.com/products/adafruit-scd-30-ndir-co2-temperature-and-humidity-sensor)
 
 ## Deployment
-Copy the files from the smibhib folder into the root of a Pico 2 W running Micropython (minimum Pico 2 W Micropython firmware v1.25.0-preview.365 https://micropython.org/download/RPI_PICO2_W/) and update values in config.py as necessary.
+Copy the files from the smibhib folder into the root of a Pico 2 W running [Micropython](https://micropython.org/download/RPI_PICO2_W/) (Developed and tested on Pico 2 W Micropython firmware nightly build [v1.25.0-preview.365](./firmware/RPI_PICO2_W-20250307-v1.25.0-preview.365.g3823aeb0f.uf2) in the firmware folder) and update values in config.py as necessary.
 
 This project should work on a Pico W on recent firmware, but we have moved development, testing and our production SMIBHIDs to Pico 2 Ws.
 
