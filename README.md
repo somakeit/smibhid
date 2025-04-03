@@ -158,9 +158,3 @@ If errors are encountered such as no wifi on the update process, the staging fil
 The space state UI state machine is described in this diagram:
 
 ![Space state UI state machine diagram](images/SMIBHID_UI_state_diagram.drawio.png)
-
-## Version
-Ensure that the `HID` class version attribute is updated to match the version in `pyproject.toml`
-
-> [!IMPORTANT]
-> This version needs to match the release when it goes into the `master` branch.
