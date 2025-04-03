@@ -1,5 +1,3 @@
-#TODO: Test log rotation
-
 from lib.ulogging import uLogger
 from os import listdir, mkdir, stat, remove, rename
 from time import time, localtime
@@ -80,10 +78,10 @@ class FileLogger:
         """
         Add a unixtime and tuple timestamp to the provided minute log entries in and append to the minute_log.txt file.
         """
-        if self.enabled is False:
-            self.log.info("Sensor log cache is disabled, skipping minute log entry")
+        if self.check_for_minute_log_issues(data):
+            self.log.info("Minute log entry issues detected, skipping logging")
             return
-        
+                
         self.log.info(f"Logging minute entry {data}")
 
         self.check_for_log_rotate(self.minute_log_file)
@@ -105,6 +103,24 @@ class FileLogger:
             except Exception as e:
                 self.log.error(f"Failed to generate hour log: {e}")
 
+    def check_for_minute_log_issues(self, data: dict) -> bool:
+        """
+        Check for issues with the minute log data before logging. Return True if issues are found.
+        """        
+        if self.enabled is False:
+            self.log.info("Sensor log cache is disabled, skipping minute log entry")
+            return True
+        
+        if not isinstance(data, dict):
+            self.log.error("Invalid data format for minute log entry, expected a dictionary")
+            return True
+        
+        if len(data) == 0:
+            self.log.info("No data to log for minute entry")
+            return True
+        
+        return False
+    
     def create_minute_timestamped_entry(self, data: dict) -> str:
         """
         Create a timestamped entry for the minute log file.
