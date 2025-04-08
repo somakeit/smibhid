@@ -225,6 +225,8 @@ class SCD30():
                     logger.error(f"Invalid calibration value: {value}")
                     return "Invalid calibration value"
                 
+                value = int(value)
+                
                 if value == 0:
                     logger.info("Setting SCD30 calibration to default value")
                     value = DEFAULT_CO2_CALIBRATION_VALUE
