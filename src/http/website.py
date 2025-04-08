@@ -30,6 +30,9 @@ class WebApp:
         self.create_update_js()
         self.create_homepage()
         self.create_update()
+        self.create_sensors()
+        self.create_scd30_js()
+        self.create_scd30()
         self.create_api()
 
     def startup(self):
@@ -62,6 +65,21 @@ class WebApp:
         @self.app.route('/update')
         async def index(request, response):
             await response.send_file('/http/www/update.html')
+    
+    def create_sensors(self) -> None:
+        @self.app.route('/sensors')
+        async def index(request, response):
+            await response.send_file('/http/www/sensors/sensors.html')
+    
+    def create_scd30_js(self) -> None:
+        @self.app.route('/js/scd30.js')
+        async def index(request, response):
+            await response.send_file('/http/www/js/scd30.js', content_type='application/javascript')
+    
+    def create_scd30(self) -> None:
+        @self.app.route('/sensors/scd30')
+        async def index(request, response):
+            await response.send_file('/http/www/sensors/scd30.html')
 
     def create_api(self) -> None:
         @self.app.route('/api')
