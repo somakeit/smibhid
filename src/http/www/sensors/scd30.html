@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>SMIBHID - SCD30 Control</title>
+        <link rel="stylesheet" href="../css/style.css">
+    </head>
+    <body>
+        <h1>SMIBHID - SCD30 Sensor Control</h1>
+
+        <h2>Auto Measure</h2>
+        <form id="autoMeasureForm">
+            <label for="autoMeasureAction">Action:</label>
+            <select id="autoMeasureAction" name="action">
+                <option value="start">Start</option>
+                <option value="stop">Stop</option>
+            </select>
+            <button type="button" onclick="setAutoMeasure()">Submit</button>
+        </form>
+
+        <h2>Calibration</h2>
+        <form id="calibrationForm">
+            <label for="calibrationValue">Calibration Value in ppm (0 sets default as per config file):</label>
+            <input type="number" id="calibrationValue" name="value" min="0" required>
+            <button type="button" onclick="setCalibration()">Submit</button>
+        </form>
+
+        <p>Return to <a href="/">home</a></p>
+
+        <script type="module">
+            import { setAutoMeasure, setCalibration } from '../js/scd30.js?v=0.0.2';
+
+            window.setAutoMeasure = setAutoMeasure;
+            window.setCalibration = setCalibration;
+        </script>
+
+    </body>
+</html>

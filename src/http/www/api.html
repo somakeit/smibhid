@@ -78,13 +78,27 @@
                 <td><a href="/api/sensors/modules/SCD30/auto_measure">/api/sensors/modules/scd30/auto_measure</a></td>
                 <td>GET</td>
                 <td></td>
-                <td>Get SCD30 measurement status</td>
+                <td>Get SCD30 measurement status. The SCD30 will not return sensible values until this returns 1 shortly after startup.</td>
             </tr>
             <tr>
                 <td>/api/sensors/modules/SCD30/auto_measure/{start_stop}</td>
                 <td>PUT</td>
-                <td>Insert start or stop in {start_stop} parameter</td>
-                <td>Put SCD30 measurement status</td>
+                <td>
+                    Insert start or stop in {start_stop} parameter to enable or disable automatic measurement.
+                </td>
+                <td>
+                    Put SCD30 measurement status.
+                    Without automatic measurement, the SCD30 will not take a measurement and get_readings will return 0.
+                </td>
+            </tr>
+            <tr>
+                <td>/api/sensors/modules/SCD30/calibration/{ppm}</td>
+                <td>PUT</td>
+                <td>
+                    Insert integer ppm value to calibrate the SCD30 to in the {ppm} parameter.
+                    Enter 0 for default value specified in config file.
+                </td>
+                <td>Put SCD30 calibration value</td>
             </tr>
         </table>
 

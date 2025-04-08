@@ -54,6 +54,9 @@ I2C_FREQ = 400000
 ## Sensors - Populate driver list with connected sensor modules from this supported list: ["SGP30", "BME280", "SCD30"]
 SENSOR_MODULES = []
 
+# Default CO2 calibration value for SCD30 (global average is currently 427)
+DEFAULT_CO2_CALIBRATION_VALUE = 427
+
 ## Enable sensor log cache (Pico 1 will likely need this disabled due to memory constraints)
 SENSOR_LOG_CACHE_ENABLED = False
 SENSOR_LOG_FILE_MAX_SIZE = 50000
