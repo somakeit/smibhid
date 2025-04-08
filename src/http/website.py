@@ -5,6 +5,7 @@ from json import dumps
 import uasyncio
 from lib.updater import UpdateCore
 from lib.sensors.file_logging import FileLogger
+from config import DEFAULT_CO2_CALIBRATION_VALUE
 
 class WebApp:
 
@@ -78,8 +79,9 @@ class WebApp:
         #self.app.add_resource(Readings, '/api/sensors/modules/<module>/readings/latest', sensors = self.sensors, logger = self.log) #TODO: Fix tinyweb to allow for multiple parameters https://github.com/belyalov/tinyweb/pull/51
         self.app.add_resource(Readings, '/api/sensors/readings/latest', module = "", sensors = self.sensors, logger = self.log)
         self.app.add_resource(SensorData, '/api/sensors/readings/log/<log_type>', logger = self.log)
-        self.app.add_resource(SCD30, '/api/sensors/modules/SCD30/auto_measure', sensors = self.sensors, logger = self.log)
-        self.app.add_resource(SCD30, '/api/sensors/modules/SCD30/auto_measure/<start_stop>', sensors = self.sensors, logger = self.log)
+        self.app.add_resource(SCD30, '/api/sensors/modules/SCD30/auto_measure', function = "auto_measure", sensors = self.sensors, logger = self.log)
+        self.app.add_resource(SCD30, '/api/sensors/modules/SCD30/auto_measure/<value>', function = "auto_measure", sensors = self.sensors, logger = self.log)
+        self.app.add_resource(SCD30, '/api/sensors/modules/SCD30/calibration/<value>', function = "calibration", sensors = self.sensors, logger = self.log)
     
 class WLANMAC():
 
@@ -165,28 +167,61 @@ class SensorData():
 
 class SCD30():
         
-        def get(self, data, sensors, logger: uLogger) -> str:
-            logger.info("API request - sensors/scd30/auto_measure")
-            try:
-                scd30 = sensors.configured_modules["SCD30"]
-                html = str(scd30.get_status_ready())
-            except Exception as e:
-                logger.error(f"Failed to get SCD30 automatic measurement status: {e}")
-                html = "Failed to get automatic measurement status"
-            logger.info(f"Return value: {html}")
+        def get(self, data, function: str, sensors, logger: uLogger) -> str:
+            if function == "auto_measure":
+                logger.info("API request - sensors/scd30/auto_measure")
+                try:
+                    scd30 = sensors.configured_modules["SCD30"]
+                    html = str(scd30.get_status_ready())
+                except Exception as e:
+                    logger.error(f"Failed to get SCD30 automatic measurement status: {e}")
+                    html = "Failed to get automatic measurement status"
+                logger.info(f"Return value: {html}")
+
             return html
         
-        def put(self, data, start_stop, sensors, logger: uLogger) -> str:
-            logger.info(f"API request - sensors/scd30/auto_measure/{start_stop}")
-            try:
-                scd30 = sensors.configured_modules["SCD30"]
-                if start_stop == "start":
-                    scd30.start_continuous_measurement()
-                if start_stop == "stop":
-                    scd30.stop_continuous_measurement()
-                html = "success"
-            except Exception as e:
-                logger.error(f"Failed to start/stop SCD30 measurement: {e}")
-                html = f"Incorrect URL suffix: {start_stop}, expected 'start' or 'stop'"
-            logger.info(f"Return value: {html}")
+        def put(self, data, value, function: str, sensors, logger: uLogger) -> str:
+            if function == "auto_measure":
+                logger.info(f"API request - sensors/scd30/auto_measure/{value}")
+                
+                if value not in ["start", "stop"]:
+                    logger.error(f"Invalid URL suffix: {value}")
+                    return "Invalid URL suffix"
+                
+                try:
+                    scd30 = sensors.configured_modules["SCD30"]
+                    if value == "start":
+                        scd30.start_continuous_measurement()
+                    if value == "stop":
+                        scd30.stop_continuous_measurement()
+                    html = "success"
+
+                except Exception as e:
+                    logger.error(f"Failed to start/stop SCD30 measurement: {e}")
+                    html = f"Incorrect URL suffix: {value}, expected 'start' or 'stop'"
+                
+                logger.info(f"Return value: {html}")
+
+            if function == "calibration":
+                if not value.isdigit():
+                    logger.error(f"Invalid calibration value: {value}")
+                    return "Invalid calibration value"
+                
+                if value == 0:
+                    logger.info("Setting SCD30 calibration to default value")
+                    value = DEFAULT_CO2_CALIBRATION_VALUE
+                    logger.info(f"Default calibration value: {value}")
+                logger.info(f"API request - sensors/scd30/calibration/{value}")
+                
+                try:
+                    scd30 = sensors.configured_modules["SCD30"]
+                    scd30.set_forced_recalibration(int(value))
+                    html = "success"
+                
+                except Exception as e:
+                    logger.error(f"Failed to set SCD30 calibration: {e}")
+                    html = f"Failed to set calibration: {e}"
+                
+                logger.info(f"Return value: {html}")
+            
             return html
