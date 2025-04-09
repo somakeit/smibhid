@@ -54,6 +54,9 @@ I2C_FREQ = 400000
 ## Sensors - Populate driver list with connected sensor modules from this supported list: ["SGP30", "BME280", "SCD30"]
 SENSOR_MODULES = []
 
+# Default CO2 calibration value for SCD30 (global average is currently 427)
+DEFAULT_CO2_CALIBRATION_VALUE = 427
+
 ## Threshold to trigger the CO2 alarm, reset threshold to stop the alarm and snooze duration to silence the alarm buzzer (alarm LED remains on)
 # Set the CO2_ALARM_THRESHOLD_PPM to 0 to disable the CO2 alarm
 CO2_ALARM_THRESHOLD_PPM = None
