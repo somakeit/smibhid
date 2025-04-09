@@ -16,8 +16,7 @@ In general we follow [pep8 guidelines](https://peps.python.org/pep-0008/).
 
 Code should be clear in its intent with minimal comments, ensure you use helpful variable and function names and keep functions and methods simple in their scope. More well named simple functions are better than monolithic complex functions with short and cryptic names.
 
-A code update should almost always trigger an update or creation of new documentation; Ensure associated documentation is updated whenver possible with new code patches.
-
+A code update should almost always trigger an update or creation of new documentation; Ensure associated documentation is updated whenever possible with new code patches.
 ### Tests
 We haven't got tests yet, but if we do it will be pytest, feel free to provide pytests for your patch.
 
