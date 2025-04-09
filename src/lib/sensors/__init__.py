@@ -9,7 +9,7 @@ from lib.sensors.sensor_module import SensorModule
 from lib.sensors.file_logging import FileLogger
 from lib.button import Button
 from asyncio import Event, create_task
-from time import time
+from time import time, sleep
 
 class Sensors:
     def __init__(self, i2c: I2C) -> None:
@@ -28,14 +28,19 @@ class Sensors:
     def configure_co2_alarm(self) -> None:
         """
         Configure the CO2 alarm state and set the GPIO pins for the alarm components."""
+        self.log.info("Configuring CO2 alarm")
         self.co2_alarm_buzzer = Pin(CO2_ALARM_BUZZER_PIN, Pin.OUT)
-        self.co2_alarm_buzzer.off()
         self.co2_alarm_led = Pin(CO2_ALARM_LED_PIN, Pin.OUT)
+        self.co2_alarm_buzzer.on()
+        self.co2_alarm_led.on()
+        sleep(0.5)
+        self.co2_alarm_buzzer.off()
         self.co2_alarm_led.off()
         self.co2_alarm_snooze_event = Event()
         self.co2_alarm_snooze_button = Button(CO2_ALARM_SNOOZE_BUTTON_PIN, "CO2 alarm snooze", self.co2_alarm_snooze_event)
         self.co2_alarm_buzzer_snooze_set_time = None
         create_task(self.co2_alarm_snooze_button.wait_for_press())
+        create_task(self.async_co2_alarm_button_press_watcher())
     
     async def async_co2_alarm_button_press_watcher(self) -> None:
         """
@@ -108,7 +113,7 @@ class Sensors:
         Assess the CO2 alarm state based on readings from the SCD30 sensor.
         """
         if "SCD30" in readings:
-            co2_ppm = readings["SCD30"]["CO2"]
+            co2_ppm = readings["SCD30"]["co2"]
             if co2_ppm >= CO2_ALARM_THRESHOLD_PPM:
                 self.log.info(f"CO2 of {co2_ppm} ppm above alarm threshold of ({CO2_ALARM_THRESHOLD_PPM} ppm), setting alarm")
                 self.set_co2_alarm()
