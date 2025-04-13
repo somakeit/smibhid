@@ -1,6 +1,6 @@
 # SMIBHID
 ## Overview
-SMIBHID is the So Make It Bot Human Interface Device and definitely not a mispronunciation of any insults from a popular 90s documentary detailing the activites of the Jupiter Mining Core.
+SMIBHID is the So Make It Bot Human Interface Device and definitely not a mispronunciation of any insults from a popular 90s documentary detailing the activities of the Jupiter Mining Core.
 
 This device run on a Raspberry Pi Pico W and provides physical input and output to humans for the SMIB project; Buttons, LEDs, that sort of thing.
 
@@ -26,11 +26,26 @@ Press the space_open or space_closed buttons to call the smib server endpoint ap
   - API page that details API endpoints available and their usage
   - Update page for performing over the air firmware updates and remote reset to apply them
 - Pinger watchdog - Optionally ping an IP address and toggle a GPIO pin on ping failure. Useful for network device monitoring and reset.
-- Extensible sensor module framework for async polling of I2C sensors (currently only writes to log out) and presentation of sensors and readings on the web API
+- Extensible sensor module framework for async polling of I2C sensors and presentation of sensors and readings on the web API and recording to log file
   - Supported sensors
     - SGP30 (Equivalent CO2 and VOC)
     - BME280
     - SCD30
+  - Calibration of the SGP30 CO2 sensor via the API or web admin console
+  - CO2 alarm where SGP3 present
+
+### Sensors
+SMIBHID can be used for environmental monitoring. At present only I2C sensors are supported, although the framework could be easily extended to accept other connectivity into the driver framework.
+
+Once the sensors are configured they will poll at a regular interval and store to log files if configured.
+
+Future intent is to have the sensor data pushed to SMIB at each poll and only cache data that has yet to be pushed as even the Pico 2 has RAM limitations that prevent processing of large data files easily.
+
+The API allows querying of the sensors in realtime and SMIB has a slack command to query the sensors and report that realtime data back to the slack channel via the "/howfresh" command.
+
+The SGP30 CO2 sensor needs calibration from time to time and this can be achieved by posting the current CO2 level as measured by a reference sensor to the calibration API endpoint or by using the sensors web management page. Full instructions are available by following links from the main admin web page at http://<smibhid IP>:80
+
+The SGP30 module also allows configuration of a buzzer and LED alarm. On each poll (once per minute), the LED and alarm buzzer will trigger at the PPM threshold (configurable) in the config file and will remain triggered until the level drops below the reset threshold (configurable). A snooze button is provided to silence the audible alarm for 5 minutes (configurable) while an open window lowers the measured PPM, but the alarm LED will remain lit while the reset threshold is exceeded.
 
 ## Circuit diagram
 ### Pico W Connections
@@ -41,9 +56,6 @@ Press the space_open or space_closed buttons to call the smib server endpoint ap
 
 ### Example breadboard build
 ![Breadboard photo](images/breadboard.jpg)
-
-### Example prototype build
-
 
 ## Hardware
 Below is a list of hardware and links for my specific build:
@@ -56,6 +68,7 @@ Below is a list of hardware and links for my specific build:
 - [SGP30 I2C sensor](https://thepihut.com/products/sgp30-air-quality-sensor-breakout)
 - [BME280 sensor](https://thepihut.com/products/bme280-breakout-temperature-pressure-humidity-sensor)
 - [SCD30 sensor](https://thepihut.com/products/adafruit-scd-30-ndir-co2-temperature-and-humidity-sensor)
+- [Buzzer](https://shop.pimoroni.com/products/mini-active-buzzer?variant=40257468694611)
 
 ## Deployment
 Copy the files from the smibhib folder into the root of a Pico 2 W running Micropython (minimum Pico 2 W Micropython firmware v1.25.0-preview.365 https://micropython.org/download/RPI_PICO2_W/) and update values in config.py as necessary.
@@ -63,15 +76,20 @@ Copy the files from the smibhib folder into the root of a Pico 2 W running Micro
 This project should work on a Pico W on recent firmware, but we have moved development, testing and our production SMIBHIDs to Pico 2 Ws.
 
 ### Configuration
+- See the log level section below for logging config
 - Ensure the pins for the space open/closed LEDs and buttons are correctly specified for your wiring
-- Configure I2C pins for the display and sensors if using, display will detect automatically or disable if not found
-- Populate the display list with displays in use (must have appropriate driver module)
-- Populate the sensors list with sensors in use (must have appropriate driver module)
+- Configure the space open relay pin if required or else set to None, also choose if space open sets pin high or low
 - Populate Wifi SSID and password
+- Configure the pinger watchdog and associated pin (example relay with transistor for coil current provided in circuit diagram)
 - Configure the webserver hostname/IP and port as per your smib.webserver configuration
 - Set the space state poll frequency in seconds (>= 5), set to 0 to disable the state poll
-- Configure the space open relay pin if required or else set to None, also choose if space open sets pin high or low
-- Configure the pinger watchdog and associated pin (example relay with transistor for coil current provided in circuit diagram)
+- Configure I2C pins for the display and sensors if using, display will detect automatically or disable if not found
+- Populate the sensors list with sensors in use (must have appropriate driver module)
+  - Configure sensor log file caching if required
+  - If SGP30 present, configure optional CO2 alarm thresholds and buzzer, LED and snooze button pins
+- Populate the display list with displays in use (must have appropriate driver module)
+- Enable UI logging if required
+- Adjust the overclocking value if needed, although maximum safe values are defaulted. The standard frequency for maximum stability is 133000000 and 150000000 for pico and pico 2 respectively
 
 If you miss any configuration options, a default will be applied, an error output in the log detailing the configuration item missed including the default value configured and if connected, an error displayed on displays.
 
@@ -97,12 +115,12 @@ Populate the LOG_HANDLERS list in config.py with zero or more of the following l
 Example: `LOG_HANDLERS = ["Console", "File"]`
 
 #### Log file max size
-Set the LOG_FILE_MAX_SIZE value in config.py to set the maximum size of the log file in bytes before rotating. The log rotater will create a maximum of 2 files at this size, so configure appropiately for anticpated flash free space.
+Set the LOG_FILE_MAX_SIZE value in config.py to set the maximum size of the log file in bytes before rotating. The log rotator will create a maximum of 2 files at this size, so configure appropriately for anticipated flash free space.
 
 Example: `LOG_FILE_MAX_SIZE = 10240`
 
 ### Error handling
-Create a new instance of the ErrorHandling class in a module to register a list of possible errors for that module and enabled or disable them for display on connected screens using class methods. See the space state module for an example of implementation.
+Create a new instance of the ErrorHandling class in a module to register a list of possible errors for that module and enable or disable them for display on connected screens using class methods. See the space state module for an example of implementation.
 
 ### Adding functionality
 Refer to the [S.M.I.B. contribution guidelines](https://github.com/somakeit/S.M.I.B./contribute) for more info on contributing.
