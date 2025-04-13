@@ -94,7 +94,7 @@ class Alarm:
         """
         Assess the CO2 alarm state based on readings from the SCD30 sensor.
         """
-        if "SCD30" in readings and "co2" in readings["SCD30"] and readings["SCD30"]["co2"] is not 0:
+        if "SCD30" in readings and "co2" in readings["SCD30"] and readings["SCD30"]["co2"] != 0:
             self.log.info("Assessing CO2 alarm state")
             co2_ppm = readings["SCD30"]["co2"]
             if co2_ppm >= CO2_ALARM_THRESHOLD_PPM:
