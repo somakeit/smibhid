@@ -31,8 +31,8 @@ Press the space_open or space_closed buttons to call the smib server endpoint ap
     - SGP30 (Equivalent CO2 and VOC)
     - BME280
     - SCD30
-  - Calibration of the SGP30 CO2 sensor via the API or web admin console
-  - CO2 alarm where SGP3 present
+  - Calibration of the SCD30 CO2 sensor via the API or web admin console
+  - CO2 alarm where SCD30 module present
 
 ### Sensors
 SMIBHID can be used for environmental monitoring. At present only I2C sensors are supported, although the framework could be easily extended to accept other connectivity into the driver framework.
