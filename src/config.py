@@ -59,9 +59,9 @@ DEFAULT_CO2_CALIBRATION_VALUE = 427
 
 ## Threshold to trigger the CO2 alarm, reset threshold to stop the alarm and snooze duration to silence the alarm buzzer (alarm LED remains on)
 # Set the CO2_ALARM_THRESHOLD_PPM to 0 to disable the CO2 alarm
-CO2_ALARM_THRESHOLD_PPM = None
-CO2_ALARM_RESET_THRESHOLD_PPM = None
-CO2_ALARM_SNOOZE_DURATION_S = None
+CO2_ALARM_THRESHOLD_PPM = 1000
+CO2_ALARM_RESET_THRESHOLD_PPM = 800
+CO2_ALARM_SNOOZE_DURATION_S = 300
 
 # CO2 alarm GPIO pin config
 CO2_ALARM_LED_PIN = None
