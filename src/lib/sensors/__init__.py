@@ -1,6 +1,3 @@
-#TODO: alarm LED doesn't light
-#TODO: alarm snooze only works till next poll
-
 from asyncio import create_task, sleep, Event, run, CancelledError
 from machine import I2C, Pin
 from config import SENSOR_MODULES, SENSOR_LOG_CACHE_ENABLED, CO2_ALARM_THRESHOLD_PPM, CO2_ALARM_RESET_THRESHOLD_PPM, CO2_ALARM_SNOOZE_DURATION_S, CO2_ALARM_LED_PIN, CO2_ALARM_BUZZER_PIN, CO2_ALARM_SNOOZE_BUTTON_PIN
@@ -65,9 +62,9 @@ class Sensors:
             self.log.error("CO2 alarm task already running, method should not have been called.")
             return
 
-        self.alarm_task = create_task(self.alarm_loop())
+        self.alarm_task = create_task(self.async_alarm_buzzer_loop())
 
-    async def alarm_loop(self) -> None:
+    async def async_alarm_buzzer_loop(self) -> None:
         """
         Asynchronously loop to sound the CO2 alarm buzzer.
         """
@@ -200,7 +197,7 @@ class Sensors:
         """
         self.log.info("Snoozing CO2 alarm")
         create_task(self.async_stop_alarm())
-        self.co2_alarm_snooze_set_time = time()    
+        self.co2_alarm_buzzer_snooze_set_time = time()    
 
     def set_co2_alarm_buzzer(self) -> None:
         """
