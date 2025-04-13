@@ -64,9 +64,9 @@ CO2_ALARM_RESET_THRESHOLD_PPM = 800
 CO2_ALARM_SNOOZE_DURATION_S = 300
 
 # CO2 alarm GPIO pin config
-CO2_ALARM_LED_PIN = None
-CO2_ALARM_BUZZER_PIN = None
-CO2_ALARM_SNOOZE_BUTTON_PIN = None
+CO2_ALARM_LED_PIN = 6
+CO2_ALARM_BUZZER_PIN = 4
+CO2_ALARM_SNOOZE_BUTTON_PIN = 5
 
 ## Enable sensor log cache (Pico 1 will likely need this disabled due to memory constraints)
 SENSOR_LOG_CACHE_ENABLED = False
