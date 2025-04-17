@@ -1,12 +1,14 @@
-from asyncio import create_task, sleep
-from machine import I2C
-from config import SENSOR_MODULES, SENSOR_LOG_CACHE_ENABLED
+from asyncio import create_task, sleep, Event, run, CancelledError
+from machine import I2C, Pin
+from config import SENSOR_MODULES, SENSOR_LOG_CACHE_ENABLED, CO2_ALARM_THRESHOLD_PPM
 from lib.ulogging import uLogger
 from lib.sensors.SGP30 import SGP30
 from lib.sensors.BME280 import BME280
 from lib.sensors.SCD30 import SCD30
 from lib.sensors.sensor_module import SensorModule
 from lib.sensors.file_logging import FileLogger
+from time import time
+from lib.sensors.alarm import Alarm
 
 class Sensors:
     def __init__(self, i2c: I2C) -> None:
@@ -18,7 +20,11 @@ class Sensors:
         self.file_logger = FileLogger(init_files=True)
         modules = ["SGP30", "BME280", "SCD30"]
         self.load_modules(modules)
-        self._configure_modules() 
+        self._configure_modules()
+        self.alarm = None
+        if CO2_ALARM_THRESHOLD_PPM > 0 and 'SCD30' in self.configured_modules:
+            self.alarm = Alarm()
+            self.log.info("SCD30 present and CO2_ALARM_THRESHOLD_PPM > 0, CO2 alarm enabled")
 
     def load_modules(self, modules: list[str]) -> None:
         """
@@ -70,7 +76,9 @@ class Sensors:
             
             if len(readings) > 0:
                 self.file_logger.log_minute_entry(readings)
-            
+                if self.alarm:
+                    self.alarm.assess_co2_alarm(readings)
+
             else:
                 self.log.error("No sensor readings available")
             
