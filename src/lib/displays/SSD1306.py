@@ -209,7 +209,7 @@ class SSD1306_I2C(_SSD1306):
         reset = None,
         page_addressing: bool = False
     ):
-        self.i2c_device = i2c
+        self.i2c = i2c
         self.addr = addr
         self.page_addressing = page_addressing
         self.temp = bytearray(2)
@@ -231,7 +231,7 @@ class SSD1306_I2C(_SSD1306):
     def write_cmd(self, cmd: int) -> None:
         """Send a command to the I2C device"""
         hex = 0x80  # Co=1, D/C#=0
-        self.i2c_device.writeto(self.addr, bytearray([hex, cmd])) #TODO: Gives EIO, need to review datasheet
+        self.i2c.writeto(self.addr, bytearray([hex, cmd]), True)
 
     def write_framebuf(self) -> None:
         """Blast out the frame buffer using a single I2C transaction to support
@@ -244,6 +244,6 @@ class SSD1306_I2C(_SSD1306):
                 self.pagebuffer[1:] = self.buffer[
                     1 + self.width * page : 1 + self.width * (page + 1)
                 ]
-                self.i2c_device.write(self.pagebuffer)
+                self.i2c.writeto(self.addr, self.pagebuffer, True)
         else:
-            self.i2c_device.write(self.buffer)
+            self.i2c.writeto(self.addr, self.buffer, True)
