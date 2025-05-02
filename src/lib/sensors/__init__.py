@@ -9,6 +9,7 @@ from lib.sensors.sensor_module import SensorModule
 from lib.sensors.file_logging import FileLogger
 from time import time
 from lib.sensors.alarm import Alarm
+from lib.displays.SSD1306 import SSD1306_I2C
 
 class Sensors:
     def __init__(self, i2c: I2C) -> None:
@@ -22,6 +23,7 @@ class Sensors:
         self.load_modules(modules)
         self._configure_modules()
         self.alarm = None
+        self.oled = SSD1306_I2C(128, 32, self.i2c)
         if CO2_ALARM_THRESHOLD_PPM > 0 and 'SCD30' in self.configured_modules:
             self.alarm = Alarm()
             self.log.info("SCD30 present and CO2_ALARM_THRESHOLD_PPM > 0, CO2 alarm enabled")
