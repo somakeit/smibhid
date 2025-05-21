@@ -10,13 +10,14 @@ from config import (
 from machine import Pin
 from asyncio import create_task, run, sleep, Event, CancelledError
 from lib.button import Button
-from time import time, sleep as time_sleep
+from time import time
+from lib.displays.SSD1306 import SSD1306_I2C
 
 class Alarm:
     """
     Alarm class to handle sensor alarms.
     """
-    def __init__(self, display: None) -> None:
+    def __init__(self, display: SSD1306_I2C = None) -> None:
         self.log = uLogger("Alarm")
         self.log.info("Alarm module initialized")
         self.display = display
@@ -42,7 +43,6 @@ class Alarm:
         self.display.update_alarm("Clear")
         self.co2_alarm_buzzer.off()
         self.co2_alarm_led.off()
-        time_sleep(2)
     
     async def async_start_alarm(self) -> None:
         """
@@ -92,7 +92,10 @@ class Alarm:
         while True:
             await self.co2_alarm_snooze_event.wait()
             self.co2_alarm_snooze_event.clear()
-            self.snooze_co2_alarm()
+            if self.display.power:
+                self.snooze_co2_alarm()
+            else:
+                self.display.poweron()
     
     def assess_co2_alarm(self, readings: dict) -> None:
         """

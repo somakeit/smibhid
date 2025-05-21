@@ -1,7 +1,9 @@
 from micropython import const
 from machine import I2C
 from framebuf import MONO_VLSB, FrameBuffer
-from time import sleep
+from time import sleep, time
+from asyncio import sleep as async_sleep, create_task
+from lib.ulogging import uLogger
 
 _FRAMEBUF_FORMAT = MONO_VLSB
 
@@ -42,6 +44,7 @@ class _SSD1306(FrameBuffer):
         page_addressing: bool
     ):
         super().__init__(buffer, width, height, _FRAMEBUF_FORMAT)
+        self.log = uLogger("SSD1306")
         self.width = width
         self.height = height
         self.external_vcc = external_vcc
@@ -66,6 +69,7 @@ class _SSD1306(FrameBuffer):
             self.pagebuffer = None
             self.page_column_start = None
         # Let's get moving!
+        self.screen_on_time = None
         self.poweron()
         self.init_display()
 
@@ -166,6 +170,7 @@ class _SSD1306(FrameBuffer):
             sleep(0.010)
         self.write_cmd(SET_DISP | 0x01)
         self._power = True
+        self.screen_on_time = time()
 
     def show(self) -> None:
         """Update the display"""
@@ -227,6 +232,7 @@ class SSD1306_I2C(_SSD1306):
             external_vcc=external_vcc,
             page_addressing=self.page_addressing,
         )
+        create_task(self.screensaver())
 
     def write_cmd(self, cmd: int) -> None:
         """Send a command to the I2C device"""
@@ -248,6 +254,16 @@ class SSD1306_I2C(_SSD1306):
         else:
             self.i2c.writeto(self.addr, self.buffer, True)
 
+    async def screensaver(self) -> None:
+        """Turn on the screensaver"""
+        self.log.info("Screensaver task started")
+        while True:
+            self.log.info("Screensaver running check")
+            if self.power and self.screen_on_time + 5 < time():
+                self.log.info("Turning off display")
+                self.poweroff()
+            await async_sleep(1)
+    
     def clear(self) -> None:
         """Clear the display"""
         self.fill(0)
