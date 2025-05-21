@@ -25,16 +25,14 @@ class Sensors:
         self._configure_modules()
         self.alarm = None
         if CO2_ALARM_THRESHOLD_PPM > 0 and 'SCD30' in self.configured_modules:
-            self.alarm = Alarm()
+            self.alarm = Alarm(self.oled)
             self.log.info("SCD30 present and CO2_ALARM_THRESHOLD_PPM > 0, CO2 alarm enabled")
 
     def load_modules(self, modules: list[str]) -> None:
         """
         Load a list of sensor modules by name passed as a list of strings.
         """
-        self.oled.fill(0)
-        self.oled.text("Loading modules...", 0, 0)
-        self.oled.show()
+        self.oled.clear_and_text("Loading modules...")
 
         for module in modules:
             try:
@@ -54,9 +52,7 @@ class Sensors:
     def _configure_modules(self) -> None:
         self.log.info(f"Attempting to locate drivers for: {self.SENSOR_MODULES}")
 
-        self.oled.fill(0)
-        self.oled.text("Configuring Sensors...", 0, 0)
-        self.oled.show()
+        self.oled.clear_and_text("Configuring Sensors...")
 
         for sensor_module in self.SENSOR_MODULES:
             if sensor_module in self.available_modules:
@@ -72,9 +68,7 @@ class Sensors:
     def startup(self) -> None:
         if SENSOR_LOG_CACHE_ENABLED:
             self.log.info(f"Starting sensors: {self.configured_modules}")
-            self.oled.fill(0)
-            self.oled.text("Starting sensors...", 0, 0)
-            self.oled.show()
+            self.oled.clear_and_text("Starting sensors...")
             create_task(self._poll_sensors())
             self.log.info("Sensor polling started")
         else:
@@ -89,13 +83,9 @@ class Sensors:
             self.log.info(f"Sensor readings: {readings}")
             
             if len(readings) > 0:
-                if 'SCD30' in readings:
-                    self.log.info(f"CO2: {readings['SCD30']['co2']} ppm")
-                    self.oled.fill(0)
-                    self.oled.text(f"CO2: {readings['SCD30']['co2']} ppm", 0, 0)
-                    self.oled.show()
-                else:
-                    self.log.info("No SCD30 readings available")
+                if readings.get("SCD30"):
+                    self.oled.update_co2(readings["SCD30"]["co2"])
+                    
                 self.file_logger.log_minute_entry(readings)
                 if self.alarm:
                     self.alarm.assess_co2_alarm(readings)

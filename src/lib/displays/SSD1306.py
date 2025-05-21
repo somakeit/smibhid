@@ -247,3 +247,32 @@ class SSD1306_I2C(_SSD1306):
                 self.i2c.writeto(self.addr, self.pagebuffer, True)
         else:
             self.i2c.writeto(self.addr, self.buffer, True)
+
+    def clear(self) -> None:
+        """Clear the display"""
+        self.fill(0)
+        self.show()
+    
+    def clear_and_text(self, text: str) -> None:
+        """
+        Clear the display and write text.
+        """
+        self.fill(0)
+        self.text(text, 0, 0)
+        self.show()
+    
+    def update_co2(self, co2: int) -> None:
+        """
+        Update the CO2 value on the OLED screen.
+        """
+        self.fill_rect(0, 0, 128, 10, 0)
+        self.text(f"CO2: {co2} ppm", 0, 0)
+        self.show()
+    
+    def update_alarm(self, text: str) -> None:
+        """
+        Update the alarm status on the OLED screen.
+        """
+        self.fill_rect(0, 10, 128, 10, 0)
+        self.text(f"Alarm: {text}", 0, 10)
+        self.show()
