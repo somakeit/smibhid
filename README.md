@@ -15,7 +15,8 @@ Press the space_open or space_closed buttons to call the smib server endpoint ap
 - Confirms the space state after change by calling space_state
 - Regularly polls for space state (polling period configurable in config.py) and updates the SMIBHID status appropriately to sync with other space state controls
 - Flashes both space state LEDs at 2Hz if space state cannot be determined
-- 2x16 character LCD display support
+- 2x16 character I2C LCD display support (Space state)
+- 32x128 I2C OLED display support (Sensors)
 - Error information shown on connected displays where configured in modules using ErrorHandler class
 - UI Logger captures timestamps of button presses and uploads to SMIB for logging and review of usage patterns
 - Space open relay pin optionally sets a GPIO to high or low when the space is open
@@ -46,6 +47,8 @@ The API allows querying of the sensors in realtime and SMIB has a slack command 
 The SGP30 CO2 sensor needs calibration from time to time and this can be achieved by posting the current CO2 level as measured by a reference sensor to the calibration API endpoint or by using the sensors web management page. Full instructions are available by following links from the main admin web page at http://<smibhid IP>:80
 
 The SGP30 module also allows configuration of a buzzer and LED alarm. On each poll (once per minute), the LED and alarm buzzer will trigger at the PPM threshold (configurable) in the config file and will remain triggered until the level drops below the reset threshold (configurable). A snooze button is provided to silence the audible alarm for 5 minutes (configurable) while an open window lowers the measured PPM, but the alarm LED will remain lit while the reset threshold is exceeded.
+
+The CO2 reading can be output onto the 32x128 OLED display if attached. There is a 5 second auto off on the OLED display to prevent pixel burnout/in. The snooze button becomes a screen wake button if the screen is fitted and powered off and snooze on a subsequent press while the screen is powered on.
 
 ## Circuit diagram
 ### Pico W Connections
