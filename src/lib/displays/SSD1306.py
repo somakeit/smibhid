@@ -1,13 +1,14 @@
+#TODO: Catch and manage I2C IO errors
+
 from micropython import const
 from machine import I2C
 from framebuf import MONO_VLSB, FrameBuffer
 from time import sleep, time
 from asyncio import sleep as async_sleep, create_task
 from lib.ulogging import uLogger
+from lib.registry import driver_registry
 
 _FRAMEBUF_FORMAT = MONO_VLSB
-
-
 
 # register definitions
 SET_CONTRAST = const(0x81)
@@ -191,7 +192,7 @@ class _SSD1306(FrameBuffer):
         self.write_framebuf()
 
 
-class SSD1306_I2C(_SSD1306):
+class SSD1306(_SSD1306):
     """
     I2C class for SSD1306
 
@@ -205,9 +206,9 @@ class SSD1306_I2C(_SSD1306):
 
     def __init__(
         self,
-        width: int,
-        height: int,
         i2c: I2C,
+        width: int = 128,
+        height: int = 32,
         *,
         addr: int = 0x3C,
         external_vcc: bool = False,
@@ -259,13 +260,14 @@ class SSD1306_I2C(_SSD1306):
         self.log.info("Screensaver task started")
         while True:
             self.log.info("Screensaver running check")
-            if self.power and self.screen_on_time + 5 < time():
+            if self.power and (self.screen_on_time is None or self.screen_on_time + 5 < time()):
                 self.log.info("Turning off display")
                 self.poweroff()
             await async_sleep(1)
     
     def clear(self) -> None:
         """Clear the display"""
+        self.log.info("Clearing display")
         self.fill(0)
         self.show()
     
@@ -273,14 +275,23 @@ class SSD1306_I2C(_SSD1306):
         """
         Clear the display and write text.
         """
+        self.log.info(f"Clearing display and writing text {text}")
         self.fill(0)
         self.text(text, 0, 0)
+        self.show()
+    
+    def print_startup(self, version: str) -> None:
+        """Render startup information on screen."""
+        self.log.info(f"Printing startup information: v{version}")
+        self.text("S.M.I.B.H.I.D.", 0, 0)
+        self.text(f"Loading: v{version}", 0, 10)
         self.show()
     
     def update_co2(self, co2: int) -> None:
         """
         Update the CO2 value on the OLED screen.
         """
+        self.log.info(f"Updating CO2 value: {co2} ppm")
         self.fill_rect(0, 0, 128, 10, 0)
         self.text(f"CO2: {co2} ppm", 0, 0)
         self.show()
@@ -289,6 +300,9 @@ class SSD1306_I2C(_SSD1306):
         """
         Update the alarm status on the OLED screen.
         """
+        self.log.info(f"Updating alarm status: {text}")
         self.fill_rect(0, 10, 128, 10, 0)
         self.text(f"Alarm: {text}", 0, 10)
         self.show()
+
+driver_registry.register_driver("SSD1306", SSD1306)

@@ -7,9 +7,7 @@ from lib.sensors.BME280 import BME280
 from lib.sensors.SCD30 import SCD30
 from lib.sensors.sensor_module import SensorModule
 from lib.sensors.file_logging import FileLogger
-from time import time
 from lib.sensors.alarm import Alarm
-from lib.displays.SSD1306 import SSD1306_I2C
 
 class Sensors:
     def __init__(self, i2c: I2C) -> None:
@@ -20,19 +18,18 @@ class Sensors:
         self.configured_modules: dict[str, SensorModule] = {}
         self.file_logger = FileLogger(init_files=True)
         modules = ["SGP30", "BME280", "SCD30"]
-        self.oled = SSD1306_I2C(128, 32, self.i2c)
         self.load_modules(modules)
         self._configure_modules()
         self.alarm = None
         if CO2_ALARM_THRESHOLD_PPM > 0 and 'SCD30' in self.configured_modules:
-            self.alarm = Alarm(self.oled)
+            self.alarm = Alarm()
             self.log.info("SCD30 present and CO2_ALARM_THRESHOLD_PPM > 0, CO2 alarm enabled")
 
     def load_modules(self, modules: list[str]) -> None:
         """
         Load a list of sensor modules by name passed as a list of strings.
         """
-        self.oled.clear_and_text("Loading modules...")
+        #self.oled.clear_and_text("Loading modules...")
 
         for module in modules:
             try:
@@ -52,7 +49,7 @@ class Sensors:
     def _configure_modules(self) -> None:
         self.log.info(f"Attempting to locate drivers for: {self.SENSOR_MODULES}")
 
-        self.oled.clear_and_text("Configuring Sensors...")
+        #self.oled.clear_and_text("Configuring Sensors...")
 
         for sensor_module in self.SENSOR_MODULES:
             if sensor_module in self.available_modules:
@@ -68,7 +65,7 @@ class Sensors:
     def startup(self) -> None:
         if SENSOR_LOG_CACHE_ENABLED:
             self.log.info(f"Starting sensors: {self.configured_modules}")
-            self.oled.clear_and_text("Starting sensors...")
+            #self.oled.clear_and_text("Starting sensors...")
             create_task(self._poll_sensors())
             self.log.info("Sensor polling started")
         else:
@@ -84,7 +81,8 @@ class Sensors:
             
             if len(readings) > 0:
                 if readings.get("SCD30"):
-                    self.oled.update_co2(readings["SCD30"]["co2"])
+                    #self.oled.update_co2(readings["SCD30"]["co2"])
+                    pass
                     
                 self.file_logger.log_minute_entry(readings)
                 if self.alarm:

@@ -3,7 +3,7 @@ from asyncio import get_event_loop, Event
 from lib.space_state import SpaceState, NoneState, OpenState, ClosedState
 from lib.error_handling import ErrorHandler
 from lib.module_config import ModuleConfig
-from lib.display import Display
+from lib.displays.display import Display
 from lib.networking import WirelessNetwork
 from lib.rfid.reader import RFIDReader
 from config import RFID_ENABLED, CLOCK_FREQUENCY, SDA_PIN, SCL_PIN, I2C_ID, I2C_FREQ
