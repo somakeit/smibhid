@@ -18,6 +18,7 @@ class Display:
         self.drivers = DISPLAY_DRIVERS
         self.log.info("Init display")
         self.enabled = False
+        self.screen_name = "all"
         self.i2c = i2c
         self.screens = []
         self._load_configured_drivers()
@@ -44,13 +45,25 @@ class Display:
             self.enabled = False
 
     def _execute_command(self, command: str, *args) -> None:
-        self.log.info(f"Executing command on screen drivers: {command}, with arguments: {args}")
+        """Execute a command on specified screen, defaults to all screens."""
+        self.log.info(f"Executing command {command} on screen {self.screen_name}, with arguments: {args}")
         for screen in self.screens:
-            if hasattr(screen, command):
-                method = getattr(screen, command)
-                self.log.info(f"Executing command on screen: {screen}")
-                if callable(method):
-                    method(*args)
+            if self.screen_name == "all" or screen == self.screen_name:
+                if hasattr(screen, command):
+                    method = getattr(screen, command)
+                    self.log.info(f"Executing command on screen: {screen}")
+                    if callable(method):
+                        method(*args)
+        self.screen_name = "all"
+    
+    def set_screen_for_next_command(self, screen_name: str) -> None:
+        """Set the screen to execute the next command on."""
+        self.log.info(f"Setting screen to {screen_name}")
+        if screen_name in self.screens:
+            self.screen_name = screen_name
+        else:
+            self.log.warn(f"Screen {screen_name} not found, defaulting to all screens.")
+            self.screen_name = "all"
 
     def clear(self) -> None:
         """Clear all screens."""
@@ -104,3 +117,13 @@ class Display:
         """Display cancelling text."""
         self.log.info("Cancelling")
         self._execute_command("cancelling")
+    
+    def update_co2(self, co2: int) -> None:
+        """Update CO2 information on all screens."""
+        self.log.info(f"Updating CO2 information: {co2}")
+        self._execute_command("update_co2", co2)
+
+    def update_alarm(self, alarm: str) -> None:
+        """Update alarm information on all screens."""
+        self.log.info(f"Updating alarm information: {alarm}")
+        self._execute_command("update_alarm", alarm)
