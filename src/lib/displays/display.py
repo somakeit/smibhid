@@ -3,6 +3,7 @@ from lib.registry import driver_registry
 from lib.displays.LCD1602 import LCD1602 # Importing the module registers the driver - do not remove this  # noqa: F401
 from lib.displays.SSD1306 import SSD1306 # Importing the module registers the driver - do not remove this  # noqa: F401
 from config import DISPLAY_DRIVERS
+from json import dumps
 
 class Display:
     """
@@ -44,18 +45,22 @@ class Display:
             self.log.info("No screens configured successfully; Display functionality disabled.")
             self.enabled = False
 
-    def _execute_command(self, command: str, *args) -> None:
+    def _execute_command(self, command: str, *args) -> dict:
         """Execute a command on specified screen, defaults to all screens."""
+        results = {}
         self.log.info(f"Executing command {command} on screen {self.screen_name}, with arguments: {args}")
         for screen in self.screens:
-            self.log.info(f"Checking screen: {screen.__class__.__name__} against {self.screen_name}.")
-            if self.screen_name == "all" or self.screen_name == screen.__class__.__name__:
+            screen_name = screen.__class__.__name__
+            self.log.info(f"Checking screen: {screen_name} against {self.screen_name}.")
+            if self.screen_name == "all" or self.screen_name == screen_name:
                 if hasattr(screen, command):
                     method = getattr(screen, command)
                     self.log.info(f"Executing command on screen: {screen.__class__.__name__}")
                     if callable(method):
-                        method(*args)
+                        results[screen_name] = method(*args)
         self.screen_name = "all"
+        
+        return results
     
     def set_screen_for_next_command(self, screen_name: str) -> None:
         """Set the screen to execute the next command on."""
@@ -129,3 +134,15 @@ class Display:
         """Update alarm information on all screens."""
         self.log.info(f"Updating alarm information: {alarm}")
         self._execute_command("update_alarm", alarm)
+    
+    def get_power_state(self) -> dict:
+        """Get power state information on all screens."""
+        self.log.info("Getting power state information")
+        results = self._execute_command("get_power_state")
+        self.log.info(f"Power state information: {results}")
+        return results
+    
+    def power_on(self) -> None:
+        """Power on all screens."""
+        self.log.info("Powering on all screens")
+        self._execute_command("power_on")

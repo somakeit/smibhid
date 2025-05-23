@@ -1,5 +1,3 @@
-#TODO: Catch and manage I2C IO errors
-
 from micropython import const
 from machine import I2C
 from framebuf import MONO_VLSB, FrameBuffer
@@ -71,12 +69,16 @@ class _SSD1306(FrameBuffer):
             self.page_column_start = None
         # Let's get moving!
         self.screen_on_time = None
-        self.poweron()
+        self.power_on()
         self.init_display()
 
     @property
     def power(self) -> bool:
         """True if the display is currently powered on, otherwise False"""
+        return self._power
+    
+    def get_power_state(self) -> bool:
+        """Get the power state of the display"""
         return self._power
 
     def init_display(self) -> None:
@@ -131,7 +133,7 @@ class _SSD1306(FrameBuffer):
         self.fill(0)
         self.show()
 
-    def poweroff(self) -> None:
+    def power_off(self) -> None:
         """Turn off the display (nothing visible)"""
         self.write_cmd(SET_DISP)
         self._power = False
@@ -160,7 +162,7 @@ class _SSD1306(FrameBuffer):
         """Derived class must implement this"""
         raise NotImplementedError
 
-    def poweron(self) -> None: #TODO: Make async
+    def power_on(self) -> None: #TODO: Make async
         "Reset device and turn on the display."
         if self.reset_pin:
             self.reset_pin.value = 1
@@ -263,7 +265,7 @@ class SSD1306(_SSD1306):
             self.log.info("Screensaver running check")
             if self.power and (self.screen_on_time is None or self.screen_on_time + 5 < time()):
                 self.log.info("Turning off display")
-                self.poweroff()
+                self.power_off()
             await async_sleep(1)
     
     def clear(self) -> None:

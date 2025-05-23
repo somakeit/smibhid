@@ -93,11 +93,16 @@ class Alarm:
             await self.co2_alarm_snooze_event.wait()
             self.co2_alarm_snooze_event.clear()
             
-            self.snooze_co2_alarm() # TODO: add power query to display module and reinstate snooze wake display logic, include detection of display in power query and immediately snooze if no display connected
-            #if self.display.power:
-                #self.snooze_co2_alarm()
-            #else:
-                #self.display.poweron()
+            try:
+                power_state = self.display.get_power_state()["SSD1306"]
+            except KeyError:
+                self.log.error("Power state not found in display state, no display connected, setting power state to True")
+                power_state = True
+                
+            if power_state:
+                self.snooze_co2_alarm()
+            else:
+                self.display.power_on()
     
     def assess_co2_alarm(self, readings: dict) -> None:
         """
