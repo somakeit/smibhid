@@ -233,6 +233,7 @@ class SSD1306(_SSD1306):
             external_vcc=external_vcc,
             page_addressing=self.page_addressing,
         )
+        self.log.info("Init SSD1306 display driver")
         create_task(self.screensaver())
 
     def write_cmd(self, cmd: int) -> None:

@@ -39,7 +39,7 @@ class Display:
                 print(f"An error occurred while confguring display driver '{driver}': {e}")
                 
         if len(self.screens) > 0:
-            self.log.info(f"Display functionality enabled: {len(self.screens)} screens configured.")
+            self.log.info(f"Display functionality enabled: {len(self.screens)} screen objects configured: {self.screens}")
         else:
             self.log.info("No screens configured successfully; Display functionality disabled.")
             self.enabled = False
@@ -48,18 +48,20 @@ class Display:
         """Execute a command on specified screen, defaults to all screens."""
         self.log.info(f"Executing command {command} on screen {self.screen_name}, with arguments: {args}")
         for screen in self.screens:
-            if self.screen_name == "all" or screen == self.screen_name:
+            self.log.info(f"Checking screen: {screen.__class__.__name__} against {self.screen_name}.")
+            if self.screen_name == "all" or self.screen_name == screen.__class__.__name__:
                 if hasattr(screen, command):
                     method = getattr(screen, command)
-                    self.log.info(f"Executing command on screen: {screen}")
+                    self.log.info(f"Executing command on screen: {screen.__class__.__name__}")
                     if callable(method):
                         method(*args)
         self.screen_name = "all"
     
     def set_screen_for_next_command(self, screen_name: str) -> None:
         """Set the screen to execute the next command on."""
-        self.log.info(f"Setting screen to {screen_name}")
-        if screen_name in self.screens:
+        self.log.info(f"Setting screen for next command to {screen_name}")
+        if any(screen.__class__.__name__ == screen_name for screen in self.screens):
+            self.log.info(f"Screen {screen_name} found, setting for next command.")
             self.screen_name = screen_name
         else:
             self.log.warn(f"Screen {screen_name} not found, defaulting to all screens.")
