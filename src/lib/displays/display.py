@@ -62,15 +62,20 @@ class Display:
         
         return results
     
-    def set_screen_for_next_command(self, screen_name: str) -> None:
-        """Set the screen to execute the next command on."""
+    def set_screen_for_next_command(self, screen_name: str) -> bool:
+        """
+        Set the screen to execute the next command on. If the screen is not found, retain all screens.
+        Returns True if the screen was found and set, False if not.
+        """
         self.log.info(f"Setting screen for next command to {screen_name}")
         if any(screen.__class__.__name__ == screen_name for screen in self.screens):
             self.log.info(f"Screen {screen_name} found, setting for next command.")
             self.screen_name = screen_name
+            return True
         else:
-            self.log.warn(f"Screen {screen_name} not found, defaulting to all screens.")
+            self.log.warn(f"Screen {screen_name} not found, retaining all screens and returning screen missing error.")
             self.screen_name = "all"
+            return False
 
     def clear(self) -> None:
         """Clear all screens."""

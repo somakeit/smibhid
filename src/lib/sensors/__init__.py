@@ -74,8 +74,11 @@ class Sensors:
         Asynchronously poll sensors and log readings every 60 seconds.
         """
         self.log.info("Starting sensor polling")
-        self.display.set_screen_for_next_command(self.SENSOR_SCREEN)
-        self.display.clear()
+        screen_set = self.display.set_screen_for_next_command(self.SENSOR_SCREEN)
+        if screen_set:
+            self.log.info("Sensor screen cleared")
+            self.display.clear()
+        
         while True:
             readings = self.get_readings()
             self.log.info(f"Sensor readings: {readings}")
