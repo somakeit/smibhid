@@ -93,7 +93,6 @@ class Sensors:
             if len(readings) > 0:
                 if readings.get("SCD30"):
                     self.display.update_co2(readings["SCD30"]["co2"])
-                    pass
                     
                 self.file_logger.log_minute_entry(readings)
                 if self.alarm:
