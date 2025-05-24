@@ -1,4 +1,4 @@
-from lib.display import Display
+from lib.displays.display import Display
 from lib.networking import WirelessNetwork
 from lib.ulogging import uLogger
 from lib.rfid.reader import RFIDReader

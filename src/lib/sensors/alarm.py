@@ -11,17 +11,18 @@ from machine import Pin
 from asyncio import create_task, run, sleep, Event, CancelledError
 from lib.button import Button
 from time import time
+from lib.displays.display import Display
 
 class Alarm:
     """
     Alarm class to handle sensor alarms.
     """
-    def __init__(self) -> None:
+    def __init__(self, display: Display) -> None:
         self.log = uLogger("Alarm")
         self.log.info("Alarm module initialized")
+        self.display = display
         self.co2_alarm_buzzer = Pin(CO2_ALARM_BUZZER_PIN, Pin.OUT)
         self.co2_alarm_led = Pin(CO2_ALARM_LED_PIN, Pin.OUT)
-        run(self.async_test_co2_alarm())
         self.co2_alarm_snooze_event = Event()
         self.co2_alarm_snooze_button = Button(CO2_ALARM_SNOOZE_BUTTON_PIN, "CO2 alarm snooze", self.co2_alarm_snooze_event)
         self.co2_alarm_buzzer_snooze_set_time = None
@@ -34,9 +35,11 @@ class Alarm:
         Asynchronously test the CO2 alarm by sounding the buzzer and turning on the LED.
         """
         self.log.info("Testing CO2 alarm")
+        self.display.update_alarm("Testing")
         self.co2_alarm_buzzer.on()
         self.co2_alarm_led.on()
         await sleep(0.5)
+        self.display.update_alarm("Clear")
         self.co2_alarm_buzzer.off()
         self.co2_alarm_led.off()
     
@@ -88,7 +91,31 @@ class Alarm:
         while True:
             await self.co2_alarm_snooze_event.wait()
             self.co2_alarm_snooze_event.clear()
-            self.snooze_co2_alarm()
+            
+            self.log.info("CO2 alarm snooze button pressed")
+            power_state = self.are_all_power_managed_displays_powered_on()
+                
+            if power_state:
+                self.snooze_co2_alarm()
+            else:
+                self.display.power_on()
+
+    def are_all_power_managed_displays_powered_on(self) -> bool:
+        """
+        Check all returned power states (displays supporting power on/off) from
+        the display abstraction layer and return True if all of them are
+        powered on.
+        If no displays with power states are connected, return True by default.
+        """
+        power_states = self.display.get_power_state()
+        
+        for power_state in power_states:
+            if power_states[power_state] is False:
+                self.log.info(f"{power_state} is powered off, returning False")
+                return False
+
+        self.log.info("No displays with power control are powered off; returning True")
+        return True
     
     def assess_co2_alarm(self, readings: dict) -> None:
         """
@@ -122,6 +149,7 @@ class Alarm:
         self.log.info("Unsetting CO2 alarm state")
         self.co2_alarm_led.off()
         create_task(self.async_stop_alarm())
+        self.display.update_alarm("Clear")
 
     def snooze_co2_alarm(self) -> None:
         """
@@ -129,7 +157,8 @@ class Alarm:
         """
         self.log.info("Snoozing CO2 alarm")
         create_task(self.async_stop_alarm())
-        self.co2_alarm_buzzer_snooze_set_time = time()    
+        self.co2_alarm_buzzer_snooze_set_time = time()
+        self.display.update_alarm("Snoozed")    
 
     def set_co2_alarm_buzzer(self) -> None:
         """
@@ -142,9 +171,11 @@ class Alarm:
             if not self.alarm_task or self.alarm_task.done():
                 self.log.info("Setting CO2 alarm buzzer")
                 create_task(self.async_start_alarm())
+                self.display.update_alarm("Triggered")
                     
         else:
             self.log.info("CO2 alarm buzzer snoozed, not setting buzzer")
+            self.display.update_alarm("Snoozed")
             if self.alarm_task and not self.alarm_task.done():
                 self.log.warn("CO2 alarm task running when it shouldn't be, cancelling CO2 alarm task")
                 create_task(self.async_stop_alarm())

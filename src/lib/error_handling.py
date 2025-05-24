@@ -1,4 +1,4 @@
-from lib.display import Display
+from lib.displays.display import Display
 from lib.ulogging import uLogger
 
 class ErrorHandler:

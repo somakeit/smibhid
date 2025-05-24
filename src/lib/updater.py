@@ -5,7 +5,7 @@ import requests
 from gc import collect
 from lib.networking import WirelessNetwork
 from asyncio import run
-from lib.display import Display
+from lib.displays.display import Display
 from time import sleep
 
 class UpdateCore:
