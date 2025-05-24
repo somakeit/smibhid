@@ -128,7 +128,7 @@ Example: `LOG_FILE_MAX_SIZE = 10240`
 Create a new instance of the ErrorHandling class in a module to register a list of possible errors for that module and enable or disable them for display on connected screens using class methods. See the space state module for an example of implementation.
 
 ### Adding functionality
-Refer to the [S.M.I.B. contribution guidelines](https://github.com/somakeit/S.M.I.B./contribute) for more info on contributing.
+Refer to the [SMIBHID contribution guidelines](https://github.com/somakeit/smibhid/contribute) for more info on contributing.
 
 Use existing space state buttons, lights, slack API wrapper and watchers as an example for how to implement:
 - Create or use an existing (such as button) appropriate module and class with coroutine to watch for input or other appropriate event
