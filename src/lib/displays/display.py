@@ -41,6 +41,7 @@ class Display:
                 
         if len(self.screens) > 0:
             self.log.info(f"Display functionality enabled: {len(self.screens)} screen objects configured: {self.screens}")
+            self.enabled = True
         else:
             self.log.info("No screens configured successfully; Display functionality disabled.")
             self.enabled = False
