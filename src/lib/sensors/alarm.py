@@ -92,16 +92,28 @@ class Alarm:
             await self.co2_alarm_snooze_event.wait()
             self.co2_alarm_snooze_event.clear()
             
-            try:
-                power_state = self.display.get_power_state()["SSD1306"]
-            except KeyError:
-                self.log.error("Power state not found in display state, no display connected, setting power state to True")
-                power_state = True
+            self.log.info("CO2 alarm snooze button pressed")
+            power_state = self.are_all_power_managed_displays_powered_on()
                 
             if power_state:
                 self.snooze_co2_alarm()
             else:
                 self.display.power_on()
+
+    def are_all_power_managed_displays_powered_on(self) -> bool:
+        """
+        Check all returned power states from display abstraction layer and return True if any of them are powered on.
+        If no displays with power states are  connected, return True by default.
+        """
+        power_states = self.display.get_power_state()
+        
+        for power_state in power_states:
+            if power_states[power_state] is False:
+                self.log.info(f"{power_state} is powered off, returning False")
+                return False
+
+        self.log.error("No connected displays have power control and are powered off, returning True")
+        return True
     
     def assess_co2_alarm(self, readings: dict) -> None:
         """
