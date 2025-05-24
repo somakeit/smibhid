@@ -3,8 +3,6 @@ from lib.registry import driver_registry
 from lib.displays.LCD1602 import LCD1602 # Importing the module registers the driver - do not remove this  # noqa: F401
 from lib.displays.SSD1306 import SSD1306 # Importing the module registers the driver - do not remove this  # noqa: F401
 from config import DISPLAY_DRIVERS
-from json import dumps
-
 class Display:
     """
     Abstracted display capabilities for supported physical displays.
