@@ -114,7 +114,7 @@ class Alarm:
                 self.log.info(f"{power_state} is powered off, returning False")
                 return False
 
-        self.log.info("No connected displays have power control and are powered off, returning True")
+        self.log.info("No displays with power control are powered off; returning True")
         return True
     
     def assess_co2_alarm(self, readings: dict) -> None:
