@@ -62,6 +62,17 @@ class Sensors:
         self.log.info(f"Configured modules: {self.get_modules()}")
 
     def startup(self) -> None:
+        screen_set = self.display.set_screen_for_next_command(self.SENSOR_SCREEN)
+        if screen_set:
+            self.log.info("Sensor screen cleared")
+            self.display.clear()
+        
+        self.display.update_co2("Unknown")
+        self.display.update_alarm("Clear")
+
+        if self.alarm:
+            run(self.alarm.async_test_co2_alarm())
+
         if SENSOR_LOG_CACHE_ENABLED:
             self.log.info(f"Starting sensors: {self.configured_modules}")
             create_task(self._poll_sensors())
@@ -74,10 +85,6 @@ class Sensors:
         Asynchronously poll sensors and log readings every 60 seconds.
         """
         self.log.info("Starting sensor polling")
-        screen_set = self.display.set_screen_for_next_command(self.SENSOR_SCREEN)
-        if screen_set:
-            self.log.info("Sensor screen cleared")
-            self.display.clear()
         
         while True:
             readings = self.get_readings()

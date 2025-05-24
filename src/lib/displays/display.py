@@ -130,7 +130,7 @@ class Display:
         self.log.info("Cancelling")
         self._execute_command("cancelling")
     
-    def update_co2(self, co2: int) -> None:
+    def update_co2(self, co2: str) -> None:
         """Update CO2 information on all screens."""
         self.log.info(f"Updating CO2 information: {co2}")
         self._execute_command("update_co2", co2)

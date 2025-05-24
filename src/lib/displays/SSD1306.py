@@ -290,7 +290,7 @@ class SSD1306(_SSD1306):
         self.text(f"Loading: v{version}", 0, 10)
         self.show()
     
-    def update_co2(self, co2: int) -> None:
+    def update_co2(self, co2: str) -> None:
         """
         Update the CO2 value on the OLED screen.
         """

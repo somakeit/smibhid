@@ -23,7 +23,6 @@ class Alarm:
         self.display = display
         self.co2_alarm_buzzer = Pin(CO2_ALARM_BUZZER_PIN, Pin.OUT)
         self.co2_alarm_led = Pin(CO2_ALARM_LED_PIN, Pin.OUT)
-        run(self.async_test_co2_alarm())
         self.co2_alarm_snooze_event = Event()
         self.co2_alarm_snooze_button = Button(CO2_ALARM_SNOOZE_BUTTON_PIN, "CO2 alarm snooze", self.co2_alarm_snooze_event)
         self.co2_alarm_buzzer_snooze_set_time = None
