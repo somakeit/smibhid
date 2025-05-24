@@ -102,8 +102,10 @@ class Alarm:
 
     def are_all_power_managed_displays_powered_on(self) -> bool:
         """
-        Check all returned power states from display abstraction layer and return True if any of them are powered on.
-        If no displays with power states are  connected, return True by default.
+        Check all returned power states (displays supporting power on/off) from
+        the display abstraction layer and return True if all of them are
+        powered on.
+        If no displays with power states are connected, return True by default.
         """
         power_states = self.display.get_power_state()
         
@@ -112,7 +114,7 @@ class Alarm:
                 self.log.info(f"{power_state} is powered off, returning False")
                 return False
 
-        self.log.error("No connected displays have power control and are powered off, returning True")
+        self.log.info("No connected displays have power control and are powered off, returning True")
         return True
     
     def assess_co2_alarm(self, readings: dict) -> None:
