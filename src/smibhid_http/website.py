@@ -116,6 +116,14 @@ class Version():
         html = dumps(hid.version)
         logger.info(f"Return value: {html}")
         return html
+    
+class Hostname():
+
+    def get(self, data, hid, logger: uLogger) -> str:
+        logger.info("API request - hostname")
+        html = dumps(hid.wifi.determine_hostname())
+        logger.info(f"Return value: {html}")
+        return html
 
 class FirmwareFiles():
 

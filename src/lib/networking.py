@@ -54,15 +54,33 @@ class WirelessNetwork:
         self.wlan = network.WLAN(network.STA_IF)
         self.wlan.active(True)
         self.wlan.config(pm=self.disable_power_management)
-        self.mac = hexlify(self.wlan.config('mac'),':').decode()
+        self.mac = self.get_mac_address()
         self.mac_no_colons = self.mac.replace(":", "")
         self.log.info("MAC: " + self.mac)
-        if config.CUSTOM_HOSTNAME:
-            self.hostname = config.CUSTOM_HOSTNAME
-        else:
-            self.hostname = "smibhid-" + self.mac_no_colons[-6:]
-        self.log.info(f"Setting hostname to {self.hostname}")
+        self.hostname = self.determine_hostname()
         network.hostname(self.hostname)
+
+    def get_mac_address(self) -> str:
+        """
+        Get the MAC address of the wireless interface.
+        Returns:
+            str: The MAC address in the format 'xx:xx:xx:xx:xx:xx'.
+        """
+        mac = hexlify(self.wlan.config('mac'),':').decode()
+        self.log.info(f"MAC address: {mac}")
+        return mac
+
+    def determine_hostname(self) -> str:
+        """
+        Generate a default hostname based on the MAC address if no custom
+        hostname provided and populate in class variable `self.hostname`.
+        """
+        if config.CUSTOM_HOSTNAME:
+            hostname = config.CUSTOM_HOSTNAME
+        else:
+            hostname = "smibhid-" + self.mac_no_colons[-6:]
+        self.log.info(f"Setting hostname to {hostname}")
+        return hostname
 
     def startup(self) -> None:
         self.log.info("Starting wifi network monitor")
