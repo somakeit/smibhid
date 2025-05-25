@@ -180,7 +180,7 @@ Ensure Pytest is installed in your environment. You can install it using the fol
 Tests are configured within the tests folder.
 
 The conftest.py file is used to mock up micropython specific elements and provide mock values for hardware interfaces to allow meaingful testing of the board in cpython.
-Review the conftest and test files for existing example son how to build further tests.
+Review the conftest and test files for existing example on how to build further tests.
 
 ### UI State diagram
 The space state UI state machine is described in this diagram:

@@ -72,8 +72,8 @@ class WirelessNetwork:
 
     def determine_hostname(self) -> str:
         """
-        Generate a default hostname based on the MAC address if no custom
-        hostname provided and populate in class variable `self.hostname`.
+        Generate and return a default hostname based on the MAC address if no
+        custom hostname is provided.
         """
         if config.CUSTOM_HOSTNAME:
             hostname = config.CUSTOM_HOSTNAME
