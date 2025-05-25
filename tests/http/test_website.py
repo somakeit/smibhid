@@ -1,6 +1,4 @@
 import pytest
-import asyncio
-import httpx
 
 @pytest.fixture()
 def hid_log():
@@ -16,6 +14,24 @@ def hid_log_with_version(hid_log):
     test_version = "1.5.0"
     hid.version = test_version
     return hid, log, test_version
+
+@pytest.fixture()
+def webapp(hid_log_with_version):
+    from smibhid_http.website import WebApp
+    hid, log, version = hid_log_with_version
+    from lib.module_config import ModuleConfig
+    from lib.networking import WirelessNetwork
+    from lib.display import Display
+    from machine import I2C
+
+    i2c = I2C(0, sda=21, scl=22, freq=100000)
+    module_config = ModuleConfig()
+    module_config.register_wifi(WirelessNetwork())
+    module_config.register_display(Display(i2c))
+    module_config.register_sensors(i2c)
+
+    app = WebApp(module_config, hid)
+    return app
 
 def test_import_hid():
     """
@@ -116,21 +132,13 @@ def test_hostname_endpoint_returns_correct_hostname(hid_log):
     expected_hostname = wlan.determine_hostname()
     assert response == dumps(expected_hostname), f"Expected {expected_hostname}, got '{response}'"
 
-def test_hostname_endpoint_is_registered():
-    from smibhid_http.website import WebApp, Hostname
-    from lib.module_config import ModuleConfig
-    from lib.hid import HID
-    from lib.networking import WirelessNetwork
-    from lib.display import Display
-    from machine import I2C
+def test_hostname_endpoint_is_registered(webapp):
+    """
+    Test that the hostname endpoint is registered correctly in the web application.
+    """
+    from smibhid_http.website import Hostname
 
-    i2c = I2C(0, sda=21, scl=22, freq=100000)
-    module_config = ModuleConfig()
-    module_config.register_wifi(WirelessNetwork())
-    module_config.register_display(Display(i2c))
-    module_config.register_sensors(i2c)
-    hid = HID()
-    app = WebApp(module_config, hid)
+    app = webapp
 
     # Access the underlying tinyweb Webserver instance
     tinyweb_app = app.app
