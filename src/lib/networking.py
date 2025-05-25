@@ -199,6 +199,10 @@ class WirelessNetwork:
             await sleep(5)
     
     def get_mac(self) -> str:
+        """
+        Get the MAC address of the wireless interface as stored in the Wireless
+        Network class - cheaper than calling the wlan config.
+        """
         return self.mac
     
     def get_ip(self) -> str:
