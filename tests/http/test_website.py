@@ -1,3 +1,20 @@
+import pytest
+
+@pytest.fixture()
+def hid_log():
+    from lib.ulogging import uLogger
+    from lib.hid import HID
+    log = uLogger("test_endpoint")
+    hid = HID()
+    return hid, log
+
+@pytest.fixture()
+def hid_log_with_version(hid_log):
+    hid, log = hid_log
+    test_version = "1.5.0"
+    hid.version = test_version
+    return hid, log, test_version
+
 def test_import_hid():
     """
     Test the import of the HID module.
@@ -28,32 +45,24 @@ def test_import_webapp():
     except ImportError as e:
         assert False, f"Failed to import WebApp: {e}"
 
-def test_hid_firmware_version_returned():
+def test_hid_firmware_version_returned(hid_log_with_version):
     """
     Test that the HID firmware version is returned correctly.
     """
-    from lib.hid import HID
-    hid = HID()
-    test_version = "1.5.0"
-    hid.version = test_version  # Mocking the version for testing
+    hid, log, test_version = hid_log_with_version
     expected_version = hid.version
     assert expected_version == test_version, f"Expected firmware version {test_version}, got '{expected_version}'"
 
-def test_firmware_endpoint_returns_current_firmware_version():
+def test_firmware_endpoint_returns_current_firmware_version(hid_log_with_version):
     """
     Test that the firmware endpoint returns the current firmware version.
     """
-    from json import dumps
-    from lib.ulogging import uLogger
-    from lib.hid import HID
-    log = uLogger("test_firmware_endpoint")
-    hid = HID()
-    test_version = "1.5.0"
-    hid.version = test_version  # Mocking the version for testing
     from smibhid_http.website import Version
+    from json import dumps
+    hid, log, hid_version = hid_log_with_version
     version = Version()
     response = version.get("", hid, log)
-    assert response == dumps(hid.version), f"Expected {dumps(hid.version)}, got '{response}'"
+    assert response == dumps(hid_version), f"Expected {dumps(hid_version)}, got '{response}'"
 
 def test_correct_mac_address_returned():
     """
@@ -61,11 +70,11 @@ def test_correct_mac_address_returned():
     """
     from lib.networking import WirelessNetwork
     wlan = WirelessNetwork()
-    expected_mac = wlan.get_mac_address()
-    assert expected_mac is not None, "MAC address should not be None"
-    assert isinstance(expected_mac, str), "MAC address should be a string"
-    assert len(expected_mac) == 17, "MAC address should be 17 characters long (including colons)"
-    assert expected_mac == "00:11:22:33:44:55"
+    mac = wlan.get_mac_address()
+    assert mac is not None, "MAC address should not be None"
+    assert isinstance(mac, str), "MAC address should be a string"
+    assert len(mac) == 17, "MAC address should be 17 characters long (including colons)"
+    assert mac == "00:11:22:33:44:55"
 
 def test_default_hostname_generation():
     """
@@ -73,8 +82,9 @@ def test_default_hostname_generation():
     """
     from lib.networking import WirelessNetwork
     wlan = WirelessNetwork()
-    expected_hostname = wlan.determine_hostname()
-    assert expected_hostname == "smibhid-334455", f"Expected 'smibhid', got '{expected_hostname}'"
+    hostname = wlan.determine_hostname()
+    expected_hostname = "smibhid-334455"
+    assert hostname == expected_hostname, f"Expected {expected_hostname}, got '{hostname}'"
 
 def test_custom_hostname_generation():
     """
@@ -90,17 +100,14 @@ def test_custom_hostname_generation():
     expected_hostname = wlan.determine_hostname()
     assert expected_hostname == custom_hostname, f"Expected '{custom_hostname}', got '{expected_hostname}'"
 
-def test_hostname_endpoint_returns_correct_hostname():
+def test_hostname_endpoint_returns_correct_hostname(hid_log):
     """
     Test that the hostname endpoint returns the default device hostname if not configured.
     """
     from json import dumps
-    from lib.ulogging import uLogger
-    from lib.hid import HID
     from smibhid_http.website import Hostname
     from lib.networking import WirelessNetwork
-    log = uLogger("test_hostname_endpoint")
-    hid = HID()
+    hid, log = hid_log
     hostname = Hostname()
     response = hostname.get("", hid, log)
     wlan = WirelessNetwork()
