@@ -1,4 +1,6 @@
 import pytest
+import asyncio
+import httpx
 
 @pytest.fixture()
 def hid_log():
@@ -113,3 +115,35 @@ def test_hostname_endpoint_returns_correct_hostname(hid_log):
     wlan = WirelessNetwork()
     expected_hostname = wlan.determine_hostname()
     assert response == dumps(expected_hostname), f"Expected {expected_hostname}, got '{response}'"
+
+def test_hostname_endpoint_is_registered():
+    from smibhid_http.website import WebApp, Hostname
+    from lib.module_config import ModuleConfig
+    from lib.hid import HID
+    from lib.networking import WirelessNetwork
+    from lib.display import Display
+    from machine import I2C
+
+    i2c = I2C(0, sda=21, scl=22, freq=100000)
+    module_config = ModuleConfig()
+    module_config.register_wifi(WirelessNetwork())
+    module_config.register_display(Display(i2c))
+    module_config.register_sensors(i2c)
+    hid = HID()
+    app = WebApp(module_config, hid)
+
+    # Access the underlying tinyweb Webserver instance
+    tinyweb_app = app.app
+
+    # The explicit_url_map maps url bytes to (handler, params)
+    url = b'/api/hostname'
+    assert url in tinyweb_app.explicit_url_map, "Hostname endpoint not registered"
+
+    handler, params = tinyweb_app.explicit_url_map[url]
+    # The handler should be restful_resource_handler, and params['_callmap'] should map b'GET' to (Hostname.get, ...)
+    assert callable(handler), "Handler for /api/hostname is not callable"
+    assert b'GET' in params['_callmap'], "GET method not registered for /api/hostname"
+    get_handler, kwargs = params['_callmap'][b'GET']
+    # The handler should be Hostname.get or a bound method of Hostname
+    assert hasattr(get_handler, '__self__'), "GET handler is not a bound method"
+    assert isinstance(get_handler.__self__, Hostname), "GET handler is not from Hostname class"

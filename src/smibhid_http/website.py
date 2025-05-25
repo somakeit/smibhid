@@ -88,6 +88,7 @@ class WebApp:
         
         self.app.add_resource(WLANMAC, '/api/wlan/mac', wifi = self.wifi, logger = self.log)
         self.app.add_resource(Version, '/api/version', hid = self.hid, logger = self.log)
+        self.app.add_resource(Hostname, '/api/hostname', hid = self.hid, logger = self.log)
         
         self.app.add_resource(FirmwareFiles, '/api/firmware_files', update_core = self.update_core, logger = self.log)
         self.app.add_resource(Reset, '/api/reset', update_core = self.update_core, logger = self.log)
