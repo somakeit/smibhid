@@ -172,6 +172,17 @@ If any files are staged (.updating file exists in updates folder on the device) 
 
 If errors are encountered such as no wifi on the update process, the staging file is deleted and SMIBHID will reboot back into normal mode.
 
+### Pytest
+The project now supports pytest tests and new functionality should ideally come with appropriate tests, possibly even leveraging TDD if you're feeling fancy.
+Ensure Pytest and appropriate dependencies are installed in your environment.
+Tests are configured within the tests folder.
+The conftest.py file is used to mock up micropython specific elements and provide mock values for hardware interfaces to allow meaingful testing of the board in cpython.
+
+#### Dependencies to install
+pip install:
+- pytest
+- httpx
+
 ### UI State diagram
 The space state UI state machine is described in this diagram:
 
