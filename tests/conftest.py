@@ -17,9 +17,12 @@ import types
 import json
 import struct
 
+#pytest_plugins = 'pytest_asyncio'
+
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../src')))
 
 # Define classes and functions to be mocked in testing
+# Machine
 class Pin:
     IN = 0 # type: int
     OUT = 1 # type: int
@@ -47,6 +50,10 @@ class Pin:
         """
         pass
     
+class freq:
+    def __init__(self, freq: int) -> None:
+        pass
+
 class I2C:
     def __init__(self, id: int, sda, scl, freq: int):
         pass
@@ -107,7 +114,7 @@ class RTC:
     """
 
     def __init__(self):
-        self.datetime = (2023, 10, 1, 0, 0, 0, 0, 0)  # Default date and time
+        self.datetime = (2023, 10, 1, 0, 0, 0, 0, 0)
 
     def datetime(self, dt=None):
         if dt is not None:
@@ -134,12 +141,23 @@ class SPI:
     def write(self, data: bytes):
         pass
 
+# Network
 class WLAN():
     def __init__(self, interface) -> None:
-        pass
+        self._mac = "00:11:22:33:44:55"  # Mock MAC address
 
-    def config(self, item: str) -> bytes:
-        return bytes(0)
+    def config(self, *args, **kwargs):
+        # Handle config('mac') or config(mac=True)
+        if args and args[0] == 'mac':
+            return bytes.fromhex(self._mac.replace(":", ""))
+        if 'mac' in kwargs and kwargs['mac']:
+            return bytes.fromhex(self._mac.replace(":", ""))
+        # Handle config(pm=...)
+        if 'pm' in kwargs:
+            # Simulate setting power management, do nothing
+            return None
+        # Default: do nothing
+        return None
     
     def active(self, mode: bool):
         pass
@@ -151,9 +169,18 @@ class WLAN():
         return 3
     
     def ifconfig(self):
-        config = ["192.168.1.100"]
+        config = ["192.168.12.50"]
         return config
 
+_network_hostname = None  # Module-level variable to store hostname
+
+def mock_hostname(name=None):
+    global _network_hostname
+    if name is not None:
+        _network_hostname = name
+    return _network_hostname
+
+# gc module
 def mock_collect():
     # Simulate successful garbage collection
     return None
@@ -162,61 +189,24 @@ def mock_mem_free():
     # Simulate returning free memory in bytes
     return 1024 * 1024
 
+#rp2 module
 def rp2_country(id: str):
     return 0
 
-# build mocked modules for testing using functions and classes above
-machine = types.ModuleType('machine')
-setattr(machine, 'Pin', Pin)
-setattr(machine, 'I2C', I2C)
-setattr(machine, 'PWM', PWM)
-setattr(machine, 'RTC', RTC)
-setattr(machine, 'SPI', SPI)
-
-network = types.ModuleType('network')
-setattr(network, 'WLAN', WLAN)
-setattr(network, 'STA_IF', 0)
-
-gc = types.ModuleType('gc')
-setattr(gc, 'collect', mock_collect)
-setattr(gc, 'mem_free', mock_mem_free)
-
-rp2 = types.ModuleType('rp2')
-setattr(rp2, 'country', rp2_country)
-
-# Insert mocked modules into testing environment
-sys.modules['machine'] = machine
-sys.modules['uasyncio'] = asyncio
-sys.modules['uos'] = os
-sys.modules['uerrno'] = errno
-sys.modules['usocket'] = socket
-sys.modules['utime'] = time
-sys.modules['network'] = network
-sys.modules['rp2'] = rp2
-sys.modules['ubinascii'] = binascii
-sys.modules['gc'] = gc
-sys.modules['ujson'] = json
-sys.modules['ustruct'] = struct
-
-# Ensure asyncio.core is available as a dummy module
-asyncio_core = types.ModuleType('asyncio.core')
-sys.modules['asyncio.core'] = asyncio_core
-
+# time module
 def mock_ticks_ms():
     # Return a fake millisecond tick count
     return int(time.time() * 1000)
 
-setattr(time, 'ticks_ms', mock_ticks_ms)
+def mock_ticks_diff(a, b):
+    # Simulate MicroPython's ticks_diff: returns the signed difference
+    return a - b
 
-# If you want to be extra safe, also ensure 'time' is in sys.modules
-sys.modules['time'] = time
-
+# os module
 def mock_statvfs(path):
     # Return a dummy statvfs result (tuple of 10 integers, as per Python docs)
     # (f_bsize, f_frsize, f_blocks, f_bfree, f_bavail, f_files, f_ffree, f_favail, f_flag, f_namemax)
     return (4096, 4096, 100000, 80000, 80000, 10000, 8000, 8000, 0, 255)
-
-setattr(os, 'statvfs', mock_statvfs)
 
 def mock_uname():
     # Return a dummy object with typical uname attributes
@@ -234,15 +224,63 @@ def mock_uname():
             return f"(sysname='{self.sysname}', nodename='{self.nodename}', release='{self.release}', version='{self.version}', machine='{self.machine}')"
     return Uname()
 
-setattr(os, 'uname', mock_uname)
-
-# Create a mock micropython module
-micropython = types.ModuleType('micropython')
-
+# micropython module
 def mock_const(x):
     return x
 
+# asyncio module
+def sleep_ms(ms):
+    # Simulate MicroPython asyncio's sleep_ms.
+    return None
+
+# Assign mock functions and classes to their respective modules, creating modules if necessary
+machine = types.ModuleType('machine')
+setattr(machine, 'Pin', Pin)
+setattr(machine, 'I2C', I2C)
+setattr(machine, 'PWM', PWM)
+setattr(machine, 'RTC', RTC)
+setattr(machine, 'SPI', SPI)
+setattr(machine, 'freq', freq)
+
+network = types.ModuleType('network')
+setattr(network, 'WLAN', WLAN)
+setattr(network, 'STA_IF', 0)
+setattr(network, 'hostname', mock_hostname)
+
+gc = types.ModuleType('gc')
+setattr(gc, 'collect', mock_collect)
+setattr(gc, 'mem_free', mock_mem_free)
+
+rp2 = types.ModuleType('rp2')
+setattr(rp2, 'country', rp2_country)
+
+asyncio_core = types.ModuleType('asyncio.core')
+setattr(asyncio_core, 'Event', getattr(asyncio, 'Event', None))
+setattr(asyncio_core, 'create_task', getattr(asyncio, 'create_task', None))
+
+setattr(asyncio, 'sleep_ms', sleep_ms)
+
+setattr(time, 'ticks_ms', mock_ticks_ms)
+setattr(time, 'ticks_diff', mock_ticks_diff)
+
+setattr(os, 'statvfs', mock_statvfs)
+setattr(os, 'uname', mock_uname)
+
+micropython = types.ModuleType('micropython')
 setattr(micropython, 'const', mock_const)
 
-# Insert into sys.modules so 'from micropython import const' works
+# Insert mocked modules into testing environment
+sys.modules['machine'] = machine
+sys.modules['uasyncio'] = asyncio
+sys.modules['uos'] = os
+sys.modules['uerrno'] = errno
+sys.modules['usocket'] = socket
+sys.modules['utime'] = time
+sys.modules['network'] = network
+sys.modules['rp2'] = rp2
+sys.modules['ubinascii'] = binascii
+sys.modules['gc'] = gc
+sys.modules['ujson'] = json
+sys.modules['ustruct'] = struct
+sys.modules['asyncio.core'] = asyncio_core
 sys.modules['micropython'] = micropython
