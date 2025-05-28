@@ -1,4 +1,4 @@
-from http.webserver import Webserver
+from smibhid_http.webserver import Webserver
 from lib.ulogging import uLogger
 from lib.module_config import ModuleConfig
 from json import dumps
@@ -49,45 +49,46 @@ class WebApp:
     def create_style_css(self):
         @self.app.route('/css/style.css')
         async def index(request, response):
-            await response.send_file('/http/www/css/style.css', content_type='text/css')
+            await response.send_file('/smibhid_http/www/css/style.css', content_type='text/css')
 
     def create_update_js(self):
         @self.app.route('/js/update.js')
         async def index(request, response):
-            await response.send_file('/http/www/js/update.js', content_type='application/javascript')
+            await response.send_file('/smibhid_http/www/js/update.js', content_type='application/javascript')
     
     def create_homepage(self) -> None:
         @self.app.route('/')
         async def index(request, response):
-            await response.send_file('/http/www/index.html')
+            await response.send_file('/smibhid_http/www/index.html')
 
     def create_update(self) -> None:
         @self.app.route('/update')
         async def index(request, response):
-            await response.send_file('/http/www/update.html')
+            await response.send_file('/smibhid_http/www/update.html')
     
     def create_sensors(self) -> None:
         @self.app.route('/sensors')
         async def index(request, response):
-            await response.send_file('/http/www/sensors/sensors.html')
+            await response.send_file('/smibhid_http/www/sensors/sensors.html')
     
     def create_scd30_js(self) -> None:
         @self.app.route('/js/scd30.js')
         async def index(request, response):
-            await response.send_file('/http/www/js/scd30.js', content_type='application/javascript')
+            await response.send_file('/smibhid_http/www/js/scd30.js', content_type='application/javascript')
     
     def create_scd30(self) -> None:
         @self.app.route('/sensors/scd30')
         async def index(request, response):
-            await response.send_file('/http/www/sensors/scd30.html')
+            await response.send_file('/smibhid_http/www/sensors/scd30.html')
 
     def create_api(self) -> None:
         @self.app.route('/api')
         async def api(request, response):
-            await response.send_file('/http/www/api.html')
+            await response.send_file('/smibhid_http/www/api.html')
         
         self.app.add_resource(WLANMAC, '/api/wlan/mac', wifi = self.wifi, logger = self.log)
         self.app.add_resource(Version, '/api/version', hid = self.hid, logger = self.log)
+        self.app.add_resource(Hostname, '/api/hostname', hid = self.hid, logger = self.log)
         
         self.app.add_resource(FirmwareFiles, '/api/firmware_files', update_core = self.update_core, logger = self.log)
         self.app.add_resource(Reset, '/api/reset', update_core = self.update_core, logger = self.log)
@@ -114,6 +115,14 @@ class Version():
     def get(self, data, hid, logger: uLogger) -> str:
         logger.info("API request - version")
         html = dumps(hid.version)
+        logger.info(f"Return value: {html}")
+        return html
+    
+class Hostname():
+
+    def get(self, data, hid, logger: uLogger) -> str:
+        logger.info("API request - hostname")
+        html = dumps(hid.wifi.determine_hostname())
         logger.info(f"Return value: {html}")
         return html
 
