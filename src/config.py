@@ -72,8 +72,8 @@ CO2_ALARM_SNOOZE_BUTTON_PIN = 5
 SENSOR_LOG_CACHE_ENABLED = False
 SENSOR_LOG_FILE_MAX_SIZE = 50000
 
-## Displays - Populate driver list with connected displays from this supported list: ["LCD1602"]
-DISPLAY_DRIVERS = ["LCD1602"]
+## Displays - Populate driver list with connected displays from this supported list: ["LCD1602", "SSD1306"]
+DISPLAY_DRIVERS = ["LCD1602", "SSD1306"]
 # Scroll speed for text on displays in characters per second
 SCROLL_SPEED = 4
 

@@ -15,7 +15,8 @@ Press the space_open or space_closed buttons to call the smib server endpoint ap
 - Confirms the space state after change by calling space_state
 - Regularly polls for space state (polling period configurable in config.py) and updates the SMIBHID status appropriately to sync with other space state controls
 - Flashes both space state LEDs at 2Hz if space state cannot be determined
-- 2x16 character LCD display support
+- 2x16 character I2C LCD display support (Space state)
+- 32x128 I2C OLED display support (Sensors)
 - Error information shown on connected displays where configured in modules using ErrorHandler class
 - UI Logger captures timestamps of button presses and uploads to SMIB for logging and review of usage patterns
 - Space open relay pin optionally sets a GPIO to high or low when the space is open
@@ -47,6 +48,8 @@ The SGP30 CO2 sensor needs calibration from time to time and this can be achieve
 
 The SGP30 module also allows configuration of a buzzer and LED alarm. On each poll (once per minute), the LED and alarm buzzer will trigger at the PPM threshold (configurable) in the config file and will remain triggered until the level drops below the reset threshold (configurable). A snooze button is provided to silence the audible alarm for 5 minutes (configurable) while an open window lowers the measured PPM, but the alarm LED will remain lit while the reset threshold is exceeded.
 
+The CO2 reading can be output onto the 32x128 OLED display if attached. There is a 5 second auto off on the OLED display to prevent pixel burnout/in. The snooze button becomes a screen wake button if the screen is fitted and powered off and snooze on a subsequent press while the screen is powered on.
+
 ## Circuit diagram
 ### Pico W Connections
 ![Circuit diagram](images/SMIBHID%20circuit%20diagram.drawio.png)
@@ -65,6 +68,8 @@ Below is a list of hardware and links for my specific build:
 - [LED push button switch - Green](https://thepihut.com/products/rugged-metal-pushbutton-with-green-led-ring?variant=27740444625)
 - [JST connectors](https://www.amazon.co.uk/dp/B07449V33P)
 - [2x16 Character I2C display](https://thepihut.com/products/lcd1602-i2c-module?variant=42422810083523)
+- [Monochrome 0.91" 128x32 I2C OLED Display](https://shop.pimoroni.com/products/monochrome-0-91-128x32-i2c-oled-display-stemma-qt-qwiic-compatible?variant=31209617784915)
+- [4 Pin JST-SH Cable (Qwiic, STEMMA QT, Qw/ST)](https://shop.pimoroni.com/products/jst-sh-cable-qwiic-stemma-qt-compatible?variant=40407104290899)
 - [SGP30 I2C sensor](https://thepihut.com/products/sgp30-air-quality-sensor-breakout) (Recommend SCD30 despite the price, this board is wildly inaccurate in my testing)
 - [BME280 sensor](https://thepihut.com/products/bme280-breakout-temperature-pressure-humidity-sensor)
 - [SCD30 sensor](https://thepihut.com/products/adafruit-scd-30-ndir-co2-temperature-and-humidity-sensor)

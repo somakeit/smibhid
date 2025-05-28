@@ -7,13 +7,15 @@ from lib.sensors.BME280 import BME280
 from lib.sensors.SCD30 import SCD30
 from lib.sensors.sensor_module import SensorModule
 from lib.sensors.file_logging import FileLogger
-from time import time
 from lib.sensors.alarm import Alarm
+from lib.displays.display import Display
 
 class Sensors:
-    def __init__(self, i2c: I2C) -> None:
+    def __init__(self, i2c: I2C, display: Display) -> None:
         self.log = uLogger("Sensors")
         self.i2c = i2c
+        self.display = display
+        self.SENSOR_SCREEN = "SSD1306"
         self.SENSOR_MODULES = SENSOR_MODULES
         self.available_modules: dict[str, SensorModule] = {}
         self.configured_modules: dict[str, SensorModule] = {}
@@ -23,7 +25,7 @@ class Sensors:
         self._configure_modules()
         self.alarm = None
         if CO2_ALARM_THRESHOLD_PPM > 0 and 'SCD30' in self.configured_modules:
-            self.alarm = Alarm()
+            self.alarm = Alarm(self.display)
             self.log.info("SCD30 present and CO2_ALARM_THRESHOLD_PPM > 0, CO2 alarm enabled")
 
     def load_modules(self, modules: list[str]) -> None:
@@ -47,6 +49,7 @@ class Sensors:
     
     def _configure_modules(self) -> None:
         self.log.info(f"Attempting to locate drivers for: {self.SENSOR_MODULES}")
+
         for sensor_module in self.SENSOR_MODULES:
             if sensor_module in self.available_modules:
                 self.log.info(f"Found driver for {sensor_module}")
@@ -59,6 +62,17 @@ class Sensors:
         self.log.info(f"Configured modules: {self.get_modules()}")
 
     def startup(self) -> None:
+        screen_set = self.display.set_screen_for_next_command(self.SENSOR_SCREEN)
+        if screen_set:
+            self.log.info("Sensor screen cleared")
+            self.display.clear()
+        
+        self.display.update_co2("Unknown")
+        self.display.update_alarm("Clear")
+
+        if self.alarm:
+            run(self.alarm.async_test_co2_alarm())
+
         if SENSOR_LOG_CACHE_ENABLED:
             self.log.info(f"Starting sensors: {self.configured_modules}")
             create_task(self._poll_sensors())
@@ -70,11 +84,16 @@ class Sensors:
         """
         Asynchronously poll sensors and log readings every 60 seconds.
         """
+        self.log.info("Starting sensor polling")
+        
         while True:
             readings = self.get_readings()
             self.log.info(f"Sensor readings: {readings}")
             
             if len(readings) > 0:
+                if readings.get("SCD30"):
+                    self.display.update_co2(readings["SCD30"]["co2"])
+                    
                 self.file_logger.log_minute_entry(readings)
                 if self.alarm:
                     self.alarm.assess_co2_alarm(readings)
