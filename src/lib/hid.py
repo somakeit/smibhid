@@ -9,7 +9,7 @@ from lib.rfid.reader import RFIDReader
 from config import RFID_ENABLED, CLOCK_FREQUENCY, SDA_PIN, SCL_PIN, I2C_ID, I2C_FREQ
 from lib.uistate import UIState
 from lib.ui_log import UILog
-from http.website import WebApp
+from smibhid_http.website import WebApp
 from lib.pinger import Pinger
 from machine import freq, I2C
 from lib.sensors import Sensors
