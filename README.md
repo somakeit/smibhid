@@ -62,7 +62,7 @@ The CO2 reading can be output onto the 32x128 OLED display if attached. There is
 
 ## Hardware
 Below is a list of hardware and links for my specific build:
-- [Raspberry Pi Pico W](https://thepihut.com/products/raspberry-pi-pico-w?variant=41952994754755)
+- [Raspberry Pi Pico 2 W](https://thepihut.com/products/raspberry-pi-pico-2-w)
 - [Prototype board](https://thepihut.com/products/pico-proto-pcb?variant=41359085568195)
 - [LED push button switch - Red](https://thepihut.com/products/rugged-metal-pushbutton-with-red-led-ring?variant=27740444561)
 - [LED push button switch - Green](https://thepihut.com/products/rugged-metal-pushbutton-with-green-led-ring?variant=27740444625)
@@ -70,7 +70,7 @@ Below is a list of hardware and links for my specific build:
 - [2x16 Character I2C display](https://thepihut.com/products/lcd1602-i2c-module?variant=42422810083523)
 - [Monochrome 0.91" 128x32 I2C OLED Display](https://shop.pimoroni.com/products/monochrome-0-91-128x32-i2c-oled-display-stemma-qt-qwiic-compatible?variant=31209617784915)
 - [4 Pin JST-SH Cable (Qwiic, STEMMA QT, Qw/ST)](https://shop.pimoroni.com/products/jst-sh-cable-qwiic-stemma-qt-compatible?variant=40407104290899)
-- [SGP30 I2C sensor](https://thepihut.com/products/sgp30-air-quality-sensor-breakout)
+- [SGP30 I2C sensor](https://thepihut.com/products/sgp30-air-quality-sensor-breakout) (Recommend SCD30 despite the price, this board is wildly inaccurate in my testing)
 - [BME280 sensor](https://thepihut.com/products/bme280-breakout-temperature-pressure-humidity-sensor)
 - [SCD30 sensor](https://thepihut.com/products/adafruit-scd-30-ndir-co2-temperature-and-humidity-sensor)
 - [Buzzer](https://shop.pimoroni.com/products/mini-active-buzzer?variant=40257468694611)
