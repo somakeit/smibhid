@@ -40,7 +40,7 @@ class Wrapper:
         """Upload the UI log to the server."""
         json_log = dumps(log)
         await self._async_slack_api_request("POST", "smibhid_ui_log", json_log)
-        
+
     async def _async_slack_api_request(self, method: str, url_suffix: str, json_data: str = "") -> dict:
         """
         Make a request to the S.M.I.B. SLACK API, provide the URL suffix to event api url, e.g. 'space_open'.
@@ -57,7 +57,7 @@ class Wrapper:
             response = await self._async_api_make_request(method, url, json_data)
             return response
         else:
-            raise ValueError(f"{method} is not 'GET' or 'PULL'.")
+            raise ValueError(f"{method} is not 'GET' 'PUT' or 'POST'.")
 
     async def _async_api_make_request(self, method: str, url: str, json_data: str = "") -> dict:
         """

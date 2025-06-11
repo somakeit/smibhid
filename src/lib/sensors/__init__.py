@@ -9,12 +9,18 @@ from lib.sensors.sensor_module import SensorModule
 from lib.sensors.file_logging import FileLogger
 from lib.sensors.alarm import Alarm
 from lib.displays.display import Display
+from lib.networking import WirelessNetwork
+from lib.slack_api import Wrapper
+from json import dumps
+from time import time
 
 class Sensors:
-    def __init__(self, i2c: I2C, display: Display) -> None:
+    def __init__(self, i2c: I2C, display: Display, wifi: WirelessNetwork) -> None:
         self.log = uLogger("Sensors")
         self.i2c = i2c
         self.display = display
+        self.wifi = wifi
+        self.api_wrapper = Wrapper(self.wifi)
         self.SENSOR_SCREEN = "SSD1306"
         self.SENSOR_MODULES = SENSOR_MODULES
         self.available_modules: dict[str, SensorModule] = {}
@@ -79,6 +85,30 @@ class Sensors:
             self.log.info("Sensor polling started")
         else:
             self.log.info("Sensor log cache disabled, skipping sensor startup")
+    
+    async def async_push_sensor_readings(self, readings: dict) -> str:
+        """
+        Asynchronously push sensor readings to the slack web API server
+        """
+        self.log.info("Making async push of sensor readings to SMIB API")
+
+        result = ""  
+
+        try:
+            if readings:
+                timestamped_readings = [{
+                    "timestamp": time(),
+                    "human_timestamp": self.file_logger.localtime_to_iso8601(time()),
+                    "data": readings
+                }]
+                result = await self.api_wrapper._async_slack_api_request("POST", "smibhid_sensor_log", dumps(timestamped_readings)) #TODO: rename method to not be internal "_"
+                self.log.info(f"Pushed sensor readings: {timestamped_readings}, result: {result}")
+            else:
+                self.log.warn("No sensor readings to push")
+        except Exception as e:
+            self.log.error(f"Error pushing sensor readings: {e}")
+        
+        return result
 
     async def _poll_sensors(self) -> None:
         """
@@ -97,6 +127,9 @@ class Sensors:
                 self.file_logger.log_minute_entry(readings)
                 if self.alarm:
                     self.alarm.assess_co2_alarm(readings)
+                
+                await self.async_push_sensor_readings(readings)
+                self.log.info("Sensor readings pushed to API")
 
             else:
                 self.log.error("No sensor readings available")
