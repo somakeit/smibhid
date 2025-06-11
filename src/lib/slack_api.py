@@ -17,15 +17,15 @@ class Wrapper:
     async def async_space_open(self, hours: int = 0) -> None:
         """Call space_open, with optional hours open for parameter."""
         json_hours = dumps({"hours" : hours})
-        await self._async_slack_api_request("PUT", "space_open", json_hours)
+        await self.async_slack_api_request("PUT", "space_open", json_hours)
     
     async def async_space_closed(self) -> None:
         """Call space_closed."""
-        await self._async_slack_api_request("PUT", "space_closed")
+        await self.async_slack_api_request("PUT", "space_closed")
     
     async def async_get_space_state(self) -> bool | None:
         """Call space_state and return boolean: True = Open, False = closed."""
-        response = await self._async_slack_api_request("GET", "space_state")
+        response = await self.async_slack_api_request("GET", "space_state")
         self.log.info(f"Request result: {response}")
         try:
             state = response['open']
@@ -39,9 +39,9 @@ class Wrapper:
     async def async_upload_ui_log(self, log: list) -> None:
         """Upload the UI log to the server."""
         json_log = dumps(log)
-        await self._async_slack_api_request("POST", "smibhid_ui_log", json_log)
+        await self.async_slack_api_request("POST", "smibhid_ui_log", json_log)
 
-    async def _async_slack_api_request(self, method: str, url_suffix: str, json_data: str = "") -> dict:
+    async def async_slack_api_request(self, method: str, url_suffix: str, json_data: str = "") -> dict:
         """
         Make a request to the S.M.I.B. SLACK API, provide the URL suffix to event api url, e.g. 'space_open'.
         Returns the response payload as a string

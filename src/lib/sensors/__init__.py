@@ -101,7 +101,7 @@ class Sensors:
                     "human_timestamp": self.file_logger.localtime_to_iso8601(time()),
                     "data": readings
                 }]
-                result = await self.api_wrapper._async_slack_api_request("POST", "smibhid_sensor_log", dumps(timestamped_readings)) #TODO: rename method to not be internal "_"
+                result = await self.api_wrapper.async_slack_api_request("POST", "smibhid_sensor_log", dumps(timestamped_readings))
                 self.log.info(f"Pushed sensor readings: {timestamped_readings}, result: {result}")
             else:
                 self.log.warn("No sensor readings to push")
