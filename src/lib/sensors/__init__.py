@@ -1,6 +1,6 @@
 from asyncio import create_task, sleep, Event, run, CancelledError
 from machine import I2C, Pin
-from config import SENSOR_MODULES, SENSOR_LOG_CACHE_ENABLED, CO2_ALARM_THRESHOLD_PPM
+from config import SENSOR_MODULES, SENSOR_LOGGING_ENABLED, SENSOR_LOG_CACHE_ENABLED, CO2_ALARM_THRESHOLD_PPM
 from lib.ulogging import uLogger
 from lib.sensors.SGP30 import SGP30
 from lib.sensors.BME280 import BME280
@@ -79,7 +79,7 @@ class Sensors:
         if self.alarm:
             run(self.alarm.async_test_co2_alarm())
 
-        if SENSOR_LOG_CACHE_ENABLED:
+        if SENSOR_LOGGING_ENABLED:
             self.log.info(f"Starting sensors: {self.configured_modules}")
             create_task(self._poll_sensors())
             self.log.info("Sensor polling started")
@@ -124,9 +124,10 @@ class Sensors:
                 if readings.get("SCD30"):
                     self.display.update_co2(readings["SCD30"]["co2"])
                     
-                self.file_logger.log_minute_entry(readings)
-                if self.alarm:
-                    self.alarm.assess_co2_alarm(readings)
+                if SENSOR_LOG_CACHE_ENABLED:
+                    self.file_logger.log_minute_entry(readings)
+                    if self.alarm:
+                        self.alarm.assess_co2_alarm(readings)
                 
                 await self.async_push_sensor_readings(readings)
                 self.log.info("Sensor readings pushed to API")
