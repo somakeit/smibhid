@@ -44,7 +44,7 @@ class Wrapper:
     async def async_slack_api_request(self, method: str, url_suffix: str, json_data: str = "") -> dict:
         """
         Make a request to the S.M.I.B. SLACK API, provide the URL suffix to event api url, e.g. 'space_open'.
-        Returns the response payload as a string
+        Returns the response data as a dict, throws an exception if the return status code is not 200.
         """
         self.log.info(f"Calling slack API: {url_suffix} with method: {method} and data: {json_data}")
         url = self.event_api_base_url + url_suffix
@@ -52,7 +52,10 @@ class Wrapper:
         return result
     
     async def _async_api_request(self, method: str, url: str, json_data: str = "") -> dict:
-        """Internal method to make a PUT or GET request to an API, provide the HTTP method and the full API URL"""
+        """
+        Internal method to make a PUT or GET request to an API, provide the HTTP method and the full API URL
+        Returns the response data as a dict, throws an exception if the return status code is not 200.
+        """
         if method in ["GET", "PUT", "POST"]:
             response = await self._async_api_make_request(method, url, json_data)
             return response

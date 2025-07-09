@@ -12,7 +12,7 @@ from lib.displays.display import Display
 from lib.networking import WirelessNetwork
 from lib.slack_api import Wrapper
 from json import dumps
-from time import time
+from time import time, localtime
 
 class Sensors:
     def __init__(self, i2c: I2C, display: Display, wifi: WirelessNetwork) -> None:
@@ -86,29 +86,33 @@ class Sensors:
         else:
             self.log.info("Sensor log cache disabled, skipping sensor startup")
     
-    async def async_push_sensor_readings(self, readings: dict) -> str:
+    async def async_push_sensor_readings(self, readings: dict) -> dict:
         """
         Asynchronously push sensor readings to the slack web API server
         """
         self.log.info("Making async push of sensor readings to SMIB API")
 
-        result = ""  
+        result = {}
 
         try:
             if readings:
-                timestamped_readings = [{
-                    "timestamp": time(),
-                    "human_timestamp": self.file_logger.localtime_to_iso8601(time()),
-                    "data": readings
-                }]
-                result = await self.api_wrapper.async_slack_api_request("POST", "smibhid_sensor_log", dumps(timestamped_readings))
-                self.log.info(f"Pushed sensor readings: {timestamped_readings}, result: {result}")
+                result = await self.api_wrapper.async_slack_api_request("POST", "smibhid_sensor_log", dumps(readings))
+                self.log.info(f"Pushed sensor readings: {readings}, result: {result}")
             else:
                 self.log.warn("No sensor readings to push")
         except Exception as e:
             self.log.error(f"Error pushing sensor readings: {e}")
+            raise
         
         return result
+    
+    def generate_timestamp_readings(self, readings: dict) -> dict:
+        timestamped_readings = {
+                    "timestamp": time(),
+                    "human_timestamp": self.file_logger.localtime_to_iso8601(localtime()),
+                    "data": readings
+                }
+        return timestamped_readings
 
     async def _poll_sensors(self) -> None:
         """
@@ -129,8 +133,35 @@ class Sensors:
                     if self.alarm:
                         self.alarm.assess_co2_alarm(readings)
                 
-                await self.async_push_sensor_readings(readings)
-                self.log.info("Sensor readings pushed to API")
+                readings_list = []
+                failed_push_list = []
+                readings_list.append(self.generate_timestamp_readings(readings))
+                if self.file_logger.check_for_smib_cache():
+                    self.log.info("SMIB cache file found, reading cached sensor readings")
+                    cached_readings = self.file_logger.read_smib_cache_list()
+                    readings_list.extend(cached_readings)
+                    self.log.info(f"Readings from cache: {cached_readings}")
+                    self.log.info(f"Total readings to push: {len(readings_list)}")
+                
+                else:
+                    self.log.info("No cached readings found, pushing current readings only")
+
+                try:
+                    self.log.info(f"Pushing sensor readings: {readings_list}")
+                    await self.async_push_sensor_readings(readings_list)
+                    self.log.info(f"Sensor readings pushed successfully.")
+
+                except Exception as e:
+                    self.log.error(f"Error pushing sensor reading: {e}")
+                    failed_push_list.extend(readings_list)
+
+                if self.file_logger.check_for_smib_cache():
+                    self.file_logger.delete_smib_cache()
+                if failed_push_list:
+                    self.log.error(f"Failed to push sensor readings: {failed_push_list}")
+                    self.file_logger.write_smib_cache_list(failed_push_list)
+                else:
+                    self.log.info("All sensor readings pushed successfully")               
 
             else:
                 self.log.error("No sensor readings available")
