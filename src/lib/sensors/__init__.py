@@ -1,5 +1,5 @@
-from asyncio import create_task, sleep, Event, run, CancelledError
-from machine import I2C, Pin
+from asyncio import create_task, sleep, run
+from machine import I2C
 from config import SENSOR_MODULES, SENSOR_LOGGING_ENABLED, SENSOR_LOG_CACHE_ENABLED, CO2_ALARM_THRESHOLD_PPM
 from lib.ulogging import uLogger
 from lib.sensors.SGP30 import SGP30
@@ -54,6 +54,9 @@ class Sensors:
                 self.log.error(f"Failed to load {module} sensor module: {e}")
     
     def _configure_modules(self) -> None:
+        """
+        Configure sensor modules by checking if they are available and logging their status.
+        """
         self.log.info(f"Attempting to locate drivers for: {self.SENSOR_MODULES}")
 
         for sensor_module in self.SENSOR_MODULES:
@@ -68,6 +71,9 @@ class Sensors:
         self.log.info(f"Configured modules: {self.get_modules()}")
 
     def startup(self) -> None:
+        """
+        Perform startup tasks for the sensors, including clearing the display and starting sensor polling.
+        """
         screen_set = self.display.set_screen_for_next_command(self.SENSOR_SCREEN)
         if screen_set:
             self.log.info("Sensor screen cleared")
@@ -86,7 +92,7 @@ class Sensors:
         else:
             self.log.info("Sensor log cache disabled, skipping sensor startup")
     
-    async def async_push_sensor_readings(self, readings: dict) -> dict:
+    async def async_push_sensor_readings(self, readings: list) -> dict:
         """
         Asynchronously push sensor readings to the slack web API server
         """
@@ -106,13 +112,82 @@ class Sensors:
         
         return result
     
-    def generate_timestamp_readings(self, readings: dict) -> dict:
+    def generate_timestamped_readings(self, readings: dict) -> dict:
+        """
+        Generate a timestamped reading dictionary from reading data with unix timestamp and human readable time tuple.
+        """
         timestamped_readings = {
                     "timestamp": time(),
                     "human_timestamp": self.file_logger.localtime_to_iso8601(localtime()),
                     "data": readings
                 }
         return timestamped_readings
+
+    def update_display_and_log_cache(self, readings: dict) -> None:
+        """
+        Update the display with sensor readings and log them to cache if caching enabled.
+        """
+        if readings.get("SCD30"):
+                self.display.update_co2(readings["SCD30"]["co2"])
+                
+        if SENSOR_LOG_CACHE_ENABLED:
+            self.file_logger.log_minute_entry(readings)
+            if self.alarm:
+                self.alarm.assess_co2_alarm(readings)
+    
+    async def async_push_all_readings(self, readings_list: list) -> None:
+        """
+        Asynchronously push all sensor readings to the API, including any cached readings.
+        Cache any failed pushes to the file cache for later retry.
+        """
+        failed_push_list = []
+        try:
+            self.log.info(f"Pushing sensor readings: {readings_list}")
+            await self.async_push_sensor_readings(readings_list)
+            self.log.info("Sensor readings pushed successfully.")
+
+        except Exception as e:
+            self.log.error(f"Error pushing sensor reading: {e}")
+            failed_push_list.extend(readings_list)
+
+        if self.file_logger.check_for_smib_cache():
+            self.file_logger.delete_smib_cache()
+
+        if failed_push_list:
+            self.log.error(f"Failed to push sensor readings: {failed_push_list}")
+            self.file_logger.write_smib_cache_list(failed_push_list)
+        else:
+            self.log.info("All sensor readings pushed successfully")
+    
+    def collect_cached_readings(self, readings_list: list) -> list:
+        """
+        Check for previous failed readings in cache and append them to the readings list.
+        """
+        if self.file_logger.check_for_smib_cache():
+            self.log.info("SMIB cache file found, reading cached sensor readings")
+            cached_readings = self.file_logger.read_smib_cache_list()
+            readings_list.extend(cached_readings)
+            self.log.info(f"Readings from cache: {cached_readings}")
+            self.log.info(f"Total readings to push: {len(readings_list)}")
+            
+        else:
+            self.log.info("No cached readings found, pushing current readings only")
+
+        return readings_list
+    
+    async def async_gather_and_push_all_readings(self, readings: dict) -> None:
+        """
+        Gather all previously cached sensor readings that failed to push,
+        append a timestamp to the current readings and add to the cached
+        readings to push them to the API. Create a new cache for any failed
+        pushes.
+        """
+        readings_list = []
+        readings_list.append(self.generate_timestamped_readings(readings))
+        readings_list = self.collect_cached_readings(readings_list)
+        await self.async_push_all_readings(readings_list)
+
+        return
 
     async def _poll_sensors(self) -> None:
         """
@@ -125,44 +200,9 @@ class Sensors:
             self.log.info(f"Sensor readings: {readings}")
             
             if len(readings) > 0:
-                if readings.get("SCD30"):
-                    self.display.update_co2(readings["SCD30"]["co2"])
-                    
-                if SENSOR_LOG_CACHE_ENABLED:
-                    self.file_logger.log_minute_entry(readings)
-                    if self.alarm:
-                        self.alarm.assess_co2_alarm(readings)
-                
-                readings_list = []
-                failed_push_list = []
-                readings_list.append(self.generate_timestamp_readings(readings))
-                if self.file_logger.check_for_smib_cache():
-                    self.log.info("SMIB cache file found, reading cached sensor readings")
-                    cached_readings = self.file_logger.read_smib_cache_list()
-                    readings_list.extend(cached_readings)
-                    self.log.info(f"Readings from cache: {cached_readings}")
-                    self.log.info(f"Total readings to push: {len(readings_list)}")
-                
-                else:
-                    self.log.info("No cached readings found, pushing current readings only")
-
-                try:
-                    self.log.info(f"Pushing sensor readings: {readings_list}")
-                    await self.async_push_sensor_readings(readings_list)
-                    self.log.info(f"Sensor readings pushed successfully.")
-
-                except Exception as e:
-                    self.log.error(f"Error pushing sensor reading: {e}")
-                    failed_push_list.extend(readings_list)
-
-                if self.file_logger.check_for_smib_cache():
-                    self.file_logger.delete_smib_cache()
-                if failed_push_list:
-                    self.log.error(f"Failed to push sensor readings: {failed_push_list}")
-                    self.file_logger.write_smib_cache_list(failed_push_list)
-                else:
-                    self.log.info("All sensor readings pushed successfully")               
-
+                self.update_display_and_log_cache(readings)
+                await self.async_gather_and_push_all_readings(readings)
+            
             else:
                 self.log.error("No sensor readings available")
             
