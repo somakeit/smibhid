@@ -92,7 +92,7 @@ class Sensors:
         else:
             self.log.info("Sensor log cache disabled, skipping sensor startup")
     
-    async def async_push_sensor_readings(self, readings: list) -> dict:
+    async def async_push_sensor_readings_payload(self, payload: dict) -> dict:
         """
         Asynchronously push sensor readings to the slack web API server
         """
@@ -101,9 +101,9 @@ class Sensors:
         result = {}
 
         try:
-            if readings:
-                result = await self.api_wrapper.async_slack_api_request("POST", "smibhid_sensor_log", dumps(readings))
-                self.log.info(f"Pushed sensor readings: {readings}, result: {result}")
+            if payload:
+                result = await self.api_wrapper.async_slack_api_request("POST", "smibhid_sensor_log", dumps(payload))
+                self.log.info(f"Pushed sensor readings: {payload}, result: {result}")
             else:
                 self.log.warn("No sensor readings to push")
         except Exception as e:
@@ -135,15 +135,41 @@ class Sensors:
             if self.alarm:
                 self.alarm.assess_co2_alarm(readings)
     
+    def create_unit_encapsulated_readings_payload(self, readings_list: list) -> dict:
+        """
+        Return a dictionary with the readings_list encapsulated in a 'readings' key and a 'unit' key
+        containing the corresponding reading units.
+        """
+        self.log.info("Creating payload for sensor readings")
+        units = {}
+        modules = self.get_modules()
+        self.log.info(f"Configured modules: {modules}")
+        for module in modules:
+            units[module] = {}
+            sensors = self.get_sensors(module)
+            for sensor in sensors:
+                self.log.info(f"Adding sensor {sensor['name']} with unit {sensor['unit']}")
+                units[module][sensor["name"]] = sensor["unit"]
+
+        payload = {
+            "units": units,
+            "readings": readings_list            
+        }
+
+        self.log.info(f"Created payload for sensor readings: {payload}")
+        
+        return payload
+    
     async def async_push_all_readings(self, readings_list: list) -> None:
         """
         Asynchronously push all sensor readings to the API, including any cached readings.
         Cache any failed pushes to the file cache for later retry.
         """
         failed_push_list = []
+        payload = self.create_unit_encapsulated_readings_payload(readings_list)
         try:
-            self.log.info(f"Pushing sensor readings: {readings_list}")
-            await self.async_push_sensor_readings(readings_list)
+            self.log.info(f"Pushing sensor readings: {payload}")
+            await self.async_push_sensor_readings_payload(payload)
             self.log.info("Sensor readings pushed successfully.")
 
         except Exception as e:
