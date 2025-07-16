@@ -74,6 +74,61 @@ class FileLogger:
         
         return f"{year:04d}-{month:02d}-{day:02d}T{hour:02d}:{minute:02d}:{second:02d}Z"
     
+    def check_for_smib_cache(self) -> bool:
+        """
+        Check to see if the smib_cache.txt file exists.
+        """
+        try:
+            data_dir_list = listdir("/data/sensors")
+            self.log.info(f"Data directory contents: {data_dir_list}")
+        except Exception as e:
+            self.log.error(f"Failed to list /data/ directory: {e}")
+            return False
+        if "smib_cache.txt" in data_dir_list:
+            self.log.info("smib_cache.txt exists in /data/")
+            return True
+        else:            
+            self.log.info("smib_cache.txt does not exist in /data/")
+            return False
+        
+    def read_smib_cache_list(self) -> list:
+        """
+        Read the smib_cache.txt file and return its contents as a list.
+        """
+        self.log.info("Reading smib_cache.txt")
+        try:
+            with open("/data/sensors/smib_cache.txt", "r") as f:
+                data = f.readlines()
+            self.log.info(f"Read {len(data)} lines from smib_cache.txt")
+            return [loads(line) for line in data]
+        except Exception as e:
+            self.log.error(f"Failed to read smib_cache.txt: {e}")
+            return []
+        
+    def write_smib_cache_list(self, data: list) -> None:
+        """
+        Write a list of sensor readings to the smib_cache.txt file.
+        """
+        self.log.info("Writing to smib_cache.txt")
+        try:
+            with open("/data/sensors/smib_cache.txt", "w") as f:
+                for entry in data:
+                    f.write(dumps(entry) + "\n")
+            self.log.info(f"Wrote {len(data)} entries to smib_cache.txt")
+        except Exception as e:
+            self.log.error(f"Failed to write to smib_cache.txt: {e}")
+
+    def delete_smib_cache(self) -> None:
+        """
+        Delete the smib_cache.txt file.
+        """
+        self.log.info("Deleting smib_cache.txt")
+        try:
+            remove("/data/sensors/smib_cache.txt")
+            self.log.info("smib_cache.txt deleted")
+        except Exception as e:
+            self.log.error(f"Failed to delete smib_cache.txt: {e}")
+    
     def log_minute_entry(self, data: dict) -> None:
         """
         Add a unixtime and tuple timestamp to the provided minute log entries in and append to the minute_log.txt file.

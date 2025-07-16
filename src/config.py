@@ -68,8 +68,12 @@ CO2_ALARM_LED_PIN = 6
 CO2_ALARM_BUZZER_PIN = 4
 CO2_ALARM_SNOOZE_BUTTON_PIN = 5
 
-## Enable sensor log cache (Pico 1 will likely need this disabled due to memory constraints)
+## Sensor logging
+# Enable sensor logging to SMIB server
+SENSOR_LOGGING_ENABLED = True
+# Enable local sensor log cache in addition to pushing to SMIB (Not recommended as even pico2 has memory issues with this enabled)
 SENSOR_LOG_CACHE_ENABLED = False
+# This value will also be used to rotate out the failed API transaction logs if connection to the server fails
 SENSOR_LOG_FILE_MAX_SIZE = 50000
 
 ## Displays - Populate driver list with connected displays from this supported list: ["LCD1602", "SSD1306"]
