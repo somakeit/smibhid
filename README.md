@@ -34,6 +34,7 @@ Press the space_open or space_closed buttons to call the smib server endpoint ap
     - SCD30
   - Calibration of the SCD30 CO2 sensor via the API or web admin console
   - CO2 alarm where SCD30 module present
+- Automated regular push of sensor readings to SMIB for storage in the database
 
 ### Sensors
 SMIBHID can be used for environmental monitoring. At present only I2C sensors are supported, although the framework could be easily extended to accept other connectivity into the driver framework.
