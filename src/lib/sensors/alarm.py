@@ -5,12 +5,14 @@ from config import (
     CO2_ALARM_SNOOZE_DURATION_S,
     CO2_ALARM_LED_PIN,
     CO2_ALARM_BUZZER_PIN,
-    CO2_ALARM_SNOOZE_BUTTON_PIN
+    CO2_ALARM_SNOOZE_BUTTON_PIN,
+    CO2_ALARM_SILENCE_WINDOW_START_HOUR,
+    CO2_ALARM_SILENCE_WINDOW_END_HOUR
     )
 from machine import Pin
-from asyncio import create_task, run, sleep, Event, CancelledError
+from asyncio import create_task, sleep, Event, CancelledError
 from lib.button import Button
-from time import time
+from time import time, localtime
 from lib.displays.display import Display
 
 class Alarm:
@@ -56,7 +58,7 @@ class Alarm:
 
     async def async_alarm_buzzer_loop(self) -> None:
         """
-        Asynchronously loop to sound the CO2 alarm buzzer.
+        Asynchronously loop to sound the CO2 alarm buzzer with a pause instead of continuously.
         """
         try:
             while True:
@@ -116,8 +118,8 @@ class Alarm:
 
         self.log.info("No displays with power control are powered off; returning True")
         return True
-    
-    def assess_co2_alarm(self, readings: dict) -> None:
+
+    def assess_co2_alarm(self, readings: dict) -> None: #TODO: add criteria for space open
         """
         Assess the CO2 alarm state based on readings from the SCD30 sensor.
         """
@@ -153,12 +155,36 @@ class Alarm:
 
     def snooze_co2_alarm(self) -> None:
         """
-        Snooze the CO2 alarm for a specified duration.
+        Snooze the CO2 alarm.
         """
         self.log.info("Snoozing CO2 alarm")
         create_task(self.async_stop_alarm())
         self.co2_alarm_buzzer_snooze_set_time = time()
         self.display.update_alarm("Snoozed")    
+
+    def in_co2_silence_window(self) -> bool:
+        """
+        Check if the current time is within the CO2 alarm silence window.
+        Handles cases where the silence window spans across midnight (e.g., 22:00 to 06:00).
+        """
+        current_hour = localtime()[3]
+        if (CO2_ALARM_SILENCE_WINDOW_START_HOUR is not None and
+                CO2_ALARM_SILENCE_WINDOW_END_HOUR is not None):
+            
+            start_hour = CO2_ALARM_SILENCE_WINDOW_START_HOUR
+            end_hour = CO2_ALARM_SILENCE_WINDOW_END_HOUR
+            
+            if start_hour < end_hour:
+                if start_hour <= current_hour <= end_hour:
+                    self.log.info("Current time is within CO2 alarm silence window")
+                    return True
+            else:
+                if current_hour >= start_hour or current_hour <= end_hour:
+                    self.log.info("Current time is within CO2 alarm silence window (crosses midnight)")
+                    return True
+        
+        self.log.info("Current time is outside CO2 alarm silence window")
+        return False
 
     def set_co2_alarm_buzzer(self) -> None:
         """
@@ -166,12 +192,20 @@ class Alarm:
         """
         self.log.info("Setting CO2 alarm buzzer state")
         if self.co2_alarm_buzzer_snooze_set_time is None or time() - self.co2_alarm_buzzer_snooze_set_time >= CO2_ALARM_SNOOZE_DURATION_S:
-            self.log.info("CO2 above threshold and alarm not snoozed, ensuring alarm is on")
-            
-            if not self.alarm_task or self.alarm_task.done():
-                self.log.info("Setting CO2 alarm buzzer")
-                create_task(self.async_start_alarm())
-                self.display.update_alarm("Triggered")
+            self.log.info("CO2 above threshold and alarm not snoozed")
+            if not self.in_co2_silence_window():
+                self.log.info("CO2 alarm silence window not active, setting alarm buzzer")
+                
+                if not self.alarm_task or self.alarm_task.done():
+                    self.log.info("Setting CO2 alarm buzzer")
+                    create_task(self.async_start_alarm())
+                    self.display.update_alarm("Triggered")
+            else:
+                self.log.info("CO2 alarm silence window active, not setting alarm buzzer")
+                if self.alarm_task and not self.alarm_task.done():
+                    self.display.update_alarm("Silenced")
+                    self.log.warn("CO2 alarm task running when it shouldn't be, cancelling CO2 alarm task")
+                    create_task(self.async_stop_alarm())
                     
         else:
             self.log.info("CO2 alarm buzzer snoozed, not setting buzzer")
