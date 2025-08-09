@@ -14,17 +14,19 @@ from asyncio import create_task, sleep, Event, CancelledError
 from lib.button import Button
 from time import time, localtime
 from lib.displays.display import Display
+from lib.space_state import SpaceState
 
 class Alarm:
     """
     Alarm class to handle sensor alarms.
     """
-    def __init__(self, display: Display) -> None:
+    def __init__(self, display: Display, space_state: SpaceState) -> None:
         self.log = uLogger("Alarm")
         self.log.info("Alarm module initialized")
         self.display = display
         self.co2_alarm_buzzer = Pin(CO2_ALARM_BUZZER_PIN, Pin.OUT)
         self.co2_alarm_led = Pin(CO2_ALARM_LED_PIN, Pin.OUT)
+        self.space_state = space_state
         self.co2_alarm_snooze_event = Event()
         self.co2_alarm_snooze_button = Button(CO2_ALARM_SNOOZE_BUTTON_PIN, "CO2 alarm snooze", self.co2_alarm_snooze_event)
         self.co2_alarm_buzzer_snooze_set_time = None
@@ -119,7 +121,7 @@ class Alarm:
         self.log.info("No displays with power control are powered off; returning True")
         return True
 
-    def assess_co2_alarm(self, readings: dict) -> None: #TODO: add criteria for space open
+    def assess_co2_alarm(self, readings: dict) -> None:
         """
         Assess the CO2 alarm state based on readings from the SCD30 sensor.
         """
@@ -162,10 +164,25 @@ class Alarm:
         self.co2_alarm_buzzer_snooze_set_time = time()
         self.display.update_alarm("Snoozed")    
 
-    def in_co2_silence_window(self) -> bool:
+    def alarm_should_sound(self) -> bool:
+        """
+        Determine if the CO2 alarm should sound based on space state and time
+        of day.
+        """
+        if not self.space_state.get_space_state():
+            self.log.info("Space is closed, CO2 alarm should not sound")
+            return False
+
+        if self.in_alarm_silence_window():
+            self.log.info("Current time is within CO2 alarm silence window,alarm should not sound")
+            return False
+
+        return True
+
+    def in_alarm_silence_window(self) -> bool:
         """
         Check if the current time is within the CO2 alarm silence window.
-        Handles cases where the silence window spans across midnight (e.g., 22:00 to 06:00).
+        Handles cases where the silence window spans across midnight (e.g., 22:00 to 08:00).
         """
         current_hour = localtime()[3]
         if (CO2_ALARM_SILENCE_WINDOW_START_HOUR is not None and
@@ -193,15 +210,15 @@ class Alarm:
         self.log.info("Setting CO2 alarm buzzer state")
         if self.co2_alarm_buzzer_snooze_set_time is None or time() - self.co2_alarm_buzzer_snooze_set_time >= CO2_ALARM_SNOOZE_DURATION_S:
             self.log.info("CO2 above threshold and alarm not snoozed")
-            if not self.in_co2_silence_window():
-                self.log.info("CO2 alarm silence window not active, setting alarm buzzer")
+            if  self.alarm_should_sound():
+                self.log.info("CO2 alarm silence window not active and space open, setting alarm buzzer")
                 
                 if not self.alarm_task or self.alarm_task.done():
                     self.log.info("Setting CO2 alarm buzzer")
                     create_task(self.async_start_alarm())
                     self.display.update_alarm("Triggered")
             else:
-                self.log.info("CO2 alarm silence window active, not setting alarm buzzer")
+                self.log.info("CO2 alarm silence window active or space closed, not setting alarm buzzer")
                 if self.alarm_task and not self.alarm_task.done():
                     self.display.update_alarm("Silenced")
                     self.log.warn("CO2 alarm task running when it shouldn't be, cancelling CO2 alarm task")

@@ -35,7 +35,7 @@ class HID:
             self.moduleConfig.register_rfid(RFIDReader(Event()))
         self.display = self.moduleConfig.get_display()
         self.wifi = self.moduleConfig.get_wifi()
-        self.moduleConfig.register_sensors(Sensors(self.i2c, self.display, self.wifi))
+        self.moduleConfig.register_sensors(Sensors(self.i2c, self.display, self.wifi, self.space_state))
         self.moduleConfig.register_ui_log(UILog(self.wifi))
         self.reader = self.moduleConfig.get_rfid()
         self.ui_log = self.moduleConfig.get_ui_log()

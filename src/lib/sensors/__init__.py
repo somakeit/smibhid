@@ -10,17 +10,19 @@ from lib.sensors.file_logging import FileLogger
 from lib.sensors.alarm import Alarm
 from lib.displays.display import Display
 from lib.networking import WirelessNetwork
+from lib.space_state import SpaceState
 from lib.slack_api import Wrapper
 from json import dumps
 from time import time, localtime
 
 class Sensors:
-    def __init__(self, i2c: I2C, display: Display, wifi: WirelessNetwork) -> None:
+    def __init__(self, i2c: I2C, display: Display, wifi: WirelessNetwork, space_state: SpaceState) -> None:
         self.log = uLogger("Sensors")
         self.i2c = i2c
         self.display = display
         self.wifi = wifi
         self.api_wrapper = Wrapper(self.wifi)
+        self.space_state = space_state
         self.SENSOR_SCREEN = "SSD1306"
         self.SENSOR_MODULES = SENSOR_MODULES
         self.available_modules: dict[str, SensorModule] = {}
@@ -31,7 +33,7 @@ class Sensors:
         self._configure_modules()
         self.alarm = None
         if CO2_ALARM_THRESHOLD_PPM > 0 and 'SCD30' in self.configured_modules:
-            self.alarm = Alarm(self.display)
+            self.alarm = Alarm(self.display, self.space_state)
             self.log.info("SCD30 present and CO2_ALARM_THRESHOLD_PPM > 0, CO2 alarm enabled")
 
     def load_modules(self, modules: list[str]) -> None:

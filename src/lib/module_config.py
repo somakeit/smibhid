@@ -4,6 +4,7 @@ from lib.ulogging import uLogger
 from lib.rfid.reader import RFIDReader
 from config import RFID_ENABLED
 from lib.ui_log import UILog
+from lib.sensors import Sensors
 
 class ModuleNotRegisteredError(Exception):
     """Exception raised when a required module is not registered."""
@@ -35,8 +36,8 @@ class ModuleConfig:
     
     def register_ui_log(self, ui_log: UILog) -> None:
         self.ui_log = ui_log
-    
-    def register_sensors(self, sensors) -> None:
+
+    def register_sensors(self, sensors: Sensors) -> None:
         self.sensors = sensors
 
     def get_display(self) -> Display:
