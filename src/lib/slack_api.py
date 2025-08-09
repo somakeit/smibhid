@@ -12,20 +12,20 @@ class Wrapper:
     def __init__(self, network: WirelessNetwork) -> None:
         self.log = uLogger("Slack API")
         self.wifi = network
-        self.event_api_base_url = "http://" + WEBSERVER_HOST + ":" + WEBSERVER_PORT + "/smib/event/"
+        self.event_api_base_url = "http://" + WEBSERVER_HOST + ":" + WEBSERVER_PORT + "/api/"
 
     async def async_space_open(self, hours: int = 0) -> None:
         """Call space_open, with optional hours open for parameter."""
         json_hours = dumps({"hours" : hours})
-        await self.async_slack_api_request("PUT", "space_open", json_hours)
+        await self.async_slack_api_request("PUT", "space/state/open", json_hours)
     
     async def async_space_closed(self) -> None:
         """Call space_closed."""
-        await self.async_slack_api_request("PUT", "space_closed")
+        await self.async_slack_api_request("PUT", "space/state/closed")
     
     async def async_get_space_state(self) -> bool | None:
         """Call space_state and return boolean: True = Open, False = closed."""
-        response = await self.async_slack_api_request("GET", "space_state")
+        response = await self.async_slack_api_request("GET", "space/state")
         self.log.info(f"Request result: {response}")
         try:
             state = response['open']
@@ -39,7 +39,7 @@ class Wrapper:
     async def async_upload_ui_log(self, log: list) -> None:
         """Upload the UI log to the server."""
         json_log = dumps(log)
-        await self.async_slack_api_request("POST", "smibhid_ui_log", json_log)
+        await self.async_slack_api_request("POST", "smibhid/log/ui", json_log)
 
     async def async_slack_api_request(self, method: str, url_suffix: str, json_data: str = "") -> dict:
         """
@@ -76,7 +76,7 @@ class Wrapper:
             hostname = self.wifi.get_hostname()
             headers = {
                 "Content-Type": "application/json",
-                "Device-Hostname": hostname,
+                "x-smibhid-hostname": hostname,
                 "Content-Length" : str(len(json_data))
             }
             request = await httpclient.request(method, url, headers=headers, json_data=json_data)
@@ -87,8 +87,8 @@ class Wrapper:
             if response:
                 data = loads(response)
                 self.log.info(f"JSON data: {data}")
-            
-            if request.status == 200:
+
+            if request.status >= 200 and request.status < 300:
                 self.log.info("Request processed sucessfully by SMIB API")
                 return data
             else:
