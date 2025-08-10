@@ -15,6 +15,7 @@ from lib.button import Button
 from time import time, localtime
 from lib.displays.display import Display
 from lib.space_state import SpaceState
+from lib.utils import DateTimeUtils
 
 class Alarm:
     """
@@ -23,6 +24,7 @@ class Alarm:
     def __init__(self, display: Display, space_state: SpaceState) -> None:
         self.log = uLogger("Alarm")
         self.log.info("Alarm module initialized")
+        self.date_time_utils = DateTimeUtils()
         self.display = display
         self.co2_alarm_buzzer = Pin(CO2_ALARM_BUZZER_PIN, Pin.OUT)
         self.co2_alarm_led = Pin(CO2_ALARM_LED_PIN, Pin.OUT)
@@ -184,7 +186,14 @@ class Alarm:
         Check if the current time is within the CO2 alarm silence window.
         Handles cases where the silence window spans across midnight (e.g., 22:00 to 08:00).
         """
+        self.log.info("Checking if current time is within CO2 alarm silence window")
         current_hour = localtime()[3]
+        
+        if self.date_time_utils.uk_bst():
+            current_hour += 1
+
+        self.log.info(f"Current hour: {current_hour}")
+        self.log.info(f"CO2 alarm silence window start hour: {CO2_ALARM_SILENCE_WINDOW_START_HOUR}, end hour: {CO2_ALARM_SILENCE_WINDOW_END_HOUR}")
         if (CO2_ALARM_SILENCE_WINDOW_START_HOUR is not None and
                 CO2_ALARM_SILENCE_WINDOW_END_HOUR is not None):
             
