@@ -89,7 +89,7 @@ class Wrapper:
                 self.log.info(f"JSON data: {data}")
 
             if request.status >= 200 and request.status < 300:
-                self.log.info("Request processed sucessfully by SMIB API")
+                self.log.info("Request processed successfully by SMIB API")
                 return data
             else:
                 raise ValueError(f"HTTP status code was not 200. Status code: {request.status}, HTTP response: {response}")
