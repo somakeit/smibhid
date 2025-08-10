@@ -134,8 +134,6 @@ class Sensors:
                 
         if SENSOR_LOG_CACHE_ENABLED:
             self.file_logger.log_minute_entry(readings)
-            if self.alarm:
-                self.alarm.assess_co2_alarm(readings)
     
     def create_unit_encapsulated_readings_payload(self, readings_list: list) -> dict:
         """
@@ -228,6 +226,9 @@ class Sensors:
             self.log.info(f"Sensor readings: {readings}")
             
             if len(readings) > 0:
+                if self.alarm:
+                    self.alarm.assess_co2_alarm(readings)
+
                 self.update_display_and_log_cache(readings)
                 await self.async_gather_and_push_all_readings(readings)
             
