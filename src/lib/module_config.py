@@ -1,10 +1,25 @@
-from lib.displays.display import Display
-from lib.networking import WirelessNetwork
 from lib.ulogging import uLogger
-from lib.rfid.reader import RFIDReader
 from config import RFID_ENABLED
-from lib.ui_log import UILog
-from lib.sensors import Sensors
+
+# Force TYPE_CHECKING to False for MicroPython
+TYPE_CHECKING = False
+
+if TYPE_CHECKING:
+    # Full Python with type checkers - import real types
+    from lib.displays.display import Display
+    from lib.networking import WirelessNetwork
+    from lib.rfid.reader import RFIDReader
+    from lib.ui_log import UILog
+    from lib.sensors import Sensors
+    from typing import Optional
+else:
+    # MicroPython - create stub types
+    Display = object
+    WirelessNetwork = object
+    RFIDReader = object
+    UILog = object
+    Sensors = object
+    Optional = object
 
 class ModuleNotRegisteredError(Exception):
     """Exception raised when a required module is not registered."""
@@ -19,11 +34,11 @@ class ModuleConfig:
     """
     def __init__(self) -> None:
         self.log = uLogger("ModuleConfig")
-        self.display = None
-        self.wifi = None
-        self.reader = None
-        self.ui_log = None
-        self.sensors = None
+        self.display: Optional[Display] = None
+        self.wifi: Optional[WirelessNetwork] = None
+        self.reader: Optional[RFIDReader] = None
+        self.ui_log: Optional[UILog] = None
+        self.sensors: Optional[Sensors] = None
 
     def register_display(self, display: Display) -> None:
         self.display = display
@@ -31,7 +46,7 @@ class ModuleConfig:
     def register_wifi(self, wifi: WirelessNetwork) -> None:
         self.wifi = wifi
     
-    def register_rfid(self, reader: RFIDReader) -> None:
+    def register_rfid(self, reader: Optional[RFIDReader]) -> None:
         self.reader = reader
     
     def register_ui_log(self, ui_log: UILog) -> None:
@@ -52,7 +67,7 @@ class ModuleConfig:
             raise ModuleNotRegisteredError("WiFi")
         return self.wifi
     
-    def get_rfid(self) -> RFIDReader | None:
+    def get_rfid(self) -> Optional[RFIDReader]:
         if not self.reader and RFID_ENABLED:
             self.log.warn("RFID module not registered")
             raise ModuleNotRegisteredError("RFID")
@@ -64,7 +79,7 @@ class ModuleConfig:
             raise ModuleNotRegisteredError("UI Log")
         return self.ui_log
     
-    def get_sensors(self):
+    def get_sensors(self) -> Sensors:
         if not self.sensors:
             self.log.warn("Sensors module not registered")
             raise ModuleNotRegisteredError("Sensors")
