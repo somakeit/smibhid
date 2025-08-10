@@ -161,10 +161,10 @@ class WirelessNetwork:
         except ValueError as ve:
             self.log.error(f"Authentication failed connecting to SSID {self.wifi_ssid}: {ve}")
             await self.auth_error()
-            raise ValueError(f"Authentication failed connecting to SSID {self.wifi_ssid} (password: {self.wifi_password}): {ve}")
+            raise ValueError(f"Authentication failed connecting to SSID {self.wifi_ssid}: {ve}")
         except Exception as x:
             await self.connection_error()
-            raise Exception(f"Failed to connect to SSID {self.wifi_ssid} (password: {self.wifi_password}): {x}")
+            raise Exception(f"Failed to connect to SSID {self.wifi_ssid}: {x}")
         await self.connection_success()
         self.log.info("Connected successfully!")
     
