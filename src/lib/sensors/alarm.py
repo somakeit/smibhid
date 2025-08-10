@@ -176,7 +176,7 @@ class Alarm:
             return False
 
         if self.in_alarm_silence_window():
-            self.log.info("Current time is within CO2 alarm silence window,alarm should not sound")
+            self.log.info("Current time is within CO2 alarm silence window, alarm should not sound")
             return False
 
         return True
