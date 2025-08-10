@@ -159,7 +159,7 @@ class WirelessNetwork:
         try:
             await self.wait_status(self.CYW43_LINK_UP)
         except ValueError as ve:
-            self.log.error(f"Authentication failed connecting to SSID {self.wifi_ssid} (password: {self.wifi_password}): {ve}")
+            self.log.error(f"Authentication failed connecting to SSID {self.wifi_ssid}: {ve}")
             await self.auth_error()
             raise ValueError(f"Authentication failed connecting to SSID {self.wifi_ssid} (password: {self.wifi_password}): {ve}")
         except Exception as x:
