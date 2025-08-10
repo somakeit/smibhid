@@ -104,7 +104,7 @@ class Sensors:
 
         try:
             if payload:
-                result = await self.api_wrapper.async_slack_api_request("POST", "smibhid_sensor_log", dumps(payload))
+                result = await self.api_wrapper.async_slack_api_request("POST", "smibhid/log/sensor", dumps(payload))
                 self.log.info(f"Pushed sensor readings: {payload}, result: {result}")
             else:
                 self.log.warn("No sensor readings to push")
