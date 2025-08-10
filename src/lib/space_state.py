@@ -297,6 +297,12 @@ class SpaceState:
             finally:
                 await sleep(self.space_state_poll_frequency)
 
+    def get_space_state(self) -> bool | None:
+        """
+        Get the current space state.
+        """
+        return self.space_state
+
 class SpaceStateUIState(UIState):
     """
     Base class for space state UI state.
