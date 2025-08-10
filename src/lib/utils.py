@@ -115,4 +115,5 @@ class DateTimeUtils:
                 self.logger.info(f"Current time {dt} is not in BST for year {year}")
         else:
             self.logger.warn(f"Provided year is not in BST lookup dictionary: {year}")
+            raise ValueError(f"Provided year {year} is not in BST lookup dictionary.")
         return bst

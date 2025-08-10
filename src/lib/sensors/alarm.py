@@ -188,9 +188,12 @@ class Alarm:
         """
         self.log.info("Checking if current time is within CO2 alarm silence window")
         current_hour = localtime()[3]
-        
-        if self.date_time_utils.uk_bst():
-            current_hour += 1
+
+        try:
+            if self.date_time_utils.uk_bst():
+                current_hour += 1
+        except ValueError as e:
+            self.log.error(f"Error checking UK BST: {e}, time may be incorrect for BST")
 
         self.log.info(f"Current hour: {current_hour}")
         self.log.info(f"CO2 alarm silence window start hour: {CO2_ALARM_SILENCE_WINDOW_START_HOUR}, end hour: {CO2_ALARM_SILENCE_WINDOW_END_HOUR}")
