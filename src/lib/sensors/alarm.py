@@ -204,7 +204,7 @@ class Alarm:
             end_hour = CO2_ALARM_SILENCE_WINDOW_END_HOUR
             
             if start_hour < end_hour:
-                if start_hour <= current_hour <= end_hour:
+                if start_hour <= current_hour < end_hour:
                     self.log.info("Current time is within CO2 alarm silence window")
                     return True
             else:
