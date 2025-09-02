@@ -25,15 +25,15 @@ class Sensors:
         self.space_state = space_state
         self.SENSOR_SCREEN = "SSD1306"
         self.SENSOR_MODULES = SENSOR_MODULES
-        self.available_modules: dict[str, SensorModule] = {}
-        self.configured_modules: dict[str, SensorModule] = {}
+        self.available_modules: dict = {}
+        self.configured_modules: dict = {}
         self.file_logger = FileLogger(init_files=True)
         modules = ["SGP30", "BME280", "SCD30"]
         self.load_modules(modules)
         self._configure_modules()
-        self.alarm = None
+        self.alarm = Alarm(self.display, self.space_state)
         if CO2_ALARM_THRESHOLD_PPM > 0 and 'SCD30' in self.configured_modules:
-            self.alarm = Alarm(self.display, self.space_state)
+            self.alarm.enable()
             self.log.info("SCD30 present and CO2_ALARM_THRESHOLD_PPM > 0, CO2 alarm enabled")
 
     def load_modules(self, modules: list[str]) -> None:
@@ -84,7 +84,7 @@ class Sensors:
         self.display.update_co2("Unknown")
         self.display.update_alarm("Clear")
 
-        if self.alarm:
+        if self.alarm.enabled:
             run(self.alarm.async_test_co2_alarm())
 
         if SENSOR_LOGGING_ENABLED:
