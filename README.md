@@ -2,7 +2,7 @@
 ## Overview
 SMIBHID is the So Make It Bot Human Interface Device and definitely not a mispronunciation of any insults from a popular 90s documentary detailing the activities of the Jupiter Mining Core.
 
-This device run on a Raspberry Pi Pico W and provides physical input and output to humans for the SMIB project; Buttons, LEDs, that sort of thing.
+This device runs on a Raspberry Pi Pico 2 W and provides physical input and output to humans for the SMIB project; Buttons, LEDs, that sort of thing.
 
 Space_open and space_closed LEDs show current state as set on the S.M.I.B. slack server. If the space_state is set to None on the server i.e. no state has been specifically set, then both LEDs will be off.
 
@@ -39,11 +39,11 @@ Press the space_open or space_closed buttons to call the smib server endpoint ap
 ### Sensors
 SMIBHID can be used for environmental monitoring. At present only I2C sensors are supported, although the framework could be easily extended to accept other connectivity into the driver framework.
 
-Once the sensors are configured they will poll at a regular interval and store to log files if configured.
+Once the sensors are configured they will poll at a regular interval. The readings can be stored to log files if configured to do so, but this is not recommended as even the Pico 2 doesn't have the RAM to manage much data in the current implementation.
 
-Future intent is to have the sensor data pushed to SMIB at each poll and only cache data that has yet to be pushed as even the Pico 2 has RAM limitations that prevent processing of large data files easily.
+The sensor data is pushed to SMIB at each poll and caches data that has yet to be successfully pushed and resends all (with timestamps) once connectivity is restored (subject to file size limits and/or memory failure if limits set too high).
 
-The API allows querying of the sensors in realtime and SMIB has a slack command to query the sensors and report that realtime data back to the slack channel via the "/howfresh" command.
+The API allows querying of the sensors in realtime and SMIB has a slack command to query the sensors and report that realtime data back to the slack channel via the "/howfresh" command. The /howfresh command now queries the cached data on SMIB pushed by SMIBHID and reports the age of that data.
 
 The SGP30 CO2 sensor needs calibration from time to time and this can be achieved by posting the current CO2 level as measured by a reference sensor to the calibration API endpoint or by using the sensors web management page. Full instructions are available by following links from the main admin web page at http://<smibhid IP>:80
 
@@ -77,7 +77,7 @@ Below is a list of hardware and links for my specific build:
 - [Buzzer](https://shop.pimoroni.com/products/mini-active-buzzer?variant=40257468694611)
 
 ## Deployment
-Copy the files from the smibhib folder into the root of a Pico 2 W running Micropython (minimum Pico 2 W Micropython firmware v1.25.0-preview.365 https://micropython.org/download/RPI_PICO2_W/) and update values in config.py as necessary.
+Copy the files from the src folder into the root of a Pico 2 W running MicroPython (minimum Pico 2 W MicroPython firmware v1.25.0-preview.365 https://micropython.org/download/RPI_PICO2_W/) and update values in config.py as necessary.
 
 This project should work on a Pico W on recent firmware, but we have moved development, testing and our production SMIBHIDs to Pico 2 Ws.
 
