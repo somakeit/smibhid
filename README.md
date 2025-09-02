@@ -77,7 +77,7 @@ Below is a list of hardware and links for my specific build:
 - [Buzzer](https://shop.pimoroni.com/products/mini-active-buzzer?variant=40257468694611)
 
 ## Deployment
-Copy the files from the src folder into the root of a Pico 2 W running Micropython (minimum Pico 2 W Micropython firmware v1.25.0-preview.365 https://micropython.org/download/RPI_PICO2_W/) and update values in config.py as necessary.
+Copy the files from the src folder into the root of a Pico 2 W running MicroPython (minimum Pico 2 W MicroPython firmware v1.25.0-preview.365 https://micropython.org/download/RPI_PICO2_W/) and update values in config.py as necessary.
 
 This project should work on a Pico W on recent firmware, but we have moved development, testing and our production SMIBHIDs to Pico 2 Ws.
 
