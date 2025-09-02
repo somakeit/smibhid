@@ -2,7 +2,7 @@
 ## Overview
 SMIBHID is the So Make It Bot Human Interface Device and definitely not a mispronunciation of any insults from a popular 90s documentary detailing the activities of the Jupiter Mining Core.
 
-This device run on a Raspberry Pi Pico 2 W and provides physical input and output to humans for the SMIB project; Buttons, LEDs, that sort of thing.
+This device runs on a Raspberry Pi Pico 2 W and provides physical input and output to humans for the SMIB project; Buttons, LEDs, that sort of thing.
 
 Space_open and space_closed LEDs show current state as set on the S.M.I.B. slack server. If the space_state is set to None on the server i.e. no state has been specifically set, then both LEDs will be off.
 
