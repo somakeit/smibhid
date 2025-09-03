@@ -89,7 +89,8 @@ class WirelessNetwork:
     def configure_error_handling(self) -> None:
         self.error_handler = ErrorHandler("Wifi")
         self.errors = {
-            "CON": "Wifi connect"
+            "CON": "Wifi connect",
+            "AUTH": "Wifi authentication error"
         }
 
         for error_key, error_message in self.errors.items():
@@ -106,7 +107,11 @@ class WirelessNetwork:
             status = self.dump_status()
             if status == expected_status:
                 return True
-            if status < 0:
+            elif status == self.CYW43_LINK_BADAUTH:
+                self.log.error("Bad authentication, check your SSID and password")
+                raise ValueError(self.status_names[status])
+            elif status == self.CYW43_LINK_FAIL or status == self.CYW43_LINK_NONET:
+                self.log.error(f"Connection failed: {self.status_names[status]}")
                 raise Exception(self.status_names[status])
         return False
     
@@ -129,6 +134,12 @@ class WirelessNetwork:
         if elapsed_ms > 5000:
             self.log.warn(f"took {elapsed_ms} milliseconds to connect to wifi")
 
+    async def auth_error(self) -> None:
+        self.log.info("Bad wifi credentials")
+        if not self.error_handler.is_error_enabled("AUTH"):
+            self.error_handler.enable_error("AUTH")
+        await self.status_led.async_flash(2, 2)
+    
     async def connection_error(self) -> None:
         self.log.info("Error connecting")
         if not self.error_handler.is_error_enabled("CON"):
@@ -147,9 +158,13 @@ class WirelessNetwork:
         self.wlan.connect(self.wifi_ssid, self.wifi_password)
         try:
             await self.wait_status(self.CYW43_LINK_UP)
+        except ValueError as ve:
+            self.log.error(f"Authentication failed connecting to SSID {self.wifi_ssid}: {ve}")
+            await self.auth_error()
+            raise ValueError(f"Authentication failed connecting to SSID {self.wifi_ssid}: {ve}")
         except Exception as x:
             await self.connection_error()
-            raise Exception(f"Failed to connect to SSID {self.wifi_ssid} (password: {self.wifi_password}): {x}")
+            raise Exception(f"Failed to connect to SSID {self.wifi_ssid}: {x}")
         await self.connection_success()
         self.log.info("Connected successfully!")
     
@@ -158,8 +173,11 @@ class WirelessNetwork:
         start_ms = ticks_ms()
         try:
             await self.attempt_ap_connect()
-        except Exception:
-            raise Exception("Failed to connect to network")
+        except ValueError as ve:
+            self.log.error(f"Auth error: {ve}")
+            raise ValueError(ve)
+        except Exception as e:
+            raise Exception(f"Failed to connect to network: {e}")
 
         elapsed_ms = ticks_ms() - start_ms
         self.generate_connection_info(elapsed_ms)
@@ -178,8 +196,11 @@ class WirelessNetwork:
             try:
                 await self.connect_wifi()
                 return True
-            except Exception:
-                self.log.warn(f"Error connecting to wifi on attempt {retries + 1} of {config.WIFI_CONNECT_RETRIES + 1}")
+            except ValueError as ve:
+                self.log.error(f"Auth error, will not retry, please check credentials in the config file : {ve}")
+                raise ValueError(ve)
+            except Exception as e:
+                self.log.warn(f"Error connecting to wifi on attempt {retries + 1} of {config.WIFI_CONNECT_RETRIES + 1}: {e}")
                 retries += 1
                 await self.network_retry_backoff()
 
