@@ -226,7 +226,7 @@ class Sensors:
             self.log.info(f"Sensor readings: {readings}")
             
             if len(readings) > 0:
-                if self.alarm:
+                if self.alarm.enabled:
                     self.alarm.assess_co2_alarm(readings)
 
                 self.update_display_and_log_cache(readings)
