@@ -118,6 +118,7 @@ class WebApp:
         self.app.add_resource(Alarm, '/api/sensors/alarm/threshold', value = 'threshold', sensors = self.sensors, logger = self.log)
         self.app.add_resource(Alarm, '/api/sensors/alarm/reset_threshold', value = 'reset_threshold', sensors = self.sensors, logger = self.log)
         self.app.add_resource(Alarm, '/api/sensors/alarm/snooze_remaining', value = 'snooze_remaining', sensors = self.sensors, logger = self.log)
+        self.app.add_resource(Alarm, '/api/sensors/alarm/snooze', sensors = self.sensors, logger = self.log)
 
 class WLANMAC():
 
@@ -301,4 +302,11 @@ class Alarm():
         
         logger.info(f"Return value: {html}")
         
+        return html
+    
+    def put(self, data, sensors: 'Sensors', logger: uLogger) -> str:
+        logger.info("API request - PUT sensors/alarm/snooze")
+        sensors.alarm.snooze_co2_alarm()
+        html = dumps("Snoozed")
+        logger.info(f"Return value: {html}")
         return html
