@@ -113,8 +113,10 @@ class WebApp:
         self.app.add_resource(SCD30, '/api/sensors/modules/SCD30/auto_measure/<value>', function = "auto_measure", sensors = self.sensors, logger = self.log)
         self.app.add_resource(SCD30, '/api/sensors/modules/SCD30/calibration/<value>', function = "calibration", sensors = self.sensors, logger = self.log)
 
-        self.app.add_resource(Alarm, '/api/sensors/alarm/status', status = True, sensors = self.sensors, logger = self.log)
-        self.app.add_resource(Alarm, '/api/sensors/alarm/statuses', status = False, sensors = self.sensors, logger = self.log)
+        self.app.add_resource(Alarm, '/api/sensors/alarm/status', value = 'status', sensors = self.sensors, logger = self.log)
+        self.app.add_resource(Alarm, '/api/sensors/alarm/statuses', value = 'statuses', sensors = self.sensors, logger = self.log)
+        self.app.add_resource(Alarm, '/api/sensors/alarm/threshold', value = 'threshold', sensors = self.sensors, logger = self.log)
+        self.app.add_resource(Alarm, '/api/sensors/alarm/reset_threshold', value = 'reset_threshold', sensors = self.sensors, logger = self.log)
 
 class WLANMAC():
 
@@ -271,14 +273,26 @@ class SCD30():
 
 class Alarm():
 
-    def get(self, data, status: bool, sensors: 'Sensors', logger: uLogger) -> str:
-        if status:
+    def get(self, data, value: str, sensors: 'Sensors', logger: uLogger) -> str:
+        if value == 'status':
             logger.info("API request - sensors/alarm/status")
             html = dumps(sensors.alarm.get_status())
         
-        else:
+        elif value == 'statuses':
             logger.info("API request - sensors/alarm/statuses")
             html = dumps(sensors.alarm.get_statuses())
+
+        elif value == 'threshold':
+            logger.info("API request - sensors/alarm/threshold")
+            html = dumps(sensors.alarm.get_alarm_trigger_threshold())
+        
+        elif value == 'reset_threshold':
+            logger.info("API request - sensors/alarm/reset_threshold")
+            html = dumps(sensors.alarm.get_alarm_reset_threshold())
+
+        else:
+            logger.error(f"Invalid URL suffix: {value}")
+            html = dumps("Invalid URL suffix")
         
         logger.info(f"Return value: {html}")
         

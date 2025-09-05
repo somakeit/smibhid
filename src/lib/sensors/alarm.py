@@ -262,12 +262,12 @@ class Alarm:
                 self.log.warn("CO2 alarm task running when it shouldn't be, cancelling CO2 alarm task")
                 create_task(self.async_stop_alarm())
 
-    def get_status(self) -> tuple:
+    def get_status(self) -> dict:
         """
         Get the current status of the CO2 alarm.
         """
         self.log.info("Getting CO2 alarm status.")
-        data = (self.status, self.status_lookup.get(self.status, "Unknown"))
+        data = {"status": self.status, "status_text": self.status_lookup.get(self.status, "Unknown")}
         self.log.info(f"Current status value: {data}")
         return data
     
@@ -278,3 +278,17 @@ class Alarm:
         self.log.info("Getting CO2 alarm statuses.")
         self.log.info(f"Current CO2 alarm statuses: {self.status_lookup}")
         return self.status_lookup.copy()
+
+    def get_alarm_trigger_threshold(self) -> int:
+        """
+        Get the CO2 alarm trigger threshold in ppm.
+        """
+        self.log.info(f"CO2 alarm trigger threshold: {CO2_ALARM_THRESHOLD_PPM} ppm")
+        return CO2_ALARM_THRESHOLD_PPM
+    
+    def get_alarm_reset_threshold(self) -> int:
+        """
+        Get the CO2 alarm reset threshold in ppm.
+        """
+        self.log.info(f"CO2 alarm reset threshold: {CO2_ALARM_RESET_THRESHOLD_PPM} ppm")
+        return CO2_ALARM_RESET_THRESHOLD_PPM

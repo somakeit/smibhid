@@ -112,7 +112,7 @@
                 <td>
                     
                 </td>
-                <td>Get the current status of the CO2 alarm. Returns a tuple of status code and description.</td>
+                <td>Get the current status of the CO2 alarm. Returns a dictionary of status code and status text.</td>
             </tr>
             <tr>
                 <td><a href="/api/sensors/alarm/statuses">/api/sensors/alarm/statuses</a></td>
@@ -121,6 +121,22 @@
                     
                 </td>
                 <td>Returns a dictionary of possible alarm status codes mapped to their descriptions</td>
+            </tr>
+            <tr>
+                <td><a href="/api/sensors/alarm/threshold">/api/sensors/alarm/threshold</a></td>
+                <td>GET</td>
+                <td>
+                    
+                </td>
+                <td>Get the current CO2 alarm trigger threshold in PPM.</td>
+            </tr>
+            <tr>
+                <td><a href="/api/sensors/alarm/reset_threshold">/api/sensors/alarm/reset_threshold</a></td>
+                <td>GET</td>
+                <td>
+                    
+                </td>
+                <td>Get the current CO2 alarm reset threshold in PPM.</td>
             </tr>
         </table>
 
