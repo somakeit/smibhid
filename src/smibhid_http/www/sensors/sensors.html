@@ -1,22 +1,632 @@
 <!DOCTYPE html>
 <html lang="en">
     <head>
-        <title>SMIBHID - Sensors</title>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>SMIBHID - Environmental Sensors</title>
         <link rel="stylesheet" href="../css/style.css">
     </head>
+    
     <body>
-        <h1>SMIBHID - Sensors</h1>
-        <p>SMIBHID can have multiple sensors attached for measuring the environment and reporting these values over various API endpoints..
-        </p>
+        <div class="container">
+            <!-- Header with logo and title -->
+            <header class="header">
+                <div class="logo-section">
+                    <img src="https://raw.githubusercontent.com/somakeit/smibhid/ba3b3251bfdbf9c8334227aebc1c1a55e858a23f/images/smibhid_logo.png" alt="SMIBHID Logo" class="logo">
+                    <h1 class="title">SMIBHID</h1>
+                </div>
+                <div class="subtitle">Environmental Sensors Management</div>
+            </header>
 
-        <h2>SCD30</h2>
-        <p>
-            The SCD30 sensor module comprises temperature, humidity and high accuracy CO2 sensor. The sensor can be calibrated by placing in a known CO2 concentration (such as outdoors) and send the calbration command with the current CO2 PPM value.
-        </p>
-        <p>
-            The calibration can be performed use the <a href="/api">API</a>, or using the <a href="/sensors/scd30">SCD30 control page</a>.
-        </p>
+            <!-- Main content area -->
+            <main class="main-content">
+                <!-- Welcome section -->
+                <section class="welcome-section">
+                    <h2>Environmental Monitoring</h2>
+                    <p class="description">
+                        SMIBHID supports multiple environmental sensors for comprehensive monitoring. 
+                        Manage and configure your attached sensors using the controls below.
+                    </p>
+                    <div id="sensor-status" class="sensor-status">
+                        <span class="status-indicator">🔄</span>
+                        <span id="status-text">Loading sensor information...</span>
+                    </div>
+                </section>
 
-        <p>Return to <a href="/">home</a></p>
+                <!-- Sensor management grid -->
+                <div class="admin-grid" id="sensor-grid">
+                    <!-- BME280 Sensor Panel -->
+                    <div class="admin-panel sensor-panel" id="bme280-panel" style="display: none;">
+                        <div class="panel-icon">🌡️</div>
+                        <h3>BME280 Sensor</h3>
+                        <p>Precision temperature, humidity, and barometric pressure sensor for environmental monitoring.</p>
+                        <div class="sensor-details">
+                            <ul>
+                                <li><strong>Temperature:</strong> ±1.0°C accuracy</li>
+                                <li><strong>Humidity:</strong> ±3% RH accuracy</li>
+                                <li><strong>Pressure:</strong> ±1 hPa accuracy</li>
+                            </ul>
+                        </div>
+                        <a href="#" class="panel-button" onclick="event.preventDefault(); viewSensorData('BME280')">View Readings</a>
+                    </div>
+
+                    <!-- SGP30 Sensor Panel -->
+                    <div class="admin-panel sensor-panel" id="sgp30-panel" style="display: none;">
+                        <div class="panel-icon">💨</div>
+                        <h3>SGP30 Sensor</h3>
+                        <p>Multi-pixel gas sensor for indoor air quality monitoring including TVOC and eCO2.</p>
+                        <div class="sensor-details">
+                            <ul>
+                                <li><strong>TVOC:</strong> 0-60,000 ppb range</li>
+                                <li><strong>eCO2:</strong> 400-60,000 ppm range</li>
+                                <li><strong>Response:</strong> <10 seconds</li>
+                            </ul>
+                        </div>
+                        <a href="#" class="panel-button" onclick="event.preventDefault(); viewSensorData('SGP30')">View Readings</a>
+                    </div>
+
+                    <!-- SCD30 Sensor Panel -->
+                    <div class="admin-panel sensor-panel" id="scd30-panel" style="display: none;">
+                        <div class="panel-icon">🫁</div>
+                        <h3>SCD30 Sensor</h3>
+                        <p>High-precision CO2, temperature, and humidity sensor with NDIR technology.</p>
+                        <div class="sensor-details">
+                            <ul>
+                                <li><strong>CO2:</strong> ±30 ppm accuracy</li>
+                                <li><strong>Temperature:</strong> ±0.4°C accuracy</li>
+                                <li><strong>Humidity:</strong> ±2% RH accuracy</li>
+                            </ul>
+                        </div>
+                        <div class="sensor-actions">
+                            <a href="#" class="panel-button" onclick="event.preventDefault(); viewSensorData('SCD30')">View Readings</a>
+                            <a href="/sensors/scd30" class="panel-button secondary">Manage SCD30</a>
+                        </div>
+                    </div>
+
+                    <!-- Alarm Status Panel -->
+                    <div class="admin-panel" id="alarm-panel">
+                        <div class="panel-icon" id="alarm-icon">🔔</div>
+                        <h3>CO2 Alarm Status</h3>
+                        <p>Monitor and manage CO2 alarm settings and current status.</p>
+                        <div id="alarm-details" class="sensor-details">
+                            <div id="alarm-status-text">Loading alarm information...</div>
+                        </div>
+                        <div class="sensor-actions">
+                            <a href="#" class="panel-button" onclick="event.preventDefault(); refreshAlarmStatus()">Refresh Status</a>
+                            <a href="#" class="panel-button snooze-button" onclick="event.preventDefault(); snoozeAlarm(this)">Snooze Alarm</a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Live Data Section -->
+                <section class="live-data-section" id="live-data" style="display: none;">
+                    <h2>Live Sensor Readings</h2>
+                    
+                    <!-- SCD30 Sensor Group -->
+                    <div class="sensor-group" id="scd30-readings" style="display: none;">
+                        <h3>SCD30 Sensor</h3>
+                        <div class="data-grid">
+                            <div class="data-card" id="scd30-temperature-card">
+                                <h4>Temperature</h4>
+                                <div class="data-value" id="scd30-temperature-value">--°C</div>
+                            </div>
+                            <div class="data-card" id="scd30-humidity-card">
+                                <h4>Humidity</h4>
+                                <div class="data-value" id="scd30-humidity-value">--%</div>
+                            </div>
+                            <div class="data-card" id="scd30-co2-card">
+                                <h4>CO2</h4>
+                                <div class="data-value" id="scd30-co2-value">-- ppm</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- BME280 Sensor Group -->
+                    <div class="sensor-group" id="bme280-readings" style="display: none;">
+                        <h3>BME280 Sensor</h3>
+                        <div class="data-grid">
+                            <div class="data-card" id="bme280-temperature-card">
+                                <h4>Temperature</h4>
+                                <div class="data-value" id="bme280-temperature-value">--°C</div>
+                            </div>
+                            <div class="data-card" id="bme280-humidity-card">
+                                <h4>Humidity</h4>
+                                <div class="data-value" id="bme280-humidity-value">--%</div>
+                            </div>
+                            <div class="data-card" id="bme280-pressure-card">
+                                <h4>Pressure</h4>
+                                <div class="data-value" id="bme280-pressure-value">-- hPa</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- SGP30 Sensor Group -->
+                    <div class="sensor-group" id="sgp30-readings" style="display: none;">
+                        <h3>SGP30 Sensor</h3>
+                        <div class="data-grid">
+                            <div class="data-card" id="sgp30-tvoc-card">
+                                <h4>TVOC</h4>
+                                <div class="data-value" id="sgp30-tvoc-value">-- ppb</div>
+                            </div>
+                            <div class="data-card" id="sgp30-eco2-card">
+                                <h4>eCO2</h4>
+                                <div class="data-value" id="sgp30-eco2-value">-- ppm</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="live-data-controls">
+                        <button class="panel-button" onclick="toggleLiveData()">Stop Live Updates</button>
+                    </div>
+                </section>
+
+                <!-- Navigation -->
+                <div class="navigation-section">
+                    <a href="/" class="nav-link">← Back to Dashboard</a>
+                    <a href="/api" class="nav-link">API Documentation →</a>
+                </div>
+            </main>
+
+            <!-- Footer -->
+            <footer class="footer">
+                <p>&copy; 2025 So Make It - SMIBHID Environmental Sensors</p>
+            </footer>
+        </div>
+
+        <script>
+            let liveDataInterval = null;
+            let isLiveDataActive = false;
+            let activeSensorGroups = new Set(); // Track which sensor groups are visible
+
+            // Load sensor information on page load
+            document.addEventListener('DOMContentLoaded', function() {
+                loadAvailableSensors();
+                loadAlarmStatus();
+            });
+
+            async function loadAvailableSensors() {
+                try {
+                    const response = await fetch('/api/sensors/modules');
+                    const sensors = await response.json();
+                    
+                    console.log('Available sensors:', sensors);
+                    
+                    // Update status indicator
+                    const statusIndicator = document.querySelector('#sensor-status .status-indicator');
+                    const statusText = document.getElementById('status-text');
+                    
+                    if (sensors && sensors.length > 0) {
+                        statusIndicator.innerHTML = '✅';
+                        statusIndicator.className = 'status-indicator success';
+                        statusText.textContent = `Sensors successfully polled - ${sensors.length} sensor(s) detected: ${sensors.join(', ')}`;
+                        
+                        // Show relevant sensor panels
+                        sensors.forEach(sensor => {
+                            const panel = document.getElementById(`${sensor.toLowerCase()}-panel`);
+                            if (panel) {
+                                panel.style.display = 'block';
+                            }
+                        });
+                    } else {
+                        statusIndicator.innerHTML = '⚠️';
+                        statusIndicator.className = 'status-indicator warning';
+                        statusText.textContent = 'Sensors successfully polled - No sensors detected';
+                    }
+                } catch (error) {
+                    console.error('Error loading sensors:', error);
+                    const statusIndicator = document.querySelector('#sensor-status .status-indicator');
+                    const statusText = document.getElementById('status-text');
+                    statusIndicator.innerHTML = '❌';
+                    statusIndicator.className = 'status-indicator error';
+                    statusText.textContent = 'Sensors unsuccessfully polled - Error loading sensor information';
+                }
+            }
+
+            async function loadAlarmStatus() {
+                try {
+                    // Fetch alarm status
+                    const response = await fetch('/api/sensors/alarm/status');
+                    const alarmData = await response.json();
+                    
+                    // Fetch threshold data
+                    const thresholdResponse = await fetch('/api/sensors/alarm/threshold');
+                    const threshold = await thresholdResponse.json();
+                    
+                    // Fetch reset threshold data
+                    const resetThresholdResponse = await fetch('/api/sensors/alarm/reset_threshold');
+                    const resetThreshold = await resetThresholdResponse.json();
+                    
+                    // Fetch snooze remaining (only needed if status is 2)
+                    let snoozeRemaining = null;
+                    if (alarmData && alarmData.status === 2) {
+                        const snoozeResponse = await fetch('/api/sensors/alarm/snooze_remaining');
+                        snoozeRemaining = await snoozeResponse.json();
+                    }
+                    
+                    // Fetch current CO2 readings (same as live data)
+                    const readingsResponse = await fetch('/api/sensors/readings/latest');
+                    const readingsData = await readingsResponse.json();
+                    
+                    console.log('Alarm API response:', alarmData); // Debug log
+                    console.log('Threshold API response:', threshold);
+                    console.log('Reset Threshold API response:', resetThreshold);
+                    console.log('Snooze remaining:', snoozeRemaining);
+                    console.log('Current readings:', readingsData);
+                    
+                    const alarmIcon = document.getElementById('alarm-icon');
+                    const alarmDetails = document.getElementById('alarm-status-text');
+                    
+                    // Update alarm display based on status
+                    if (alarmData && alarmData.status !== undefined && alarmData.status !== null) {
+                        alarmIcon.textContent = alarmData.active ? '🚨' : '🔔';
+                        const statusDisplay = alarmData.status_text ? 
+                            `${alarmData.status} - ${alarmData.status_text}` : 
+                            alarmData.status;
+                        
+                        // Get current CO2 value (same logic as live data cards)
+                        let currentCo2 = 'N/A';
+                        if (readingsData.SCD30 && readingsData.SCD30.co2 !== undefined) {
+                            currentCo2 = readingsData.SCD30.co2;
+                        }
+                        
+                        // Build the alarm details HTML
+                        let detailsHTML = `
+                            <div><strong>Status:</strong> ${statusDisplay}</div>`;
+                        
+                        // Add snooze remaining if status is 2
+                        if (alarmData.status === 2 && snoozeRemaining !== null) {
+                            detailsHTML += `<div><strong>Snooze Remaining:</strong> ${snoozeRemaining} seconds</div>`;
+                        }
+                        
+                        detailsHTML += `
+                            <div><strong>Threshold:</strong> ${threshold || 'N/A'} ppm</div>
+                            <div><strong>Reset Threshold:</strong> ${resetThreshold || 'N/A'} ppm</div>
+                            <div><strong>Current CO2:</strong> ${currentCo2} ppm</div>
+                        `;
+                        
+                        alarmDetails.innerHTML = detailsHTML;
+                        
+                        // Update snooze button text based on status
+                        updateSnoozeButtonText(alarmData.status);
+                    } else {
+                        alarmDetails.textContent = 'Alarm information not available';
+                        // Reset button text if no alarm data
+                        updateSnoozeButtonText(null);
+                    }
+                } catch (error) {
+                    console.error('Error loading alarm status:', error);
+                    document.getElementById('alarm-status-text').textContent = 'Error loading alarm status';
+                }
+            }
+
+            async function viewSensorData(sensorType) {
+                try {
+                    const sensorGroup = document.getElementById(`${sensorType.toLowerCase()}-readings`);
+                    const button = event.target;
+                    
+                    // Toggle the sensor group visibility
+                    if (activeSensorGroups.has(sensorType)) {
+                        // Hide this sensor group
+                        sensorGroup.style.display = 'none';
+                        activeSensorGroups.delete(sensorType);
+                        button.textContent = 'View Readings';
+                        button.classList.remove('active');
+                    } else {
+                        // Show this sensor group
+                        sensorGroup.style.display = 'block';
+                        activeSensorGroups.add(sensorType);
+                        button.textContent = 'Hide Readings';
+                        button.classList.add('active');
+                        
+                        // Show live data section if not already visible
+                        document.getElementById('live-data').style.display = 'block';
+                        
+                        // Start live updates if not already active
+                        if (!isLiveDataActive) {
+                            startLiveData();
+                        }
+                    }
+                    
+                    // Hide live data section if no sensor groups are active
+                    if (activeSensorGroups.size === 0) {
+                        document.getElementById('live-data').style.display = 'none';
+                        if (isLiveDataActive) {
+                            clearInterval(liveDataInterval);
+                            isLiveDataActive = false;
+                        }
+                    } else {
+                        // Load and update data for visible sensors
+                        const response = await fetch('/api/sensors/readings/latest');
+                        const data = await response.json();
+                        updateDataCards(data);
+                        
+                        // Scroll to live data section if we just showed it
+                        if (activeSensorGroups.size === 1) {
+                            document.getElementById('live-data').scrollIntoView({ behavior: 'smooth' });
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error loading sensor data:', error);
+                    alert('Error loading sensor data');
+                }
+            }
+
+            function updateDataCards(data) {
+                console.log('Updating data cards with:', data); // Debug log
+                
+                // Update SCD30 readings
+                if (data.SCD30 && activeSensorGroups.has('SCD30')) {
+                    console.log('SCD30 data:', data.SCD30); // Debug SCD30 specifically
+                    if (data.SCD30.temperature !== undefined) {
+                        document.getElementById('scd30-temperature-value').textContent = `${data.SCD30.temperature.toFixed(1)}°C`;
+                    }
+                    if (data.SCD30.relative_humidity !== undefined) {
+                        console.log('SCD30 relative_humidity value:', data.SCD30.relative_humidity); // Debug humidity
+                        document.getElementById('scd30-humidity-value').textContent = `${data.SCD30.relative_humidity.toFixed(1)}%`;
+                    } else {
+                        console.log('SCD30 relative_humidity is undefined or missing');
+                    }
+                    if (data.SCD30.co2 !== undefined) {
+                        document.getElementById('scd30-co2-value').textContent = `${data.SCD30.co2} ppm`;
+                    }
+                }
+
+                // Update BME280 readings
+                if (data.BME280 && activeSensorGroups.has('BME280')) {
+                    if (data.BME280.temperature !== undefined) {
+                        document.getElementById('bme280-temperature-value').textContent = `${data.BME280.temperature.toFixed(1)}°C`;
+                    }
+                    if (data.BME280.humidity !== undefined) {
+                        document.getElementById('bme280-humidity-value').textContent = `${data.BME280.humidity.toFixed(1)}%`;
+                    }
+                    if (data.BME280.pressure !== undefined) {
+                        document.getElementById('bme280-pressure-value').textContent = `${data.BME280.pressure.toFixed(1)} hPa`;
+                    }
+                }
+
+                // Update SGP30 readings
+                if (data.SGP30 && activeSensorGroups.has('SGP30')) {
+                    if (data.SGP30.tvoc !== undefined) {
+                        document.getElementById('sgp30-tvoc-value').textContent = `${data.SGP30.tvoc} ppb`;
+                    }
+                    if (data.SGP30.eco2 !== undefined) {
+                        document.getElementById('sgp30-eco2-value').textContent = `${data.SGP30.eco2} ppm`;
+                    }
+                }
+            }
+
+            function startLiveData() {
+                isLiveDataActive = true;
+                document.querySelector('#live-data button').textContent = 'Stop Live Updates';
+                
+                liveDataInterval = setInterval(async () => {
+                    try {
+                        const response = await fetch('/api/sensors/readings/latest');
+                        const data = await response.json();
+                        updateDataCards(data);
+                    } catch (error) {
+                        console.error('Error updating live data:', error);
+                    }
+                }, 5000); // Update every 5 seconds
+            }
+
+            function toggleLiveData() {
+                if (isLiveDataActive) {
+                    clearInterval(liveDataInterval);
+                    isLiveDataActive = false;
+                    document.querySelector('#live-data button').textContent = 'Start Live Updates';
+                } else {
+                    startLiveData();
+                }
+            }
+
+            function refreshAlarmStatus() {
+                loadAlarmStatus();
+            }
+
+            function updateSnoozeButtonText(alarmStatus) {
+                const snoozeButton = document.querySelector('.snooze-button');
+                if (snoozeButton) {
+                    if (alarmStatus === 2) {
+                        snoozeButton.textContent = 'Snoozed';
+                        snoozeButton.classList.add('snoozed');
+                    } else {
+                        snoozeButton.textContent = 'Snooze Alarm';
+                        snoozeButton.classList.remove('snoozed');
+                    }
+                }
+            }
+
+            async function snoozeAlarm(buttonElement) {
+                try {
+                    console.log('Attempting to snooze alarm...');
+                    const response = await fetch('/api/sensors/alarm/snooze', {
+                        method: 'PUT'
+                    });
+                    
+                    console.log('Snooze API response status:', response.status);
+                    console.log('Snooze API response ok:', response.ok);
+                    
+                    // Try to get the response text regardless of status
+                    const responseText = await response.text();
+                    console.log('Response body:', responseText);
+                    
+                    if (response.ok) {
+                        console.log('Snooze successful, refreshing alarm status...');
+                        // Success - refresh the alarm status to show updated info
+                        await loadAlarmStatus();
+                        // Button text will be updated by updateSnoozeButtonText after status refresh
+                    } else {
+                        console.error('Failed to snooze alarm. Status:', response.status);
+                        console.error('Error message from server:', responseText);
+                        alert(`Failed to snooze alarm (Status: ${response.status})\nServer message: ${responseText}`);
+                    }
+                } catch (error) {
+                    console.error('Error snoozing alarm:', error);
+                    alert('Error snoozing alarm. Please check your connection.');
+                }
+            }
+        </script>
+
+        <style>
+            .sensor-status {
+                margin-top: 1rem;
+                padding: 1rem;
+                background: rgba(255, 255, 255, 0.8);
+                border-radius: 8px;
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+            }
+
+            .status-indicator {
+                font-size: 1.2rem;
+            }
+
+            .sensor-details ul {
+                list-style: none;
+                padding: 0;
+                margin: 1rem 0;
+            }
+
+            .sensor-details li {
+                padding: 0.25rem 0;
+                color: #5d6d7e;
+            }
+
+            .sensor-actions {
+                display: flex;
+                gap: 0.5rem;
+                flex-wrap: wrap;
+                margin-top: 1.5rem;
+            }
+
+            /* Consistent spacing for single buttons after sensor details */
+            .sensor-details + .panel-button {
+                margin-top: 1.5rem;
+            }
+
+            .panel-button.secondary {
+                background: linear-gradient(135deg, #7f8c8d, #5d6d7e);
+            }
+
+            .panel-button.secondary:hover {
+                background: linear-gradient(135deg, #5d6d7e, #4a5568);
+            }
+
+            .live-data-section {
+                background: rgba(255, 255, 255, 0.9);
+                border-radius: 12px;
+                padding: 2rem;
+                margin: 2rem 0;
+                box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+                border-left: 4px solid #228B22;
+            }
+
+            .sensor-group {
+                background: rgba(34, 139, 34, 0.05);
+                border-radius: 8px;
+                padding: 1.5rem;
+                margin: 1.5rem 0;
+                border: 1px solid rgba(34, 139, 34, 0.2);
+            }
+
+            .sensor-group h3 {
+                color: #228B22;
+                margin: 0 0 1rem 0;
+                font-size: 1.3rem;
+                font-weight: 600;
+            }
+
+            .live-data-controls {
+                text-align: center;
+                margin-top: 2rem;
+                padding-top: 1.5rem;
+                border-top: 1px solid rgba(34, 139, 34, 0.2);
+            }
+
+            .panel-button.active {
+                background: linear-gradient(135deg, #006400, #228B22);
+                transform: translateY(-1px);
+                box-shadow: 0 4px 15px rgba(34, 139, 34, 0.3);
+            }
+
+            .snooze-button {
+                background: linear-gradient(135deg, #dc3545, #c82333) !important;
+                color: white !important;
+            }
+
+            .snooze-button.snoozed {
+                background: linear-gradient(135deg, #6c757d, #5a6268) !important;
+                color: white !important;
+                cursor: default;
+            }
+
+            .snooze-button.snoozed:hover {
+                background: linear-gradient(135deg, #6c757d, #5a6268) !important;
+                transform: none;
+                box-shadow: 0 2px 8px rgba(108, 117, 125, 0.3);
+            }
+
+            .data-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                gap: 1rem;
+                margin: 1.5rem 0;
+            }
+
+            .data-card {
+                background: rgba(255, 255, 255, 0.8);
+                border-radius: 8px;
+                padding: 1.5rem;
+                text-align: center;
+                border: 1px solid rgba(34, 139, 34, 0.2);
+            }
+
+            .data-card h4 {
+                margin: 0 0 0.5rem 0;
+                color: #2c3e50;
+                font-size: 1rem;
+            }
+
+            .data-value {
+                font-size: 1.5rem;
+                font-weight: bold;
+                color: #228B22;
+            }
+
+            .navigation-section {
+                display: flex;
+                justify-content: space-between;
+                margin: 2rem 0;
+                flex-wrap: wrap;
+                gap: 1rem;
+            }
+
+            .nav-link {
+                color: #228B22;
+                text-decoration: none;
+                font-weight: 500;
+                padding: 0.5rem 1rem;
+                border: 1px solid rgba(34, 139, 34, 0.3);
+                border-radius: 6px;
+                transition: all 0.3s ease;
+            }
+
+            .nav-link:hover {
+                background: rgba(34, 139, 34, 0.1);
+                border-color: #228B22;
+            }
+
+            @media (max-width: 768px) {
+                .sensor-actions {
+                    flex-direction: column;
+                }
+                
+                .navigation-section {
+                    flex-direction: column;
+                }
+            }
+        </style>
     </body>
 </html>

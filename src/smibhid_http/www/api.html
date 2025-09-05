@@ -1,155 +1,285 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <title>SMIBHID - API</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SMIBHID - API Documentation</title>
     <link rel="stylesheet" href="css/style.css">
 </head>
-    <body>
-        <h1>SMIBHID - API</h1>
-        <h2>Endpoints</h2>
-        <table>
-            <tr>
-                <th>Endpoint</th>
-                <th>Method</th>
-                <th>Options</th>
-                <th>Description</th>
-            </tr>
-            <tr>
-                <td><a href="/api/wlan/mac">/api/wlan/mac</a></td>
-                <td>GET</td>
-                <td></td>
-                <td>Get WLAN MAC address</td>
-            </tr>
-            <tr>
-                <td><a href="/api/version">/api/version</a></td>
-                <td>GET</td>
-                <td></td>
-                <td>Get firmware version</td>
-            </tr>
-            <tr>
-                <td><a href="/api/hostname">/api/hostname</a></td>
-                <td>GET</td>
-                <td></td>
-                <td>Get smibhid hostname</td>
-            </tr>
-            <tr>
-                <td>/api/firmware_files</td>
-                <td>GET, POST</td>
-                <td>
-                    <ul>
-                        <li>List files: GET</li>
-                        <li>Add file: POST: Submit Value = "Add", URL = Str: id = "url" </li>
-                        <li>Remove file: POST: Submit Value = "Remove", Str: URL </li>
-                    </ul>
-                </td>
-                <td>List, add or remove URLs staged for download and patch on reset</td>
-            </tr>
-            <tr>
-                <td><a href="/api/reset">/api/reset</a></td>
-                <td>POST</td>
-                <td></td>
-                <td>Reset SMIBHID</td>
-            </tr>
-            <tr>
-                <td><a href="/api/sensors/modules">/api/sensors/modules</a></td>
-                <td>GET</td>
-                <td></td>
-                <td>List sensor modules</td>
-            </tr>
-            <tr>
-                <td>/api/sensors/modules/{module}</td>
-                <td>GET</td>
-                <td>Insert module name from module list in {module} parameter</td>
-                <td>List module sensors</td>
-            </tr>
-            <!-- <tr>
-                <td>/api/sensors/modules/{module}/readings/latest</td>
-                <td>GET</td>
-                <td></td>
-                <td>Get latest module sensor readings</td>
-            </tr> -->
-            <tr>
-                <td><a href="/api/sensors/readings/latest">/api/sensors/readings/latest</a></td>
-                <td>GET</td>
-                <td></td>
-                <td>Get latest sensor readings from all modules</td>
-            </tr>
-            <tr>
-                <td>/api/sensors/readings/log/{log_type}</td>
-                <td>GET</td>
-                <td>Insert log type in {log_type} parameter: minute or hour</td>
-                <td>Get last 60 minutes (minute) or hourly roll up log (hour) of sensor readings from all modules</td>
-            </tr>
-            <tr>
-                <td><a href="/api/sensors/modules/SCD30/auto_measure">/api/sensors/modules/scd30/auto_measure</a></td>
-                <td>GET</td>
-                <td></td>
-                <td>Get SCD30 measurement status. The SCD30 will not return sensible values until this returns 1 shortly after startup.</td>
-            </tr>
-            <tr>
-                <td>/api/sensors/modules/SCD30/auto_measure/{start_stop}</td>
-                <td>PUT</td>
-                <td>
-                    Insert start or stop in {start_stop} parameter to enable or disable automatic measurement.
-                </td>
-                <td>
-                    Put SCD30 measurement status.
-                    Without automatic measurement, the SCD30 will not take a measurement and get_readings will return 0.
-                </td>
-            </tr>
-            <tr>
-                <td>/api/sensors/modules/SCD30/calibration/{ppm}</td>
-                <td>PUT</td>
-                <td>
-                    Insert integer ppm value to calibrate the SCD30 to in the {ppm} parameter.
-                    Enter 0 for default value specified in config file.
-                </td>
-                <td>Put SCD30 calibration value</td>
-            </tr>
-            <tr>
-                <td><a href="/api/sensors/alarm/status">/api/sensors/alarm/status</a></td>
-                <td>GET</td>
-                <td>
-                    
-                </td>
-                <td>Get the current status of the CO2 alarm. Returns a dictionary of status code and status text.</td>
-            </tr>
-            <tr>
-                <td><a href="/api/sensors/alarm/statuses">/api/sensors/alarm/statuses</a></td>
-                <td>GET</td>
-                <td>
-                    
-                </td>
-                <td>Returns a dictionary of possible alarm status codes mapped to their descriptions</td>
-            </tr>
-            <tr>
-                <td><a href="/api/sensors/alarm/threshold">/api/sensors/alarm/threshold</a></td>
-                <td>GET</td>
-                <td>
-                    
-                </td>
-                <td>Get the current CO2 alarm trigger threshold in PPM.</td>
-            </tr>
-            <tr>
-                <td><a href="/api/sensors/alarm/reset_threshold">/api/sensors/alarm/reset_threshold</a></td>
-                <td>GET</td>
-                <td>
-                    
-                </td>
-                <td>Get the current CO2 alarm reset threshold in PPM.</td>
-            </tr>
-            <tr>
-                <td><a href="/api/sensors/alarm/snooze_remaining">/api/sensors/alarm/snooze_remaining</a></td>
-                <td>GET</td>
-                <td>
-                    
-                </td>
-                <td>Get the remaining snooze time for the CO2 alarm in seconds.</td>
-            </tr>
-        </table>
 
-        <p />
+<body>
+    <div class="container">
+        <!-- Header with logo and title -->
+        <header class="header">
+            <div class="logo-section">
+                <img src="https://raw.githubusercontent.com/somakeit/smibhid/ba3b3251bfdbf9c8334227aebc1c1a55e858a23f/images/smibhid_logo.png" alt="SMIBHID Logo" class="logo">
+                <h1 class="title">SMIBHID</h1>
+            </div>
+            <div class="subtitle">API Documentation & Reference</div>
+        </header>
 
-        <a href="/">Home</a>
-    </body>
+        <!-- Main content area -->
+        <main class="main-content">
+            <!-- Welcome section -->
+            <section class="welcome-section">
+                <h2>REST API Endpoints</h2>
+                <p class="description">
+                    Complete reference for SMIBHID's REST API. Use these endpoints to programmatically interact 
+                    with your device's sensors, configuration, and system functions.
+                </p>
+            </section>
+
+            <!-- API Table Section -->
+            <section class="api-section">
+                <h2>Available Endpoints</h2>
+                <div class="table-container">
+                    <table>
+                        <tr>
+                            <th>Endpoint</th>
+                            <th>Method</th>
+                            <th>Options</th>
+                            <th>Description</th>
+                        </tr>
+                        <tr>
+                            <td><a href="/api/wlan/mac">/api/wlan/mac</a></td>
+                            <td>GET</td>
+                            <td></td>
+                            <td>Get WLAN MAC address</td>
+                        </tr>
+                        <tr>
+                            <td><a href="/api/version">/api/version</a></td>
+                            <td>GET</td>
+                            <td></td>
+                            <td>Get firmware version</td>
+                        </tr>
+                        <tr>
+                            <td><a href="/api/hostname">/api/hostname</a></td>
+                            <td>GET</td>
+                            <td></td>
+                            <td>Get smibhid hostname</td>
+                        </tr>
+                        <tr>
+                            <td>/api/firmware_files</td>
+                            <td>GET, POST</td>
+                            <td>
+                                <ul>
+                                    <li>List files: GET</li>
+                                    <li>Add file: POST: Submit Value = "Add", URL = Str: id = "url" </li>
+                                    <li>Remove file: POST: Submit Value = "Remove", Str: URL </li>
+                                </ul>
+                            </td>
+                            <td>List, add or remove URLs staged for download and patch on reset</td>
+                        </tr>
+                        <tr>
+                            <td><a href="/api/reset">/api/reset</a></td>
+                            <td>POST</td>
+                            <td></td>
+                            <td>Reset SMIBHID</td>
+                        </tr>
+                        <tr>
+                            <td><a href="/api/sensors/modules">/api/sensors/modules</a></td>
+                            <td>GET</td>
+                            <td></td>
+                            <td>List sensor modules</td>
+                        </tr>
+                        <tr>
+                            <td>/api/sensors/modules/{module}</td>
+                            <td>GET</td>
+                            <td>Insert module name from module list in {module} parameter</td>
+                            <td>List module sensors</td>
+                        </tr>
+                        <!-- <tr>
+                            <td>/api/sensors/modules/{module}/readings/latest</td>
+                            <td>GET</td>
+                            <td></td>
+                            <td>Get latest module sensor readings</td>
+                        </tr> -->
+                        <tr>
+                            <td><a href="/api/sensors/readings/latest">/api/sensors/readings/latest</a></td>
+                            <td>GET</td>
+                            <td></td>
+                            <td>Get latest sensor readings from all modules</td>
+                        </tr>
+                        <tr>
+                            <td>/api/sensors/readings/log/{log_type}</td>
+                            <td>GET</td>
+                            <td>Insert log type in {log_type} parameter: minute or hour</td>
+                            <td>Get last 60 minutes (minute) or hourly roll up log (hour) of sensor readings from all modules</td>
+                        </tr>
+                        <tr>
+                            <td><a href="/api/sensors/modules/SCD30/auto_measure">/api/sensors/modules/scd30/auto_measure</a></td>
+                            <td>GET</td>
+                            <td></td>
+                            <td>Get SCD30 measurement status. The SCD30 will not return sensible values until this returns 1 shortly after startup.</td>
+                        </tr>
+                        <tr>
+                            <td>/api/sensors/modules/SCD30/auto_measure/{start_stop}</td>
+                            <td>PUT</td>
+                            <td>
+                                Insert start or stop in {start_stop} parameter to enable or disable automatic measurement.
+                            </td>
+                            <td>
+                                Put SCD30 measurement status.
+                                Without automatic measurement, the SCD30 will not take a measurement and get_readings will return 0.
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>/api/sensors/modules/SCD30/calibration/{ppm}</td>
+                            <td>PUT</td>
+                            <td>
+                                Insert integer ppm value to calibrate the SCD30 to in the {ppm} parameter.
+                                Enter 0 for default value specified in config file.
+                            </td>
+                            <td>Put SCD30 calibration value</td>
+                        </tr>
+                        <tr>
+                            <td><a href="/api/sensors/alarm/status">/api/sensors/alarm/status</a></td>
+                            <td>GET</td>
+                            <td>
+                                
+                            </td>
+                            <td>Get the current status of the CO2 alarm. Returns a dictionary of status code and status text.</td>
+                        </tr>
+                        <tr>
+                            <td><a href="/api/sensors/alarm/statuses">/api/sensors/alarm/statuses</a></td>
+                            <td>GET</td>
+                            <td>
+                                
+                            </td>
+                            <td>Returns a dictionary of possible alarm status codes mapped to their descriptions</td>
+                        </tr>
+                        <tr>
+                            <td><a href="/api/sensors/alarm/threshold">/api/sensors/alarm/threshold</a></td>
+                            <td>GET</td>
+                            <td>
+                                
+                            </td>
+                            <td>Get the current CO2 alarm trigger threshold in PPM.</td>
+                        </tr>
+                        <tr>
+                            <td><a href="/api/sensors/alarm/reset_threshold">/api/sensors/alarm/reset_threshold</a></td>
+                            <td>GET</td>
+                            <td>
+                                
+                            </td>
+                            <td>Get the current CO2 alarm reset threshold in PPM.</td>
+                        </tr>
+                        <tr>
+                            <td><a href="/api/sensors/alarm/snooze_remaining">/api/sensors/alarm/snooze_remaining</a></td>
+                            <td>GET</td>
+                            <td>
+                                
+                            </td>
+                            <td>Get the remaining snooze time for the CO2 alarm in seconds.</td>
+                        </tr>
+                        <tr>
+                            <td><a href="/api/sensors/alarm/snooze">/api/sensors/alarm/snooze</a></td>
+                            <td>PUT</td>
+                            <td>
+                                
+                            </td>
+                            <td>Snooze the alarm for the default snooze period.</td>
+                        </tr>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Navigation -->
+            <div class="navigation-section">
+                <a href="/" class="nav-link">← Back to Dashboard</a>
+                <a href="/sensors" class="nav-link">Environmental Sensors →</a>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>&copy; 2025 So Make It - SMIBHID API Documentation</p>
+        </footer>
+    </div>
+
+    <style>
+        .api-section {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            border-left: 4px solid #228B22;
+        }
+
+        .api-section h2 {
+            color: #2c3e50;
+            font-size: 1.8rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+        }
+
+        .table-container {
+            overflow-x: auto;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .navigation-section {
+            display: flex;
+            justify-content: space-between;
+            margin: 2rem 0;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .nav-link {
+            color: #228B22;
+            text-decoration: none;
+            font-weight: 500;
+            padding: 0.5rem 1rem;
+            border: 1px solid rgba(34, 139, 34, 0.3);
+            border-radius: 6px;
+            transition: all 0.3s ease;
+        }
+
+        .nav-link:hover {
+            background: rgba(34, 139, 34, 0.1);
+            border-color: #228B22;
+        }
+
+        /* Enhanced table styling for API documentation */
+        table ul {
+            margin: 0.5rem 0;
+            padding-left: 1.5rem;
+        }
+
+        table ul li {
+            margin: 0.25rem 0;
+            color: #5d6d7e;
+            font-size: 0.9rem;
+        }
+
+        table td:first-child {
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            background: rgba(34, 139, 34, 0.05);
+        }
+
+        table td:nth-child(2) {
+            font-weight: 600;
+            color: #228B22;
+            text-align: center;
+        }
+
+        @media (max-width: 768px) {
+            .navigation-section {
+                flex-direction: column;
+            }
+            
+            .table-container {
+                font-size: 0.85rem;
+            }
+            
+            .api-section {
+                padding: 1.5rem;
+            }
+        }
+    </style>
+</body>
 </html>
