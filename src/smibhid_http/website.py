@@ -117,6 +117,7 @@ class WebApp:
         self.app.add_resource(Alarm, '/api/sensors/alarm/statuses', value = 'statuses', sensors = self.sensors, logger = self.log)
         self.app.add_resource(Alarm, '/api/sensors/alarm/threshold', value = 'threshold', sensors = self.sensors, logger = self.log)
         self.app.add_resource(Alarm, '/api/sensors/alarm/reset_threshold', value = 'reset_threshold', sensors = self.sensors, logger = self.log)
+        self.app.add_resource(Alarm, '/api/sensors/alarm/snooze_remaining', value = 'snooze_remaining', sensors = self.sensors, logger = self.log)
 
 class WLANMAC():
 
@@ -289,6 +290,10 @@ class Alarm():
         elif value == 'reset_threshold':
             logger.info("API request - sensors/alarm/reset_threshold")
             html = dumps(sensors.alarm.get_alarm_reset_threshold())
+
+        elif value == 'snooze_remaining':
+            logger.info("API request - sensors/alarm/snooze_remaining")
+            html = dumps(sensors.alarm.get_remaining_snooze_time_s())
 
         else:
             logger.error(f"Invalid URL suffix: {value}")

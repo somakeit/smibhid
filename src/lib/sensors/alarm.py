@@ -180,6 +180,7 @@ class Alarm:
         self.log.info("Snoozing CO2 alarm")
         create_task(self.async_stop_alarm())
         self.co2_alarm_buzzer_snooze_set_time = time()
+        self.status = 2
         self.display.update_alarm("Snoozed")    
 
     def alarm_should_sound(self) -> bool:
@@ -292,3 +293,26 @@ class Alarm:
         """
         self.log.info(f"CO2 alarm reset threshold: {CO2_ALARM_RESET_THRESHOLD_PPM} ppm")
         return CO2_ALARM_RESET_THRESHOLD_PPM
+    
+    def get_remaining_snooze_time_s(self) -> int:
+        """
+        Get the remaining snooze time in seconds.
+        """
+        if self.status != 2:
+            self.log.info("CO2 alarm is not snoozed, remaining snooze time is 0 seconds")
+            return 0
+        
+        elif self.co2_alarm_buzzer_snooze_set_time is not None:
+            elapsed_time = time() - self.co2_alarm_buzzer_snooze_set_time
+            remaining_time = CO2_ALARM_SNOOZE_DURATION_S - elapsed_time
+        
+            if remaining_time < 0:
+                self.log.info("CO2 alarm snooze duration has elapsed, remaining snooze time is 0 seconds")
+                return 0
+        
+        else:
+            self.log.error("CO2 alarm snooze set time is None while status is snoozed, this should not happen")
+            raise ValueError("CO2 alarm snooze set time is None while status is snoozed")
+
+        self.log.info(f"Remaining CO2 alarm snooze time: {remaining_time} seconds")
+        return int(remaining_time)
