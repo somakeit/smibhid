@@ -5,18 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SMIBHID - API Documentation</title>
     <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/api.css">
+    <script src="js/common.js"></script>
 </head>
 
-<body>
+<body data-subtitle="API Documentation & Reference" data-footer-context="API Documentation">
     <div class="container">
-        <!-- Header with logo and title -->
-        <header class="header">
-            <div class="logo-section">
-                <img src="https://raw.githubusercontent.com/somakeit/smibhid/ba3b3251bfdbf9c8334227aebc1c1a55e858a23f/images/smibhid_logo.png" alt="SMIBHID Logo" class="logo">
-                <h1 class="title">SMIBHID</h1>
-            </div>
-            <div class="subtitle">API Documentation & Reference</div>
-        </header>
+        <div id="header-placeholder"></div>
 
         <!-- Main content area -->
         <main class="main-content">
@@ -191,95 +186,7 @@
             </div>
         </main>
 
-        <!-- Footer -->
-        <footer class="footer">
-            <p>&copy; 2025 So Make It - SMIBHID API Documentation</p>
-        </footer>
+        <div id="footer-placeholder"></div>
     </div>
-
-    <style>
-        .api-section {
-            background: rgba(255, 255, 255, 0.9);
-            border-radius: 12px;
-            padding: 2rem;
-            margin-bottom: 2rem;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-            border-left: 4px solid #228B22;
-        }
-
-        .api-section h2 {
-            color: #2c3e50;
-            font-size: 1.8rem;
-            font-weight: 600;
-            margin-bottom: 1.5rem;
-        }
-
-        .table-container {
-            overflow-x: auto;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-        }
-
-        .navigation-section {
-            display: flex;
-            justify-content: space-between;
-            margin: 2rem 0;
-            flex-wrap: wrap;
-            gap: 1rem;
-        }
-
-        .nav-link {
-            color: #228B22;
-            text-decoration: none;
-            font-weight: 500;
-            padding: 0.5rem 1rem;
-            border: 1px solid rgba(34, 139, 34, 0.3);
-            border-radius: 6px;
-            transition: all 0.3s ease;
-        }
-
-        .nav-link:hover {
-            background: rgba(34, 139, 34, 0.1);
-            border-color: #228B22;
-        }
-
-        /* Enhanced table styling for API documentation */
-        table ul {
-            margin: 0.5rem 0;
-            padding-left: 1.5rem;
-        }
-
-        table ul li {
-            margin: 0.25rem 0;
-            color: #5d6d7e;
-            font-size: 0.9rem;
-        }
-
-        table td:first-child {
-            font-family: 'Courier New', monospace;
-            font-size: 0.9rem;
-            background: rgba(34, 139, 34, 0.05);
-        }
-
-        table td:nth-child(2) {
-            font-weight: 600;
-            color: #228B22;
-            text-align: center;
-        }
-
-        @media (max-width: 768px) {
-            .navigation-section {
-                flex-direction: column;
-            }
-            
-            .table-container {
-                font-size: 0.85rem;
-            }
-            
-            .api-section {
-                padding: 1.5rem;
-            }
-        }
-    </style>
 </body>
 </html>

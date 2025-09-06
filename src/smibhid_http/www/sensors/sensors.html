@@ -5,18 +5,13 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>SMIBHID - Environmental Sensors</title>
         <link rel="stylesheet" href="../css/style.css">
+        <link rel="stylesheet" href="../css/sensors.css">
+        <script src="../js/common.js"></script>
     </head>
     
-    <body>
+    <body data-subtitle="Environmental Sensors Management" data-footer-context="Environmental Sensors">
         <div class="container">
-            <!-- Header with logo and title -->
-            <header class="header">
-                <div class="logo-section">
-                    <img src="https://raw.githubusercontent.com/somakeit/smibhid/ba3b3251bfdbf9c8334227aebc1c1a55e858a23f/images/smibhid_logo.png" alt="SMIBHID Logo" class="logo">
-                    <h1 class="title">SMIBHID</h1>
-                </div>
-                <div class="subtitle">Environmental Sensors Management</div>
-            </header>
+            <div id="header-placeholder"></div>
 
             <!-- Main content area -->
             <main class="main-content">
@@ -167,10 +162,7 @@
                 </div>
             </main>
 
-            <!-- Footer -->
-            <footer class="footer">
-                <p>&copy; 2025 So Make It - SMIBHID Environmental Sensors</p>
-            </footer>
+            <div id="footer-placeholder"></div>
         </div>
 
         <script>
@@ -467,166 +459,5 @@
                 }
             }
         </script>
-
-        <style>
-            .sensor-status {
-                margin-top: 1rem;
-                padding: 1rem;
-                background: rgba(255, 255, 255, 0.8);
-                border-radius: 8px;
-                display: flex;
-                align-items: center;
-                gap: 0.5rem;
-            }
-
-            .status-indicator {
-                font-size: 1.2rem;
-            }
-
-            .sensor-details ul {
-                list-style: none;
-                padding: 0;
-                margin: 1rem 0;
-            }
-
-            .sensor-details li {
-                padding: 0.25rem 0;
-                color: #5d6d7e;
-            }
-
-            .sensor-actions {
-                display: flex;
-                gap: 0.5rem;
-                flex-wrap: wrap;
-                margin-top: 1.5rem;
-            }
-
-            /* Consistent spacing for single buttons after sensor details */
-            .sensor-details + .panel-button {
-                margin-top: 1.5rem;
-            }
-
-            .panel-button.secondary {
-                background: linear-gradient(135deg, #7f8c8d, #5d6d7e);
-            }
-
-            .panel-button.secondary:hover {
-                background: linear-gradient(135deg, #5d6d7e, #4a5568);
-            }
-
-            .live-data-section {
-                background: rgba(255, 255, 255, 0.9);
-                border-radius: 12px;
-                padding: 2rem;
-                margin: 2rem 0;
-                box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-                border-left: 4px solid #228B22;
-            }
-
-            .sensor-group {
-                background: rgba(34, 139, 34, 0.05);
-                border-radius: 8px;
-                padding: 1.5rem;
-                margin: 1.5rem 0;
-                border: 1px solid rgba(34, 139, 34, 0.2);
-            }
-
-            .sensor-group h3 {
-                color: #228B22;
-                margin: 0 0 1rem 0;
-                font-size: 1.3rem;
-                font-weight: 600;
-            }
-
-            .live-data-controls {
-                text-align: center;
-                margin-top: 2rem;
-                padding-top: 1.5rem;
-                border-top: 1px solid rgba(34, 139, 34, 0.2);
-            }
-
-            .panel-button.active {
-                background: linear-gradient(135deg, #006400, #228B22);
-                transform: translateY(-1px);
-                box-shadow: 0 4px 15px rgba(34, 139, 34, 0.3);
-            }
-
-            .snooze-button {
-                background: linear-gradient(135deg, #dc3545, #c82333) !important;
-                color: white !important;
-            }
-
-            .snooze-button.snoozed {
-                background: linear-gradient(135deg, #6c757d, #5a6268) !important;
-                color: white !important;
-                cursor: default;
-            }
-
-            .snooze-button.snoozed:hover {
-                background: linear-gradient(135deg, #6c757d, #5a6268) !important;
-                transform: none;
-                box-shadow: 0 2px 8px rgba(108, 117, 125, 0.3);
-            }
-
-            .data-grid {
-                display: grid;
-                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-                gap: 1rem;
-                margin: 1.5rem 0;
-            }
-
-            .data-card {
-                background: rgba(255, 255, 255, 0.8);
-                border-radius: 8px;
-                padding: 1.5rem;
-                text-align: center;
-                border: 1px solid rgba(34, 139, 34, 0.2);
-            }
-
-            .data-card h4 {
-                margin: 0 0 0.5rem 0;
-                color: #2c3e50;
-                font-size: 1rem;
-            }
-
-            .data-value {
-                font-size: 1.5rem;
-                font-weight: bold;
-                color: #228B22;
-            }
-
-            .navigation-section {
-                display: flex;
-                justify-content: space-between;
-                margin: 2rem 0;
-                flex-wrap: wrap;
-                gap: 1rem;
-            }
-
-            .nav-link {
-                color: #228B22;
-                text-decoration: none;
-                font-weight: 500;
-                padding: 0.5rem 1rem;
-                border: 1px solid rgba(34, 139, 34, 0.3);
-                border-radius: 6px;
-                transition: all 0.3s ease;
-            }
-
-            .nav-link:hover {
-                background: rgba(34, 139, 34, 0.1);
-                border-color: #228B22;
-            }
-
-            @media (max-width: 768px) {
-                .sensor-actions {
-                    flex-direction: column;
-                }
-                
-                .navigation-section {
-                    flex-direction: column;
-                }
-            }
-        </style>
     </body>
 </html>

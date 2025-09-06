@@ -38,7 +38,14 @@ class WebApp:
         self.port = 80
         self.running = False
         self.create_style_css()
+        self.create_api_css()
+        self.create_update_css()
+        self.create_sensors_css()
+        self.create_scd30_css()
+        self.create_common_js()
         self.create_update_js()
+        self.create_header_include()
+        self.create_footer_include()
         self.create_homepage()
         self.create_update()
         self.create_sensors()
@@ -62,10 +69,45 @@ class WebApp:
         async def index(request, response):
             await response.send_file('/smibhid_http/www/css/style.css', content_type='text/css')
 
+    def create_api_css(self):
+        @self.app.route('/css/api.css')
+        async def index(request, response):
+            await response.send_file('/smibhid_http/www/css/api.css', content_type='text/css')
+
+    def create_update_css(self):
+        @self.app.route('/css/update.css')
+        async def index(request, response):
+            await response.send_file('/smibhid_http/www/css/update.css', content_type='text/css')
+
+    def create_sensors_css(self):
+        @self.app.route('/css/sensors.css')
+        async def index(request, response):
+            await response.send_file('/smibhid_http/www/css/sensors.css', content_type='text/css')
+
+    def create_scd30_css(self):
+        @self.app.route('/css/scd30.css')
+        async def index(request, response):
+            await response.send_file('/smibhid_http/www/css/scd30.css', content_type='text/css')
+
+    def create_common_js(self):
+        @self.app.route('/js/common.js')
+        async def index(request, response):
+            await response.send_file('/smibhid_http/www/js/common.js', content_type='application/javascript')
+
     def create_update_js(self):
         @self.app.route('/js/update.js')
         async def index(request, response):
             await response.send_file('/smibhid_http/www/js/update.js', content_type='application/javascript')
+    
+    def create_header_include(self):
+        @self.app.route('/includes/header.html')
+        async def index(request, response):
+            await response.send_file('/smibhid_http/www/includes/header.html', content_type='text/html')
+
+    def create_footer_include(self):
+        @self.app.route('/includes/footer.html')
+        async def index(request, response):
+            await response.send_file('/smibhid_http/www/includes/footer.html', content_type='text/html')
     
     def create_homepage(self) -> None:
         @self.app.route('/')
