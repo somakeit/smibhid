@@ -22,6 +22,13 @@
                         Manage firmware updates for your SMIBHID device. Upload new firmware files and restart 
                         the device to apply updates safely over the network.
                     </p>
+                    <p>
+                        Files must be hosted publicly, likely on github and added the pending update files list to be downloaded and applied on restart.
+                        At present you can only update files in the /lib folder.
+                    </p>
+                    <p>
+                        The device will restart into a temporary update mode to apply the updates, during which it will be unavailable for 30-60 seconds and then restart into the new source code.
+                    </p>
                     <div class="warning-notice">
                         <span class="warning-icon">⚠️</span>
                         <span>Always ensure stable network connection during firmware updates</span>
@@ -41,6 +48,12 @@
                         <div class="panel-actions">
                             <button class="panel-button secondary" onclick="fetchURLs()">
                                 🔄 Refresh File List
+                            </button>
+                            <button type="button" class="panel-button secondary" onclick="selectAllFiles()">
+                                ☑️ Select All
+                            </button>
+                            <button type="button" class="panel-button secondary" onclick="selectNoneFiles()">
+                                ☐ Select None
                             </button>
                         </div>
 
@@ -65,7 +78,14 @@
                         <form action="" id="add_file_form" class="update-form">
                             <div class="form-group">
                                 <label for="url">Firmware File URL:</label>
-                                <input type="text" id="url" class="form-input" placeholder="https://example.com/firmware.py" />
+                                <input type="url" 
+                                       id="url" 
+                                       class="form-input" 
+                                       placeholder="https://example.com/firmware.py"
+                                       pattern="^https?://.*\.py$"
+                                       title="URL must start with http:// or https:// and end with .py"
+                                       required />
+                                <small class="form-help">Must be a valid HTTP/HTTPS URL ending in .py</small>
                             </div>
                             <input type="submit" value="Add File" class="panel-button" />
                         </form>
