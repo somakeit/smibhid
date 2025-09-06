@@ -1,40 +1,126 @@
 <!DOCTYPE html>
 <html lang="en">
     <head>
-        <title>SMIBHID - Update</title>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>SMIBHID - Firmware Update</title>
         <link rel="stylesheet" href="css/style.css">
+        <link rel="stylesheet" href="css/update.css">
+        <script src="js/common.js?v=1.0.0"></script>
     </head>
-    <body>
-        <h1>SMIBHID - Firmware update</h1>
-        <p>Firmware can be uploaded to SMIBHID over the air here and restarted to apply.
-        </p>
+    
+    <body data-subtitle="Firmware Update Management" data-footer-context="Firmware Update">
+        <div class="container">
+            <div id="header-placeholder"></div>
 
-        <h2>Update files</h2>
+            <!-- Main content area -->
+            <main class="main-content">
+                <!-- Welcome section -->
+                <section class="welcome-section">
+                    <h2>Over-the-Air Updates</h2>
+                    <p class="description">
+                        Manage firmware updates for your SMIBHID device. Upload new firmware files and restart 
+                        the device to apply updates safely over the network.
+                    </p>
+                    <p>
+                        Files must be hosted publicly, likely on github and added the pending update files list to be downloaded and applied on restart.
+                        At present you can only update files in the /lib folder.
+                    </p>
+                    <p>
+                        The device will restart into a temporary update mode to apply the updates, during which it will be unavailable for 30-60 seconds and then restart into the new source code.
+                    </p>
+                    <div class="warning-notice">
+                        <span class="warning-icon">⚠️</span>
+                        <span>Always ensure stable network connection during firmware updates</span>
+                    </div>
+                </section>
 
-        <h3>Delete files pending update</h3>
-        <button onclick="fetchURLs()">Refresh URLs</button>
-        <form action="/api/firmware_files" method="post" enctype="application/x-www-form-urlencoded" id="remove_file_form">
-            <ul id="url-list">
-            </ul>
-            <input type="submit" name="action" value="Remove" id="Remove"/>
-        </form>
+                <!-- Update Management Grid -->
+                <div class="update-grid">
+                    <!-- Pending Files Panel -->
+                    <div class="update-panel">
+                        <div class="panel-header">
+                            <div class="panel-icon">📄</div>
+                            <h3>Pending Update Files</h3>
+                        </div>
+                        <p>Manage files that are staged for the next firmware update.</p>
+                        
+                        <div class="panel-actions">
+                            <button class="panel-button secondary" onclick="fetchURLs()">
+                                🔄 Refresh File List
+                            </button>
+                            <button type="button" class="panel-button secondary" onclick="selectAllFiles()">
+                                ☑️ Select All
+                            </button>
+                            <button type="button" class="panel-button secondary" onclick="selectNoneFiles()">
+                                ☐ Select None
+                            </button>
+                        </div>
 
-        <h3>Provide the URL for a new firmware file here:</h3>
-        <form action="" id="add_file_form">
-            <label for="url">Enter file URL:</label>
-            <input type="text" id="url" />
-            <input type="submit" value="Add" />
-        </form>
+                        <form action="/api/firmware_files" method="post" enctype="application/x-www-form-urlencoded" id="remove_file_form" class="update-form">
+                            <div class="file-list-container">
+                                <ul id="url-list" class="file-list">
+                                    <!-- Files will be populated here -->
+                                </ul>
+                            </div>
+                            <input type="submit" name="action" value="Remove Selected" id="Remove" class="panel-button danger"/>
+                        </form>
+                    </div>
 
-        <span id="result"></span>
+                    <!-- Add Files Panel -->
+                    <div class="update-panel">
+                        <div class="panel-header">
+                            <div class="panel-icon">📥</div>
+                            <h3>Add New Firmware File</h3>
+                        </div>
+                        <p>Provide a URL to download and stage a new firmware file for update.</p>
+                        
+                        <form action="" id="add_file_form" class="update-form">
+                            <div class="form-group">
+                                <label for="url">Firmware File URL:</label>
+                                <input type="url" 
+                                       id="url" 
+                                       class="form-input" 
+                                       placeholder="https://example.com/firmware.py"
+                                       pattern="^https?://.*\.py$"
+                                       title="URL must start with http:// or https:// and end with .py"
+                                       required />
+                                <small class="form-help">Must be a valid HTTP/HTTPS URL ending in .py</small>
+                            </div>
+                            <input type="submit" value="Add File" class="panel-button" />
+                        </form>
 
-        <h3>Restart SMIBHID</h3>
-        <form action="/api/reset" method="post">
-            <input type="submit" name="action" value="Restart" id="Restart"/>
-        </form>
+                        <div id="result" class="result-message"></div>
+                    </div>
 
-        <p>Return to <a href="/">home</a></p>
+                    <!-- System Restart Panel -->
+                    <div class="update-panel restart-panel">
+                        <div class="panel-header">
+                            <div class="panel-icon">🔄</div>
+                            <h3>Apply Updates</h3>
+                        </div>
+                        <p>Restart SMIBHID to apply all pending firmware updates. This will temporarily disconnect the device.</p>
+                        
+                        <div class="restart-warning">
+                            <strong>Warning:</strong> The device will be unavailable for 30-60 seconds during restart.
+                        </div>
 
+                        <form action="/api/reset" method="post" class="update-form">
+                            <input type="submit" name="action" value="Restart & Apply Updates" id="Restart" class="panel-button restart-btn"/>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Navigation -->
+                <div class="navigation-section">
+                    <a href="/" class="nav-link">← Back to Dashboard</a>
+                    <a href="/api" class="nav-link">API Documentation →</a>
+                </div>
+            </main>
+
+            <div id="footer-placeholder"></div>
+        </div>
+
+        <script src="js/update.js?v=1.0.0"></script>
     </body>
-    <script type="module" src="js/update.js?v=0.0.28"></script>
 </html>

@@ -1,12 +1,20 @@
 from lib.ulogging import uLogger
 from asyncio import create_task, sleep
-from time import ticks_ms, ticks_diff
+from time import ticks_ms
+
+try:
+    from typing import TYPE_CHECKING
+except ImportError:
+    TYPE_CHECKING = False
+
+if TYPE_CHECKING:
+    from lib.hid import HID
 
 class UIState:
     """
     State machine for the SMIBHID user interface.
     """
-    def __init__(self, hid: object, space_state) -> None:
+    def __init__(self, hid: 'HID', space_state) -> None:
         """
         Pass HID instance for global UI state reference.
         Pass SpaceState instance to allow space open and closed buttons to work
