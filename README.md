@@ -2,7 +2,7 @@
 ## Overview
 SMIBHID is the So Make It Bot Human Interface Device and definitely not a mispronunciation of any insults from a popular 90s documentary detailing the activities of the Jupiter Mining Core.
 
-This device run on a Raspberry Pi Pico W and provides physical input and output to humans for the SMIB project; Buttons, LEDs, that sort of thing.
+This device runs on a Raspberry Pi Pico W and provides physical input and output to humans for the SMIB project; Buttons, LEDs, that sort of thing.
 
 Space_open and space_closed LEDs show current state as set on the S.M.I.B. slack server. If the space_state is set to None on the server i.e. no state has been specifically set, then both LEDs will be off.
 
@@ -23,17 +23,20 @@ Press the space_open or space_closed buttons to call the smib server endpoint ap
 - Config file checker against config template - useful for upgrades missing config of new features
 - Over the air firmware updates - Web based management and display output on status
 - Web server for admin functions (Check info log messages or DHCP server for IP and default port is 80)
-  - Home page with list of available functions
-  - API page that details API endpoints available and their usage
-  - Update page for performing over the air firmware updates and remote reset to apply them
+  - Home dashboard page with list of available functions
+  - Sensors page listing connected sensors, status of CO2 alarm with snooze control and sub page for SCD30 configuration and calibration
+  - API documentation page that details API endpoints available and their usage
+  - Firmware Update page for performing over the air firmware updates and remote reset to apply them
 - Pinger watchdog - Optionally ping an IP address and toggle a GPIO pin on ping failure. Useful for network device monitoring and reset.
 - Extensible sensor module framework for async polling of I2C sensors and presentation of sensors and readings on the web API and recording to log file
   - Supported sensors
     - SGP30 (Equivalent CO2 and VOC)
     - BME280
     - SCD30
-  - Calibration of the SCD30 CO2 sensor via the API or web admin console
   - CO2 alarm where SCD30 module present
+    - Alarm buzzer and LED to show when CO2 PPM is over alarm threshold
+    - Buzzer can be snoozed by physical button or web UI
+    - Buzzer will be auto suppressed when space state is closed or it is within the configured suppress alarm window
 - Automated regular push of sensor readings to SMIB for storage in the database
 
 ### Sensors
@@ -45,11 +48,13 @@ Future intent is to have the sensor data pushed to SMIB at each poll and only ca
 
 The API allows querying of the sensors in realtime and SMIB has a slack command to query the sensors and report that realtime data back to the slack channel via the "/howfresh" command.
 
-The SGP30 CO2 sensor needs calibration from time to time and this can be achieved by posting the current CO2 level as measured by a reference sensor to the calibration API endpoint or by using the sensors web management page. Full instructions are available by following links from the main admin web page at http://<smibhid IP>:80
+The SCD30 CO2 sensor needs calibration from time to time and this can be achieved by posting the current CO2 level as measured by a reference sensor to the calibration API endpoint or by using the sensors web management page. Full instructions are available by following links from the main admin web page at http://<smibhid IP>:80
 
-The SGP30 module also allows configuration of a buzzer and LED alarm. On each poll (once per minute), the LED and alarm buzzer will trigger at the PPM threshold (configurable) in the config file and will remain triggered until the level drops below the reset threshold (configurable). A snooze button is provided to silence the audible alarm for 5 minutes (configurable) while an open window lowers the measured PPM, but the alarm LED will remain lit while the reset threshold is exceeded.
+The SCD30 module also allows configuration of a buzzer and LED alarm. On each poll (once per minute), the LED and alarm buzzer will trigger at the PPM threshold (configurable) in the config file and will remain triggered until the level drops below the reset threshold (configurable). A snooze button is provided to silence the audible alarm for 5 minutes (configurable) while an open window lowers the measured PPM, but the alarm LED will remain lit while the reset threshold is exceeded.
 
-The CO2 reading can be output onto the 32x128 OLED display if attached. There is a 5 second auto off on the OLED display to prevent pixel burnout/in. The snooze button becomes a screen wake button if the screen is fitted and powered off and snooze on a subsequent press while the screen is powered on.
+The alarm will be suppressed when the space state is closed or the time is within the suppress alarm window as configured in config.py.
+
+The CO2 reading can be output onto the 32x128 OLED display if attached. There is a 5 second auto off on the OLED display to prevent pixel burnout/burn-in. The snooze button becomes a screen wake button if the screen is fitted and powered off and snooze on a subsequent press while the screen is powered on.
 
 ## Circuit diagram
 ### Pico W Connections
@@ -77,7 +82,7 @@ Below is a list of hardware and links for my specific build:
 - [Buzzer](https://shop.pimoroni.com/products/mini-active-buzzer?variant=40257468694611)
 
 ## Deployment
-Copy the files from the smibhib folder into the root of a Pico 2 W running Micropython (minimum Pico 2 W Micropython firmware v1.25.0-preview.365 https://micropython.org/download/RPI_PICO2_W/) and update values in config.py as necessary.
+Copy the files from the smibhid folder into the root of a Pico 2 W running Micropython (minimum Pico 2 W Micropython firmware v1.25.0-preview.365 https://micropython.org/download/RPI_PICO2_W/) and update values in config.py as necessary.
 
 This project should work on a Pico W on recent firmware, but we have moved development, testing and our production SMIBHIDs to Pico 2 Ws.
 
@@ -151,6 +156,7 @@ Use existing space state buttons, lights, slack API wrapper and watchers as an e
   - Update the config.py file to include the option for your new driver
   - Add the module import to sensors.\_\_init\_\_.py
   - Copy and adjust appropriately the try except block in sensors.\_\_init\_\_.load_modules method
+  - You will need to add appropriate items to the sensors.html and and sensors.js files using other sensors as a template to have your sensor show up on the web UI
 - UIState machine
   - A state machine exists and can be extended by various modules such as space_state to manage the state of the buttons and display output
   - The current state instance is held in hid.ui_state_instance
@@ -185,7 +191,7 @@ Ensure Pytest is installed in your environment. You can install it using the fol
 
 Tests are configured within the tests folder.
 
-The conftest.py file is used to mock up micropython specific elements and provide mock values for hardware interfaces to allow meaingful testing of the board in cpython.
+The conftest.py file is used to mock up micropython specific elements and provide mock values for hardware interfaces to allow meaningful testing of the board in cpython.
 Review the conftest and test files for existing example on how to build further tests.
 
 ### UI State diagram
