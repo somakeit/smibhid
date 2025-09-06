@@ -7,6 +7,7 @@
         <link rel="stylesheet" href="../css/style.css">
         <link rel="stylesheet" href="../css/scd30.css">
         <script src="../js/common.js"></script>
+        <script src="../js/scd30.js"></script>
     </head>
     
     <body data-subtitle="SCD30 Sensor Control & Calibration" data-footer-context="SCD30 Sensor Control">
@@ -141,110 +142,5 @@
 
             <div id="footer-placeholder"></div>
         </div>
-
-        <script type="module">
-            import { setAutoMeasure, setCalibration } from '../js/scd30.js?v=0.0.2';
-
-            window.setAutoMeasure = setAutoMeasure;
-            window.setCalibration = setCalibration;
-
-            // Enhanced functions with UI updates
-            window.setAutoMeasure = async function() {
-                const action = document.getElementById('autoMeasureAction').value;
-                const resultDiv = document.getElementById('autoMeasureResult');
-                
-                try {
-                    resultDiv.className = 'result-message';
-                    resultDiv.textContent = 'Applying setting...';
-                    resultDiv.style.display = 'block';
-                    
-                    const result = await setAutoMeasure();
-                    
-                    resultDiv.className = 'result-message success';
-                    resultDiv.textContent = `Measurement ${action} command sent successfully`;
-                    
-                    // Refresh status after a delay
-                    setTimeout(checkMeasurementStatus, 1000);
-                    
-                } catch (error) {
-                    resultDiv.className = 'result-message error';
-                    resultDiv.textContent = `Error: ${error.message}`;
-                }
-            };
-
-            window.setCalibration = async function() {
-                const value = document.getElementById('calibrationValue').value;
-                const resultDiv = document.getElementById('calibrationResult');
-                
-                if (!value || value < 0) {
-                    resultDiv.className = 'result-message error';
-                    resultDiv.textContent = 'Please enter a valid calibration value';
-                    resultDiv.style.display = 'block';
-                    return;
-                }
-                
-                try {
-                    resultDiv.className = 'result-message';
-                    resultDiv.textContent = 'Calibrating sensor...';
-                    resultDiv.style.display = 'block';
-                    
-                    const result = await setCalibration();
-                    
-                    resultDiv.className = 'result-message success';
-                    resultDiv.textContent = `Calibration set to ${value} ppm successfully`;
-                    
-                } catch (error) {
-                    resultDiv.className = 'result-message error';
-                    resultDiv.textContent = `Calibration error: ${error.message}`;
-                }
-            };
-
-            // New functions for enhanced UI
-            async function checkMeasurementStatus() {
-                try {
-                    const response = await fetch('/api/sensors/modules/SCD30/auto_measure');
-                    const status = await response.text();
-                    
-                    const statusElement = document.getElementById('measurement-status');
-                    const statusText = document.getElementById('status-text');
-                    
-                    if (status === '1') {
-                        statusElement.innerHTML = '<span class="status-dot active"></span>';
-                        statusText.textContent = 'Measurement active';
-                    } else {
-                        statusElement.innerHTML = '<span class="status-dot inactive"></span>';
-                        statusText.textContent = 'Measurement stopped';
-                    }
-                } catch (error) {
-                    console.error('Error checking status:', error);
-                }
-            }
-
-            async function refreshReadings() {
-                try {
-                    const response = await fetch('/api/sensors/readings/latest');
-                    const data = await response.json();
-                    
-                    if (data.SCD30) {
-                        document.getElementById('co2-reading').textContent = `${data.SCD30.co2 || '--'} ppm`;
-                        document.getElementById('temp-reading').textContent = `${data.SCD30.temperature?.toFixed(1) || '--'}°C`;
-                        document.getElementById('humidity-reading').textContent = `${data.SCD30.humidity?.toFixed(1) || '--'}%`;
-                    }
-                } catch (error) {
-                    console.error('Error refreshing readings:', error);
-                }
-            }
-
-            window.refreshReadings = refreshReadings;
-
-            // Initialize page
-            document.addEventListener('DOMContentLoaded', function() {
-                checkMeasurementStatus();
-                refreshReadings();
-                
-                // Auto-refresh readings every 10 seconds
-                setInterval(refreshReadings, 10000);
-            });
-        </script>
     </body>
 </html>

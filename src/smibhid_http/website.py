@@ -43,13 +43,16 @@ class WebApp:
         self.create_sensors_css()
         self.create_scd30_css()
         self.create_common_js()
+        self.create_index_js()
+        self.create_sensors_js()
         self.create_update_js()
+        self.create_scd30_js()
         self.create_header_include()
         self.create_footer_include()
+        self.create_favicon()
         self.create_homepage()
         self.create_update()
         self.create_sensors()
-        self.create_scd30_js()
         self.create_scd30()
         self.create_api()
 
@@ -94,10 +97,25 @@ class WebApp:
         async def index(request, response):
             await response.send_file('/smibhid_http/www/js/common.js', content_type='application/javascript')
 
+    def create_index_js(self):
+        @self.app.route('/js/index.js')
+        async def index(request, response):
+            await response.send_file('/smibhid_http/www/js/index.js', content_type='application/javascript')
+
+    def create_sensors_js(self):
+        @self.app.route('/js/sensors.js')
+        async def index(request, response):
+            await response.send_file('/smibhid_http/www/js/sensors.js', content_type='application/javascript')
+
     def create_update_js(self):
         @self.app.route('/js/update.js')
         async def index(request, response):
             await response.send_file('/smibhid_http/www/js/update.js', content_type='application/javascript')
+
+    def create_scd30_js(self):
+        @self.app.route('/js/scd30.js')
+        async def index(request, response):
+            await response.send_file('/smibhid_http/www/js/scd30.js', content_type='application/javascript')
     
     def create_header_include(self):
         @self.app.route('/includes/header.html')
@@ -108,6 +126,22 @@ class WebApp:
         @self.app.route('/includes/footer.html')
         async def index(request, response):
             await response.send_file('/smibhid_http/www/includes/footer.html', content_type='text/html')
+
+    def create_favicon(self):
+        @self.app.route('/logo')
+        async def logo(request, response):
+            # Redirect to the hosted logo image
+            await response.redirect('https://raw.githubusercontent.com/somakeit/smibhid/ba3b3251bfdbf9c8334227aebc1c1a55e858a23f/images/smibhid_logo.png')
+        
+        @self.app.route('/favicon.ico')
+        async def favicon_ico(request, response):
+            # Redirect to the logo route for consistency
+            await response.redirect('/logo')
+        
+        @self.app.route('/favicon.png')
+        async def favicon_png(request, response):
+            # Redirect to the logo route for consistency
+            await response.redirect('/logo')
     
     def create_homepage(self) -> None:
         @self.app.route('/')
@@ -123,11 +157,6 @@ class WebApp:
         @self.app.route('/sensors')
         async def index(request, response):
             await response.send_file('/smibhid_http/www/sensors/sensors.html')
-    
-    def create_scd30_js(self) -> None:
-        @self.app.route('/js/scd30.js')
-        async def index(request, response):
-            await response.send_file('/smibhid_http/www/js/scd30.js', content_type='application/javascript')
     
     def create_scd30(self) -> None:
         @self.app.route('/sensors/scd30')
