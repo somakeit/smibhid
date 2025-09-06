@@ -1,3 +1,20 @@
+// Cache for existing URLs to avoid repeated DOM queries
+let cachedExistingUrls = [];
+
+// Debounce function to limit how often validation runs
+function debounce(func, delay) {
+    let timeoutId;
+    return function (...args) {
+        clearTimeout(timeoutId);
+        timeoutId = setTimeout(() => func.apply(this, args), delay);
+    };
+}
+
+// Update cached URLs when the file list changes
+function updateUrlCache() {
+    cachedExistingUrls = Array.from(document.querySelectorAll('input[name="url"]')).map(input => input.value);
+}
+
 // Validate firmware URL format
 function validateFirmwareUrl(url) {
     // Check if URL starts with http:// or https:// and ends with .py
@@ -5,16 +22,42 @@ function validateFirmwareUrl(url) {
     return urlPattern.test(url);
 }
 
-// Check if URL already exists in the pending list
+// Check if URL already exists in the pending list (uses cached URLs)
 function isDuplicateUrl(url) {
-    const existingUrls = Array.from(document.querySelectorAll('input[name="url"]')).map(input => input.value);
-    return existingUrls.includes(url);
+    return cachedExistingUrls.includes(url);
 }
 
 // Add real-time validation feedback
 function setupRealtimeValidation() {
     const urlInput = document.getElementById('url');
     const resultDiv = document.getElementById('result');
+    
+    // Debounced validation function (500ms delay)
+    const debouncedValidation = debounce(function(url) {
+        
+        // Clear previous validation state
+        urlInput.classList.remove('invalid', 'valid');
+        resultDiv.style.display = 'none';
+        
+        if (url.length > 0) {
+            if (!validateFirmwareUrl(url)) {
+                urlInput.classList.add('invalid');
+                resultDiv.innerText = "Invalid URL format. Must start with http:// or https:// and end with .py";
+                resultDiv.className = 'result-message error';
+                resultDiv.style.display = 'block';
+            } else if (isDuplicateUrl(url)) {
+                urlInput.classList.add('invalid');
+                resultDiv.innerText = "This URL is already in the pending files list";
+                resultDiv.className = 'result-message error';
+                resultDiv.style.display = 'block';
+            } else {
+                urlInput.classList.add('valid');
+                resultDiv.innerText = "URL format is valid";
+                resultDiv.className = 'result-message success';
+                resultDiv.style.display = 'block';
+            }
+        }
+    }, 500);
     
     urlInput.addEventListener('input', function() {
         const url = this.value.trim();
@@ -24,14 +67,11 @@ function setupRealtimeValidation() {
             resultDiv.style.display = 'none';
         }
         
-        // Show validation hint for partially entered URLs
-        if (url.length > 0 && !validateFirmwareUrl(url)) {
-            this.setCustomValidity('URL must start with http:// or https:// and end with .py');
-        } else if (url.length > 0 && isDuplicateUrl(url)) {
-            this.setCustomValidity('This URL is already in the pending files list');
-        } else {
-            this.setCustomValidity('');
-        }
+        // Clear visual validation classes while typing
+        this.classList.remove('valid', 'invalid');
+        
+        // Run debounced validation
+        debouncedValidation(url);
     });
     
     urlInput.addEventListener('blur', function() {
@@ -213,6 +253,9 @@ document.addEventListener("DOMContentLoaded", function() {
                     emptyMessage.innerHTML = '<span class="empty-icon">📋</span><span>No files are currently selected for update</span>';
                     urlList.appendChild(emptyMessage);
                 }
+                
+                // Update the URL cache after DOM is updated
+                updateUrlCache();
             })
             .catch(error => {
                 console.error('Error fetching URLs:', error);
@@ -223,6 +266,9 @@ document.addEventListener("DOMContentLoaded", function() {
                 errorMessage.className = 'error-message';
                 errorMessage.innerHTML = '<span class="error-icon">❌</span><span>Error loading file list</span>';
                 urlList.appendChild(errorMessage);
+                
+                // Clear cache on error
+                cachedExistingUrls = [];
             });
     }
 
