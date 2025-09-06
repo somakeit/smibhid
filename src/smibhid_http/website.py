@@ -131,7 +131,7 @@ class WebApp:
         @self.app.route('/logo')
         async def logo(request, response):
             # Redirect to the hosted logo image
-            await response.redirect('https://raw.githubusercontent.com/somakeit/smibhid/ba3b3251bfdbf9c8334227aebc1c1a55e858a23f/images/smibhid_logo.png')
+            await response.redirect('https://raw.githubusercontent.com/somakeit/smibhid/refs/heads/master/images/smibhid_logo.png')
         
         @self.app.route('/favicon.ico')
         async def favicon_ico(request, response):
