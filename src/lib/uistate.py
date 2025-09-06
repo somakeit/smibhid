@@ -1,12 +1,21 @@
 from lib.ulogging import uLogger
 from asyncio import create_task, sleep
-from time import ticks_ms, ticks_diff
+from time import ticks_ms
+
+try:
+    from typing import TYPE_CHECKING
+except ImportError:
+    TYPE_CHECKING = False
+
+if TYPE_CHECKING:
+    from lib.hid import HID
+    from lib.space_state import SpaceState
 
 class UIState:
     """
     State machine for the SMIBHID user interface.
     """
-    def __init__(self, hid: object, space_state) -> None:
+    def __init__(self, hid: HID, space_state: SpaceState) -> None:
         """
         Pass HID instance for global UI state reference.
         Pass SpaceState instance to allow space open and closed buttons to work
@@ -45,7 +54,8 @@ class UIState:
         try:
             self.change_state_task = create_task(self.space_state.slack_api.async_space_closed())
             await self._async_space_state_change_timeout_check()
-            self.space_state.flash_task.cancel()
+            if self.space_state.flash_task:
+                self.space_state.flash_task.cancel()
             self.space_state.set_output_space_closed()
             create_task(self.space_state.async_update_space_state_output())
         except Exception as e:
@@ -62,7 +72,8 @@ class UIState:
         try:
             self.change_state_task = create_task(self.space_state.slack_api.async_space_open(open_for_hours))
             await self._async_space_state_change_timeout_check()
-            self.space_state.flash_task.cancel()
+            if self.space_state.flash_task:
+                self.space_state.flash_task.cancel()
             self.space_state.set_output_space_open()
             create_task(self.space_state.async_update_space_state_output())
         except Exception as e:
@@ -75,7 +86,8 @@ class UIState:
         """
         Cancel flash task and reset space state output to current state.
         """
-        self.space_state.flash_task.cancel()
+        if self.space_state.flash_task:
+            self.space_state.flash_task.cancel()
         self.space_state._set_space_output(self.space_state.space_state)
         create_task(self.space_state.async_update_space_state_output())
 

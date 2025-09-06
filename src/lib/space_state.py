@@ -2,7 +2,15 @@
 Classes related to space state management.
 """
 
-from asyncio import Event, create_task, sleep, wait_for, CancelledError
+from asyncio import Event, create_task, sleep, wait_for, CancelledError, Task
+
+try:
+    from typing import TYPE_CHECKING, Optional
+except ImportError:
+    TYPE_CHECKING = False
+
+if TYPE_CHECKING:
+    from lib.hid import HID
 
 import config
 from lib.button import Button
@@ -26,7 +34,7 @@ class SpaceState:
     Leverages a state machine to determine the current spacestate mode for menu interaction using the buttons where a display is present.
     """
 
-    def __init__(self, module_config: ModuleConfig, hid: object) -> None:
+    def __init__(self, module_config: ModuleConfig, hid: 'HID') -> None:
         """
         Configures error handling for space state module.
         ModuleConfig is used to get the display and wifi instances.
@@ -63,6 +71,7 @@ class SpaceState:
         self.state_check_error_open_led_flash_task = None
         self.state_check_error_closed_led_flash_task = None
         self.last_button_press_ms = 0
+        self.flash_task: Optional[Task] = None
         self.configure_error_handling()
 
     def configure_error_handling(self) -> None:
@@ -307,7 +316,7 @@ class SpaceStateUIState(UIState):
     """
     Base class for space state UI state.
     """
-    def __init__(self, hid: object, space_state: SpaceState) -> None:
+    def __init__(self, hid: HID, space_state: SpaceState) -> None:
         super().__init__(hid, space_state)
         self.open_for_hours = 0
 
@@ -342,7 +351,7 @@ class OpenState(UIState):
     """
     UI state for open space state.
     """
-    def __init__(self, hid: object, space_state: SpaceState) -> None:
+    def __init__(self, hid: HID, space_state: SpaceState) -> None:
         super().__init__(hid, space_state)
 
     async def async_on_space_closed_button(self) -> None:
@@ -356,7 +365,7 @@ class ClosedState(UIState):
     """
     UI state for closed space state.
     """
-    def __init__(self, hid: object, space_state: SpaceState) -> None:
+    def __init__(self, hid: HID, space_state: SpaceState) -> None:
         super().__init__(hid, space_state)
 
     async def async_on_space_closed_button(self) -> None:
@@ -370,7 +379,7 @@ class NoneState(UIState):
     """
     UI state for unknown space state.
     """
-    def __init__(self, hid: object, space_state: SpaceState) -> None:
+    def __init__(self, hid: HID, space_state: SpaceState) -> None:
         super().__init__(hid, space_state)
     
     async def async_on_space_closed_button(self) -> None:
@@ -384,7 +393,7 @@ class AddingHoursState(SpaceStateUIState):
     """
     UI state for adding hours to the open for hours counter.
     """
-    def __init__(self, hid: object, space_state: SpaceState) -> None:
+    def __init__(self, hid: HID, space_state: SpaceState) -> None:
         super().__init__(hid, space_state)
 
     def on_enter(self) -> None:
