@@ -43,7 +43,7 @@
                                 <li><strong>Pressure:</strong> ±1 hPa accuracy</li>
                             </ul>
                         </div>
-                        <a href="#" class="panel-button" onclick="event.preventDefault(); viewSensorData('BME280')">View Readings</a>
+                        <a href="#" class="panel-button" onclick="event.preventDefault(); viewSensorData('BME280', event)">View Readings</a>
                     </div>
 
                     <!-- SGP30 Sensor Panel -->
@@ -58,7 +58,7 @@
                                 <li><strong>Response:</strong> <10 seconds</li>
                             </ul>
                         </div>
-                        <a href="#" class="panel-button" onclick="event.preventDefault(); viewSensorData('SGP30')">View Readings</a>
+                        <a href="#" class="panel-button" onclick="event.preventDefault(); viewSensorData('SGP30', event)">View Readings</a>
                     </div>
 
                     <!-- SCD30 Sensor Panel -->
@@ -74,7 +74,7 @@
                             </ul>
                         </div>
                         <div class="sensor-actions">
-                            <a href="#" class="panel-button" onclick="event.preventDefault(); viewSensorData('SCD30')">View Readings</a>
+                            <a href="#" class="panel-button" onclick="event.preventDefault(); viewSensorData('SCD30', event)">View Readings</a>
                             <a href="/sensors/scd30" class="panel-button secondary">Manage SCD30</a>
                         </div>
                     </div>

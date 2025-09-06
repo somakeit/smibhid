@@ -125,7 +125,7 @@ async function loadAlarmStatus() {
     }
 }
 
-async function viewSensorData(sensorType) {
+async function viewSensorData(sensorType, event) {
     try {
         const sensorGroup = document.getElementById(`${sensorType.toLowerCase()}-readings`);
         const button = event.target;
