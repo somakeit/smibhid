@@ -5,7 +5,7 @@ Classes related to space state management.
 from asyncio import Event, create_task, sleep, wait_for, CancelledError, Task
 
 try:
-    from typing import TYPE_CHECKING, Optional
+    from typing import TYPE_CHECKING, Optional, Literal
 except ImportError:
     TYPE_CHECKING = False
 
@@ -24,6 +24,9 @@ from lib.uistate import UIState
 from time import ticks_ms
 from machine import Pin
 
+# Type definitions for space states
+if TYPE_CHECKING:
+    SpaceStateType = Literal["open", "closed"]
 
 class SpaceState:
     """
@@ -201,7 +204,7 @@ class SpaceState:
             return False
         else:
             self.log.info("Free to check space state")
-            if not isinstance(self.hid.ui_state_instance, AddingHoursState):
+            if not isinstance(self.hid.ui_state_instance, AddingOpenHoursState):
                 self.checking_space_state = True
                 if self.error_handler.is_error_enabled("API"):
                     self.error_handler.disable_error("API")
@@ -239,8 +242,8 @@ class SpaceState:
                     self.slack_api.async_get_space_state(),
                     self.checking_space_state_timeout_s,
                 )
-                while isinstance(self.hid.ui_state_instance, AddingHoursState):
-                    self.log.info("Waiting for AddingHoursState to complete")
+                while isinstance(self.hid.ui_state_instance, AddingOpenHoursState):
+                    self.log.info("Waiting for AddingOpenHoursState to complete")
                     await sleep(1)
                 self.log.info(
                     f"Space state is: {new_space_state}, was: {self.space_state}"
@@ -319,6 +322,7 @@ class SpaceStateUIState(UIState):
     def __init__(self, hid: HID, space_state: SpaceState) -> None:
         super().__init__(hid, space_state)
         self.open_for_hours = 0
+        self.closed_for_minutes = 0
 
     def last_button_press_x_seconds_ago(self, x: int = 2) -> bool:
         """
@@ -337,15 +341,32 @@ class SpaceStateUIState(UIState):
             self.open_for_hours = 0
         
         self.hid.display.add_hours(self.open_for_hours)
-    
-    async def _async_button_timeout_watcher(self) -> None:
+
+    def increment_closed_for_minutes(self) -> None:
         """
-        Call open space with current open hours count if no button press for 2 seconds.
+        Increment the closed for minutes counter by 10 minutes up to one hour,
+        then reset to 0.
+        """
+        if self.closed_for_minutes < 60:
+            self.closed_for_minutes += 10
+        else:
+            self.closed_for_minutes = 0
+        
+        self.hid.display.add_minutes(self.closed_for_minutes)
+
+    async def _async_button_timeout_watcher(self, going_to_state: 'SpaceStateType') -> None:
+        """
+        Call open space with current open hours count, or space closed with
+        minutes count if no button press for 2 seconds, dependent
+        on going_to_state parameter.
         """
         while not self.last_button_press_x_seconds_ago(config.ADD_HOURS_INPUT_TIMEOUT):
             await sleep(0.1)
 
-        await self._async_open_space(self.open_for_hours)
+        if going_to_state == "open":
+            await self._async_open_space(self.open_for_hours)
+        elif going_to_state == "closed":
+            await self._async_close_space(self.closed_for_minutes)
 
 class OpenState(UIState):
     """
@@ -355,11 +376,12 @@ class OpenState(UIState):
         super().__init__(hid, space_state)
 
     async def async_on_space_closed_button(self) -> None:
-        await super().async_on_space_closed_button()
+        self.log.info("Adding minutes to closed for minutes counter")
+        self.hid.ui_state_instance.transition_to(AddingClosedMinutesState(self.hid, self.space_state))
 
     async def async_on_space_open_button(self) -> None:
         self.log.info("Space open - Topping up hours - Adding hours to open for hours counter")
-        self.hid.ui_state_instance.transition_to(AddingHoursState(self.hid, self.space_state))
+        self.hid.ui_state_instance.transition_to(AddingOpenHoursState(self.hid, self.space_state))
 
 class ClosedState(UIState):
     """
@@ -373,7 +395,7 @@ class ClosedState(UIState):
 
     async def async_on_space_open_button(self) -> None:
         self.log.info("Adding hours to open for hours counter")
-        self.hid.ui_state_instance.transition_to(AddingHoursState(self.hid, self.space_state))
+        self.hid.ui_state_instance.transition_to(AddingOpenHoursState(self.hid, self.space_state))
 
 class NoneState(UIState):
     """
@@ -383,13 +405,14 @@ class NoneState(UIState):
         super().__init__(hid, space_state)
     
     async def async_on_space_closed_button(self) -> None:
-        await super().async_on_space_closed_button()
+        self.log.info("Adding minutes to closed for minutes counter")
+        self.hid.ui_state_instance.transition_to(AddingClosedMinutesState(self.hid, self.space_state))
 
     async def async_on_space_open_button(self) -> None:
         self.log.info("Adding hours to open for hours counter")
-        self.hid.ui_state_instance.transition_to(AddingHoursState(self.hid, self.space_state))
+        self.hid.ui_state_instance.transition_to(AddingOpenHoursState(self.hid, self.space_state))
 
-class AddingHoursState(SpaceStateUIState):
+class AddingOpenHoursState(SpaceStateUIState):
     """
     UI state for adding hours to the open for hours counter.
     """
@@ -399,7 +422,7 @@ class AddingHoursState(SpaceStateUIState):
     def on_enter(self) -> None:
         super().on_enter()
         self.hid.display.add_hours(self.open_for_hours)
-        self.button_timeout_task = create_task(self._async_button_timeout_watcher())
+        self.button_timeout_task = create_task(self._async_button_timeout_watcher("open"))
 
     async def async_on_space_closed_button(self) -> None:
         self.hid.display.cancelling()
@@ -408,10 +431,38 @@ class AddingHoursState(SpaceStateUIState):
         self.space_state._set_space_output(self.space_state.space_state)
         if self.space_state.space_state == CLOSED:
             self.hid.ui_state_instance.transition_to(ClosedState(self.hid, self.space_state))
-        if self.space_state.space_state == OPEN:
+        elif self.space_state.space_state == OPEN:
             self.hid.ui_state_instance.transition_to(OpenState(self.hid, self.space_state))
         else:
             self.hid.ui_state_instance.transition_to(NoneState(self.hid, self.space_state))
 
     async def async_on_space_open_button(self) -> None:
         self.increment_open_for_hours_single_digit()
+
+class AddingClosedMinutesState(SpaceStateUIState): #TODO: some bug resets display to 0 when adding many minutes, posts to slack twice (different values) and keeps the red LED flashing
+    """
+    UI state for adding minutes to the closed for minutes counter.
+    """
+    def __init__(self, hid: HID, space_state: SpaceState) -> None:
+        super().__init__(hid, space_state)
+
+    def on_enter(self) -> None:
+        super().on_enter()
+        self.hid.display.add_minutes(self.closed_for_minutes)
+        self.button_timeout_task = create_task(self._async_button_timeout_watcher("closed"))
+
+    async def async_on_space_closed_button(self) -> None:
+        self.increment_closed_for_minutes()
+
+    async def async_on_space_open_button(self) -> None:
+        self.hid.display.cancelling()
+        self.button_timeout_task.cancel()
+        await sleep(1)
+        self.space_state._set_space_output(self.space_state.space_state)
+        if self.space_state.space_state == CLOSED:
+            self.hid.ui_state_instance.transition_to(ClosedState(self.hid, self.space_state))
+        elif self.space_state.space_state == OPEN:
+            self.hid.ui_state_instance.transition_to(OpenState(self.hid, self.space_state))
+        else:
+            self.hid.ui_state_instance.transition_to(NoneState(self.hid, self.space_state))
+    

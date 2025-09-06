@@ -123,6 +123,11 @@ class Display:
         """Display a screen for adding open for hours information."""
         self.log.info("Adding hours screen")
         self._execute_command("add_hours", open_for_hours)
+
+    def add_minutes(self, closed_for_minutes: int) -> None:
+        """Display a screen for adding closed for minutes information."""
+        self.log.info("Adding minutes screen")
+        self._execute_command("add_minutes", closed_for_minutes)
     
     def cancelling(self) -> None:
         """Display cancelling text."""

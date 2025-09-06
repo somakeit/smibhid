@@ -19,10 +19,11 @@ class Wrapper:
         json_hours = dumps({"hours" : hours})
         await self.async_slack_api_request("PUT", "space/state/open", json_hours)
     
-    async def async_space_closed(self) -> None:
+    async def async_space_closed(self, minutes: int = 0) -> None:
         """Call space_closed."""
-        await self.async_slack_api_request("PUT", "space/state/closed")
-    
+        json_minutes = dumps({"minutes": minutes})
+        await self.async_slack_api_request("PUT", "space/state/closed", json_minutes)
+
     async def async_get_space_state(self) -> bool | None:
         """Call space_state and return boolean: True = Open, False = closed."""
         response = await self.async_slack_api_request("GET", "space/state")

@@ -46,13 +46,13 @@ class UIState:
         self.hid.set_ui_state(state)
         state.on_enter()
 
-    async def _async_close_space(self) -> None:
+    async def _async_close_space(self, closed_for_minutes: int = 0) -> None:
         """
         Default action for closing the space.
         """
         self.space_state.flash_task = create_task(self.space_state.space_closed_led.async_constant_flash(4))
         try:
-            self.change_state_task = create_task(self.space_state.slack_api.async_space_closed())
+            self.change_state_task = create_task(self.space_state.slack_api.async_space_closed(closed_for_minutes))
             await self._async_space_state_change_timeout_check()
             if self.space_state.flash_task:
                 self.space_state.flash_task.cancel()
@@ -103,12 +103,12 @@ class UIState:
     
     async def async_on_space_closed_button(self) -> None:
         """
-        Close space when space closed button pressed outside of space state UI.
+        Close space with no minutes when space closed button pressed outside of space state UI.
         """
         await self._async_close_space()
     
     async def async_on_space_open_button(self) -> None:
         """
-        Open space with no hours when when space open button pressed outside of space state UI.
+        Open space with no hours when space open button pressed outside of space state UI.
         """
         await self._async_open_space()
