@@ -1,5 +1,3 @@
-const version = '0.0.28';
-
 // Validate firmware URL format
 function validateFirmwareUrl(url) {
     // Check if URL starts with http:// or https:// and ends with .py
