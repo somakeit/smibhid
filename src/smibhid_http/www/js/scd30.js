@@ -1,5 +1,3 @@
-const version = '0.0.2';        
-
 async function setAutoMeasure() {
     const action = document.getElementById('autoMeasureAction').value;
     const response = await fetch(`/api/sensors/modules/SCD30/auto_measure/${action}`, {
