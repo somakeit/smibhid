@@ -11,6 +11,7 @@ Press the space_open or space_closed buttons to call the smib server endpoint ap
 ## Features
 - Space open and closed buttons with LED feedback that calls the S.M.I.B. space_open/space_closed endpoint
 - Press the open button multiple times to set the number of hours the space will be open for
+- Press the closed button multiple times to set the minutes the space will be temporarily closed for
 - LED flashes while trying to set state so you know it's trying to do something
 - Confirms the space state after change by calling space_state
 - Regularly polls for space state (polling period configurable in config.py) and updates the SMIBHID status appropriately to sync with other space state controls

@@ -9,12 +9,13 @@ except ImportError:
 
 if TYPE_CHECKING:
     from lib.hid import HID
+    from lib.space_state import SpaceState
 
 class UIState:
     """
     State machine for the SMIBHID user interface.
     """
-    def __init__(self, hid: 'HID', space_state) -> None:
+    def __init__(self, hid: HID, space_state: SpaceState) -> None:
         """
         Pass HID instance for global UI state reference.
         Pass SpaceState instance to allow space open and closed buttons to work
@@ -37,23 +38,32 @@ class UIState:
         """
         self.log.info(f"Exiting {self.__class__.__module__} {self.__class__.__name__} State")
 
-    def transition_to(self, state: 'UIState') -> None:
+    def transition_to(self, state: 'UIState', enforce: bool = False) -> None:
         """
-        Move to a new UI state.
+        Move to a new UI state, enforce option suppresses check for existing
+        state, used for polls to ensure correct state cleanup.
         """
+        self.log.info(f"Transitioning from {self.__class__.__module__} {self.__class__.__name__} to {state.__class__.__module__} {state.__class__.__name__} State")
+        if self.hid.ui_state_instance.__class__.__name__ == state.__class__.__name__:
+            if enforce:
+                self.log.info(f"Enforced transition to {state} State")
+            else:
+                self.log.warn(f"Already in {state} State and not enforced, not transitioning, this shouldn't happen")
+            return
         self.on_exit()
         self.hid.set_ui_state(state)
         state.on_enter()
 
-    async def _async_close_space(self) -> None:
+    async def _async_close_space(self, closed_for_minutes: int = 0) -> None:
         """
         Default action for closing the space.
         """
         self.space_state.flash_task = create_task(self.space_state.space_closed_led.async_constant_flash(4))
         try:
-            self.change_state_task = create_task(self.space_state.slack_api.async_space_closed())
+            self.change_state_task = create_task(self.space_state.slack_api.async_space_closed(closed_for_minutes))
             await self._async_space_state_change_timeout_check()
-            self.space_state.flash_task.cancel()
+            if self.space_state.flash_task:
+                self.space_state.flash_task.cancel()
             self.space_state.set_output_space_closed()
             create_task(self.space_state.async_update_space_state_output())
         except Exception as e:
@@ -70,7 +80,8 @@ class UIState:
         try:
             self.change_state_task = create_task(self.space_state.slack_api.async_space_open(open_for_hours))
             await self._async_space_state_change_timeout_check()
-            self.space_state.flash_task.cancel()
+            if self.space_state.flash_task:
+                self.space_state.flash_task.cancel()
             self.space_state.set_output_space_open()
             create_task(self.space_state.async_update_space_state_output())
         except Exception as e:
@@ -83,7 +94,8 @@ class UIState:
         """
         Cancel flash task and reset space state output to current state.
         """
-        self.space_state.flash_task.cancel()
+        if self.space_state.flash_task:
+            self.space_state.flash_task.cancel()
         self.space_state._set_space_output(self.space_state.space_state)
         create_task(self.space_state.async_update_space_state_output())
 
@@ -99,12 +111,12 @@ class UIState:
     
     async def async_on_space_closed_button(self) -> None:
         """
-        Close space when space closed button pressed outside of space state UI.
+        Close space with no minutes when space closed button pressed outside of space state UI.
         """
         await self._async_close_space()
     
     async def async_on_space_open_button(self) -> None:
         """
-        Open space with no hours when when space open button pressed outside of space state UI.
+        Open space with no hours when space open button pressed outside of space state UI.
         """
         await self._async_open_space()

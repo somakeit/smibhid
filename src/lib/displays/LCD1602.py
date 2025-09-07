@@ -204,6 +204,12 @@ class LCD1602:
         self.print_on_line(0, "Opening space")
         self.print_on_line(1, f"for {open_for_hours} hours")
 
+    def add_minutes(self, closed_for_minutes: int) -> None:
+        """Display a screen for adding closed for minutes information."""
+        self.log.info(f"Adding minutes screen: {closed_for_minutes}")
+        self.print_on_line(0, "Closing space")
+        self.print_on_line(1, f"for {closed_for_minutes} minutes")
+
     def cancelling(self) -> None:
         """Display cancelling text."""
         self.log.info("Cancelling")
