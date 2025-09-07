@@ -242,9 +242,7 @@ class SpaceState:
                     self.slack_api.async_get_space_state(),
                     self.checking_space_state_timeout_s,
                 )
-                while isinstance(self.hid.ui_state_instance, AddingOpenHoursState):
-                    self.log.info("Waiting for AddingOpenHoursState to complete")
-                    await sleep(1)
+
                 self.log.info(
                     f"Space state is: {new_space_state}, was: {self.space_state}"
                 )
