@@ -301,13 +301,13 @@ class SpaceState:
                 )
 
         while True:
-            self.log.info("Polling space state")
-            await sleep(self.space_state_poll_frequency)
-            
             try:
+                self.log.info("Polling space state")
+                await sleep(self.space_state_poll_frequency)
                 create_task(task_wrapper_for_error_handling())
             except CancelledError as e:
                 self.log.info(f"State poller task cancelled: {e}")
+                break 
 
     def get_space_state(self) -> bool | None:
         """
