@@ -24,6 +24,7 @@ from lib.uistate import UIState
 from time import ticks_ms
 from machine import Pin
 
+# Type definitions for space states
 if TYPE_CHECKING:
     SpaceStateType = Literal["open", "closed"]
 
@@ -302,12 +303,12 @@ class SpaceState:
 
         while True:
             self.log.info("Polling space state")
+            await sleep(self.space_state_poll_frequency)
+            
             try:
                 create_task(task_wrapper_for_error_handling())
             except CancelledError as e:
                 self.log.info(f"State poller task cancelled: {e}")
-            finally:
-                await sleep(self.space_state_poll_frequency)
 
     def get_space_state(self) -> bool | None:
         """
@@ -458,7 +459,7 @@ class AddingOpenHoursState(SpaceStateUIState):
         self.log.info("Exiting AddingOpenHoursState, restarting space state watcher")
         self.space_state.space_state_poll_task = create_task(self.space_state.async_space_state_watcher())
 
-class AddingClosedMinutesState(SpaceStateUIState):
+class AddingClosedMinutesState(SpaceStateUIState): #TODO: some bug resets display to 0 when adding many minutes, posts to slack twice (different values) and keeps the red LED flashing
     """
     UI state for adding minutes to the closed for minutes counter.
     """
