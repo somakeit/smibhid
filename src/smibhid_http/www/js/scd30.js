@@ -87,8 +87,8 @@ async function pollForStatusUpdate(expectedAction, maxRetries = 3) {
     const resultDiv = document.getElementById('autoMeasureResult');
     
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
-        // Wait before checking status (give sensor time to respond)
-        await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+        // Wait before checking status (give sensor time to respond) - fixed 1.5s delay
+        await new Promise(resolve => setTimeout(resolve, 1500));
         
         try {
             await checkMeasurementStatus();
