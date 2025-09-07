@@ -1,21 +1,63 @@
 <!DOCTYPE html>
 <html lang="en">
     <head>
-        <title>SMIBHID - Admin dashboard</title>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>SMIBHID - Device Administration</title>
         <link rel="stylesheet" href="css/style.css">
+        <script src="js/common.js?v=1.0.0"></script>
+        <script src="js/index.js?v=1.0.0"></script>
     </head>
-    
-    <body>
-        <h1>SMIBHID - Admin dashboard</h1>
-        <p>SMIBHID is the Human Interface Device for the So Make It Bot.</p>
+   
+    <body data-subtitle="Human Interface Device Administration Panel" data-footer-context="Administration Panel">
+        <div class="container">
+            <div id="header-placeholder"></div>
 
-        <h2>API</h2>
-        <p>SMIBHID provides an API for the admin functions. The API is documented <a href="/api">here</a>.</p>
-        
-        <h2>Update</h2>
-        <p>SMIBHID firmware can be updated over the air. The update page is <a href="/update">here</a>.</p>
-        
-        <h2>Sensors</h2>
-        <p>SMIBHID can have multiple sensors attached for measuring the environment and reporting these values over various API endpoints. More details can be found on the <a href="/sensors">sensors page</a>.</p>
+            <!-- Main content area -->
+            <main class="main-content">
+                <!-- Welcome section -->
+                <section class="welcome-section">
+                    <h2>Device Overview</h2>
+                    <p class="description">SMIBHID is the Human Interface Device for the So Make It Bot, providing environmental monitoring and device control capabilities.</p>
+                </section>
+
+                <!-- Admin panels grid -->
+                <div class="admin-grid">
+                    <!-- Sensors Panel -->
+                    <div class="admin-panel">
+                        <div class="panel-icon">📊</div>
+                        <h3>Environmental Sensors</h3>
+                        <p>Monitor and configure attached sensors for environmental data collection and reporting.</p>
+                        <a href="/sensors" class="panel-button">View Sensors</a>
+                    </div>
+                    
+                    <!-- API Panel -->
+                    <div class="admin-panel">
+                        <div class="panel-icon">🔌</div>
+                        <h3>API Management</h3>
+                        <p>Access and manage SMIBHID's administrative functions through the REST API interface.</p>
+                        <a href="/api" class="panel-button">Open API Documentation</a>
+                    </div>
+
+                    <!-- Update Panel -->
+                    <div class="admin-panel">
+                        <div class="panel-icon">🔄</div>
+                        <h3>Firmware Update</h3>
+                        <p>Update SMIBHID firmware over the air with the latest features and security patches.</p>
+                        <a href="/update" class="panel-button">Manage Updates</a>
+                    </div>
+
+                    <!-- System Status Panel -->
+                    <div class="admin-panel">
+                        <div class="panel-icon">⚙️</div>
+                        <h3>System Status</h3>
+                        <p>Check device health, network connectivity, and system performance metrics.</p>
+                        <a href="#" class="panel-button" onclick="showSystemStatus()">View Status</a>
+                    </div>
+                </div>
+            </main>
+
+            <div id="footer-placeholder"></div>
+        </div>
     </body>
 </html>
