@@ -271,6 +271,23 @@ class SpaceState:
             self.ui_log.log_button_press(self.open_button)
             await self.hid.ui_state_instance.async_on_space_open_button()
 
+    async def async_virtual_press_open_button(self) -> None:
+        """
+        Coroutine to be added to the async loop for virtually pressing the space open
+        button and taking appropriate actions.
+        """
+        self.last_button_press_ms = ticks_ms()
+        self.ui_log.log_button_press(self.open_button)
+        await self.hid.ui_state_instance.async_on_space_open_button()
+
+    async def async_virtual_press_close_button(self) -> None:
+        """
+        Coroutine to be added to the async loop for virtually pressing the space close
+        button and taking appropriate actions.
+        """
+        self.last_button_press_ms = ticks_ms()
+        self.ui_log.log_button_press(self.closed_button)
+        await self.hid.ui_state_instance.async_on_space_closed_button()
 
     async def async_space_close_button_watcher(self) -> None:
         """
