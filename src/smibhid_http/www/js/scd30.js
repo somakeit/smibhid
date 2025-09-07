@@ -157,15 +157,35 @@ async function checkMeasurementStatus() {
         const statusElement = document.getElementById('measurement-status');
         const statusText = document.getElementById('status-text');
         
+        // Update the status dot by finding and updating it, or creating it if it doesn't exist
+        let statusDot = statusElement.querySelector('.status-dot');
+        if (!statusDot) {
+            statusDot = document.createElement('span');
+            statusDot.className = 'status-dot';
+            statusElement.insertBefore(statusDot, statusText);
+        }
+        
         if (status === '1') {
-            statusElement.innerHTML = '<span class="status-dot active"></span><span id="status-text">Enabled - Measurement active</span>';
+            statusDot.className = 'status-dot active';
+            statusText.textContent = 'Enabled - Measurement active';
         } else {
-            statusElement.innerHTML = '<span class="status-dot inactive"></span><span id="status-text">Disabled - Measurement stopped</span>';
+            statusDot.className = 'status-dot inactive';
+            statusText.textContent = 'Disabled - Measurement stopped';
         }
     } catch (error) {
         console.error('Error checking status:', error);
         const statusElement = document.getElementById('measurement-status');
-        statusElement.innerHTML = '<span class="status-dot error"></span><span id="status-text">Error checking status</span>';
+        const statusText = document.getElementById('status-text');
+        
+        let statusDot = statusElement.querySelector('.status-dot');
+        if (!statusDot) {
+            statusDot = document.createElement('span');
+            statusDot.className = 'status-dot';
+            statusElement.insertBefore(statusDot, statusText);
+        }
+        
+        statusDot.className = 'status-dot error';
+        statusText.textContent = 'Error checking status';
     }
 }
 
