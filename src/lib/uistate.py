@@ -38,10 +38,18 @@ class UIState:
         """
         self.log.info(f"Exiting {self.__class__.__module__} {self.__class__.__name__} State")
 
-    def transition_to(self, state: 'UIState') -> None:
+    def transition_to(self, state: 'UIState', enforce: bool = False) -> None:
         """
-        Move to a new UI state.
+        Move to a new UI state, enforce option suppresses check for existing
+        state, used for polls to ensure correct state cleanup.
         """
+        self.log.info(f"Transitioning from {self.__class__.__module__} {self.__class__.__name__} to {state.__class__.__module__} {state.__class__.__name__} State")
+        if self.hid.ui_state_instance.__class__.__name__ == state.__class__.__name__:
+            if enforce:
+                self.log.info(f"Enforced transition to {state} State")
+            else:
+                self.log.warn(f"Already in {state} State and not enforced, not transitioning, this shouldn't happen")
+            return
         self.on_exit()
         self.hid.set_ui_state(state)
         state.on_enter()

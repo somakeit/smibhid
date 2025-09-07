@@ -24,7 +24,6 @@ from lib.uistate import UIState
 from time import ticks_ms
 from machine import Pin
 
-# Type definitions for space states
 if TYPE_CHECKING:
     SpaceStateType = Literal["open", "closed"]
 
@@ -75,6 +74,7 @@ class SpaceState:
         self.state_check_error_closed_led_flash_task = None
         self.last_button_press_ms = 0
         self.flash_task: Optional[Task] = None
+        self.space_state_poll_task: Optional[Task] = None
         self.configure_error_handling()
 
     def configure_error_handling(self) -> None:
@@ -113,7 +113,7 @@ class SpaceState:
                 f"Starting space state poller with frequency of \
                     {self.space_state_poll_frequency} seconds"
             )
-            create_task(self.async_space_state_watcher())
+            self.space_state_poll_task = create_task(self.async_space_state_watcher())
         else:
             self.log.info("Space state poller disabled by config")
 
@@ -126,8 +126,8 @@ class SpaceState:
                 self.space_state_relay.value(config.SPACE_OPEN_RELAY_ACTIVE_HIGH)
             else:
                 self.space_state_relay.value(not config.SPACE_OPEN_RELAY_ACTIVE_HIGH)
-    
-    def set_output_space_open(self) -> None:
+
+    def set_output_space_open(self, enforce: bool = False) -> None:
         """
         Set LED's and display to show the space as open.
         """
@@ -136,10 +136,10 @@ class SpaceState:
         self.space_closed_led.off()
         self.set_space_open_relay_state(True)
         self.display.update_state("Open")
-        self.hid.ui_state_instance.transition_to(OpenState(self.hid, self))
+        self.hid.ui_state_instance.transition_to(OpenState(self.hid, self), enforce)
         self.log.info("Space state is open.")
 
-    def set_output_space_closed(self) -> None:
+    def set_output_space_closed(self, enforce: bool = False) -> None:
         """
         Set LED's and display to show the space as closed.
         """
@@ -148,7 +148,7 @@ class SpaceState:
         self.space_closed_led.on()
         self.set_space_open_relay_state(False)
         self.display.update_state("Closed")
-        self.hid.ui_state_instance.transition_to(ClosedState(self.hid, self))
+        self.hid.ui_state_instance.transition_to(ClosedState(self.hid, self), enforce)
         self.log.info("Space state is closed.")
 
     def set_output_space_none(self) -> None:
@@ -213,14 +213,14 @@ class SpaceState:
                 self.log.info("Skipping space state check as in AddingHoursState")
                 return False
 
-    def _set_space_output(self, new_space_state: bool | None) -> None:
+    def _set_space_output(self, new_space_state: bool | None, enforce: bool = False) -> None:
         """
         Call appropriate space output configuration method for new space state.
         """
         if new_space_state is OPEN:
-            self.set_output_space_open()
+            self.set_output_space_open(enforce)
         elif new_space_state is CLOSED:
-            self.set_output_space_closed()
+            self.set_output_space_closed(enforce)
         elif new_space_state is None:
             self.set_output_space_none()
         else:
@@ -248,7 +248,7 @@ class SpaceState:
                 self.log.info(
                     f"Space state is: {new_space_state}, was: {self.space_state}"
                 )
-                self._set_space_output(new_space_state)
+                self._set_space_output(new_space_state, enforce=True)
                 self._set_space_state_check_to_ok()
 
             except Exception as e:
@@ -323,6 +323,7 @@ class SpaceStateUIState(UIState):
         super().__init__(hid, space_state)
         self.open_for_hours = 0
         self.closed_for_minutes = 0
+        self.button_timeout_task: Optional[Task] = None
 
     def last_button_press_x_seconds_ago(self, x: int = 2) -> bool:
         """
@@ -360,6 +361,8 @@ class SpaceStateUIState(UIState):
         minutes count if no button press for 2 seconds, dependent
         on going_to_state parameter.
         """
+        self.log.info(f"Starting button timeout watcher for going to state: {going_to_state}")
+        
         while not self.last_button_press_x_seconds_ago(config.ADD_HOURS_INPUT_TIMEOUT):
             await sleep(0.1)
 
@@ -376,7 +379,7 @@ class OpenState(UIState):
         super().__init__(hid, space_state)
 
     async def async_on_space_closed_button(self) -> None:
-        self.log.info("Adding minutes to closed for minutes counter")
+        self.log.info("Closing space - Adding optional minutes to close for minutes counter")
         self.hid.ui_state_instance.transition_to(AddingClosedMinutesState(self.hid, self.space_state))
 
     async def async_on_space_open_button(self) -> None:
@@ -421,12 +424,22 @@ class AddingOpenHoursState(SpaceStateUIState):
 
     def on_enter(self) -> None:
         super().on_enter()
+
+        self.log.info("Entering AddingOpenHoursState, cancelling space state watcher")
+        if self.space_state.space_state_poll_task:
+            self.space_state.space_state_poll_task.cancel()
+
         self.hid.display.add_hours(self.open_for_hours)
-        self.button_timeout_task = create_task(self._async_button_timeout_watcher("open"))
+
+        if self.button_timeout_task and not self.button_timeout_task.done():
+            self.log.warn("Button timeout watcher already running, this shouldn't happen.")
+        else:
+            self.button_timeout_task = create_task(self._async_button_timeout_watcher("open"))
 
     async def async_on_space_closed_button(self) -> None:
         self.hid.display.cancelling()
-        self.button_timeout_task.cancel()
+        if self.button_timeout_task:
+            self.button_timeout_task.cancel()
         await sleep(1)
         self.space_state._set_space_output(self.space_state.space_state)
         if self.space_state.space_state == CLOSED:
@@ -438,8 +451,14 @@ class AddingOpenHoursState(SpaceStateUIState):
 
     async def async_on_space_open_button(self) -> None:
         self.increment_open_for_hours_single_digit()
+    
+    def on_exit(self) -> None:
+        super().on_exit()
 
-class AddingClosedMinutesState(SpaceStateUIState): #TODO: some bug resets display to 0 when adding many minutes, posts to slack twice (different values) and keeps the red LED flashing
+        self.log.info("Exiting AddingOpenHoursState, restarting space state watcher")
+        self.space_state.space_state_poll_task = create_task(self.space_state.async_space_state_watcher())
+
+class AddingClosedMinutesState(SpaceStateUIState):
     """
     UI state for adding minutes to the closed for minutes counter.
     """
@@ -448,15 +467,25 @@ class AddingClosedMinutesState(SpaceStateUIState): #TODO: some bug resets displa
 
     def on_enter(self) -> None:
         super().on_enter()
+        
+        self.log.info("Entering AddingClosedMinutesState, cancelling space state watcher")
+        if self.space_state.space_state_poll_task:
+            self.space_state.space_state_poll_task.cancel()
+
         self.hid.display.add_minutes(self.closed_for_minutes)
-        self.button_timeout_task = create_task(self._async_button_timeout_watcher("closed"))
+
+        if self.button_timeout_task and not self.button_timeout_task.done():
+            self.log.warn("Button timeout watcher already running, this shouldn't happen.")
+        else:
+            self.button_timeout_task = create_task(self._async_button_timeout_watcher("closed"))
 
     async def async_on_space_closed_button(self) -> None:
         self.increment_closed_for_minutes()
 
     async def async_on_space_open_button(self) -> None:
         self.hid.display.cancelling()
-        self.button_timeout_task.cancel()
+        if self.button_timeout_task:
+            self.button_timeout_task.cancel()
         await sleep(1)
         self.space_state._set_space_output(self.space_state.space_state)
         if self.space_state.space_state == CLOSED:
@@ -465,4 +494,10 @@ class AddingClosedMinutesState(SpaceStateUIState): #TODO: some bug resets displa
             self.hid.ui_state_instance.transition_to(OpenState(self.hid, self.space_state))
         else:
             self.hid.ui_state_instance.transition_to(NoneState(self.hid, self.space_state))
+    
+    def on_exit(self) -> None:
+        super().on_exit()
+
+        self.log.info("Exiting AddingClosedMinutesState, restarting space state watcher")
+        self.space_state.space_state_poll_task = create_task(self.space_state.async_space_state_watcher())
     
