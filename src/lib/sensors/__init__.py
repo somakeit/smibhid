@@ -256,6 +256,7 @@ class Sensors:
         """
         Return readings from a specific module by passing it's name as a
         string, or all modules if none specified.
+        Remove any readings that return None to avoid logging invalid data.
         """
         readings = {}
         if module:
@@ -263,4 +264,14 @@ class Sensors:
         else:
             for name, instance in self.configured_modules.items():
                 readings[name] = instance.get_reading()
+
+        self.log.info("Cleaning sensor readings of None values")
+        self.log.info(f"Raw sensor readings: {readings}")
+        for reading in readings:
+            for module in readings[reading]:
+                if readings[reading][module] is None:
+                    self.log.warn(f"Sensor {reading} from module {module} returned None, removing from reading data")
+                    del readings[reading][module]
+        self.log.info(f"Cleaned sensor readings: {readings}")
+
         return readings
