@@ -55,6 +55,7 @@ class WebApp:
         self.create_update()
         self.create_sensors()
         self.create_scd30()
+        self.create_test_sensors()
         self.create_api()
 
     def startup(self):
@@ -163,6 +164,11 @@ class WebApp:
         @self.app.route('/sensors/scd30')
         async def index(request, response):
             await response.send_file('/smibhid_http/www/sensors/scd30.html')
+
+    def create_test_sensors(self) -> None:
+        @self.app.route('/test_sensors')
+        async def index(request, response):
+            await response.send_file('/smibhid_http/www/test_sensors.html')
 
     def create_api(self) -> None:
         @self.app.route('/api')
