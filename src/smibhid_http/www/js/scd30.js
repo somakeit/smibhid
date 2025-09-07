@@ -60,15 +60,62 @@ async function setAutoMeasureEnhanced() {
         });
         const result = await response.text();
         
-        resultDiv.className = 'result-message success';
-        resultDiv.textContent = `Measurement ${action} command sent successfully`;
-        
-        // Refresh status after a delay
-        setTimeout(checkMeasurementStatus, 1000);
+        if (response.ok) {
+            resultDiv.className = 'result-message success';
+            resultDiv.textContent = `Measurement ${action} command sent successfully`;
+            
+            // Show updating status - safely update if element exists
+            const statusText = document.getElementById('status-text');
+            if (statusText) {
+                statusText.textContent = 'Updating status...';
+            }
+            
+            // Poll for status update with retries
+            await pollForStatusUpdate(action, 3);
+        } else {
+            resultDiv.className = 'result-message error';
+            resultDiv.textContent = `Error: ${result}`;
+        }
         
     } catch (error) {
         resultDiv.className = 'result-message error';
         resultDiv.textContent = `Error: ${error.message}`;
+    }
+}
+
+async function pollForStatusUpdate(expectedAction, maxRetries = 3) {
+    const resultDiv = document.getElementById('autoMeasureResult');
+    
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        // Wait before checking status (give sensor time to respond)
+        await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+        
+        try {
+            await checkMeasurementStatus();
+            
+            // Check if the status matches what we expected
+            const statusText = document.getElementById('status-text');
+            if (statusText) {
+                const statusContent = statusText.textContent;
+                const isEnabled = statusContent.includes('Enabled');
+                const expectedEnabled = expectedAction === 'start';
+                
+                if (isEnabled === expectedEnabled) {
+                    // Status updated successfully
+                    resultDiv.className = 'result-message success';
+                    resultDiv.textContent = `Setting applied successfully - Status updated to ${isEnabled ? 'Enabled' : 'Disabled'}`;
+                    return;
+                }
+            }
+        } catch (error) {
+            console.error(`Status check attempt ${attempt} failed:`, error);
+        }
+        
+        if (attempt === maxRetries) {
+            // Final attempt failed
+            resultDiv.className = 'result-message warning';
+            resultDiv.textContent = 'Command sent, but status update verification failed. Please refresh manually.';
+        }
     }
 }
 
@@ -111,14 +158,14 @@ async function checkMeasurementStatus() {
         const statusText = document.getElementById('status-text');
         
         if (status === '1') {
-            statusElement.innerHTML = '<span class="status-dot active"></span>';
-            statusText.textContent = 'Measurement active';
+            statusElement.innerHTML = '<span class="status-dot active"></span><span id="status-text">Enabled - Measurement active</span>';
         } else {
-            statusElement.innerHTML = '<span class="status-dot inactive"></span>';
-            statusText.textContent = 'Measurement stopped';
+            statusElement.innerHTML = '<span class="status-dot inactive"></span><span id="status-text">Disabled - Measurement stopped</span>';
         }
     } catch (error) {
         console.error('Error checking status:', error);
+        const statusElement = document.getElementById('measurement-status');
+        statusElement.innerHTML = '<span class="status-dot error"></span><span id="status-text">Error checking status</span>';
     }
 }
 
