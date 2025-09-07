@@ -21,6 +21,29 @@
                     <p class="description">SMIBHID is the Human Interface Device for the So Make It Bot, providing environmental monitoring and device control capabilities.</p>
                 </section>
 
+                <!-- Space State Control Panel -->
+                <section class="space-control-section">
+                    <div class="space-control-panel">
+                        <div class="control-header">
+                            <h3>Space State Control</h3>
+                            <p>Virtual control panel mirroring the physical device buttons</p>
+                        </div>
+                        <div class="space-buttons">
+                            <button id="openButton" class="space-button open-button" onclick="openSpace()">
+                                <div class="button-icon">🟢</div>
+                                <span>OPEN</span>
+                            </button>
+                            <button id="closeButton" class="space-button close-button" onclick="closeSpace()">
+                                <div class="button-icon">🔴</div>
+                                <span>CLOSE</span>
+                            </button>
+                        </div>
+                        <div class="status-display">
+                            <span id="spaceStatus" class="status-text">Checking status...</span>
+                        </div>
+                    </div>
+                </section>
+
                 <!-- Admin panels grid -->
                 <div class="admin-grid">
                     <!-- Sensors Panel -->
