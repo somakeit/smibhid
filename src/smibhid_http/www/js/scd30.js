@@ -1,3 +1,6 @@
+// Configuration constants
+const STATUS_POLL_DELAY_MS = 1500; // Time to wait between status poll attempts
+
 async function setAutoMeasure() {
     const action = document.getElementById('autoMeasureAction').value;
     const response = await fetch(`/api/sensors/modules/SCD30/auto_measure/${action}`, {
@@ -87,8 +90,8 @@ async function pollForStatusUpdate(expectedAction, maxRetries = 3) {
     const resultDiv = document.getElementById('autoMeasureResult');
     
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
-        // Wait before checking status (give sensor time to respond) - fixed 1.5s delay
-        await new Promise(resolve => setTimeout(resolve, 1500));
+        // Wait before checking status (give sensor time to respond)
+        await new Promise(resolve => setTimeout(resolve, STATUS_POLL_DELAY_MS));
         
         try {
             await checkMeasurementStatus();
@@ -149,21 +152,27 @@ async function setCalibrationEnhanced() {
     }
 }
 
+// Helper function to ensure status dot exists
+function ensureStatusDot() {
+    const statusElement = document.getElementById('measurement-status');
+    const statusText = document.getElementById('status-text');
+    
+    let statusDot = statusElement.querySelector('.status-dot');
+    if (!statusDot) {
+        statusDot = document.createElement('span');
+        statusDot.className = 'status-dot';
+        statusElement.insertBefore(statusDot, statusText);
+    }
+    
+    return { statusDot, statusText };
+}
+
 async function checkMeasurementStatus() {
     try {
         const response = await fetch('/api/sensors/modules/SCD30/auto_measure');
         const status = await response.text();
         
-        const statusElement = document.getElementById('measurement-status');
-        const statusText = document.getElementById('status-text');
-        
-        // Update the status dot by finding and updating it, or creating it if it doesn't exist
-        let statusDot = statusElement.querySelector('.status-dot');
-        if (!statusDot) {
-            statusDot = document.createElement('span');
-            statusDot.className = 'status-dot';
-            statusElement.insertBefore(statusDot, statusText);
-        }
+        const { statusDot, statusText } = ensureStatusDot();
         
         if (status === '1') {
             statusDot.className = 'status-dot active';
@@ -174,16 +183,8 @@ async function checkMeasurementStatus() {
         }
     } catch (error) {
         console.error('Error checking status:', error);
-        const statusElement = document.getElementById('measurement-status');
-        const statusText = document.getElementById('status-text');
         
-        let statusDot = statusElement.querySelector('.status-dot');
-        if (!statusDot) {
-            statusDot = document.createElement('span');
-            statusDot.className = 'status-dot';
-            statusElement.insertBefore(statusDot, statusText);
-        }
-        
+        const { statusDot, statusText } = ensureStatusDot();
         statusDot.className = 'status-dot error';
         statusText.textContent = 'Error checking status';
     }
