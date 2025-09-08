@@ -33,9 +33,12 @@ wlan_mac_responses = {
                 "schema": {
                     "type": "string",
                     "title": "SMIBHID WLAN MAC Address",
-                    "example": "00:00:00:00:00:00",
+                    "example": "1A:2B:3C:4D:5E:6F",
                 }
             }
         }
     }
 }
+
+# TODO - RESET Does not currently return anything
+reset_responses = {}

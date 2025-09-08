@@ -174,6 +174,10 @@ class WebApp:
         @self.app.route('/api')
         async def api(request, response):
             await response.send_file('/smibhid_http/www/api.html')
+
+        @self.app.route('/openapi.json')
+        async def openapi(request, response):
+            await response.send_file('/smibhid_http/www/openapi.json')
         
         self.app.add_resource(WLANMAC, '/api/wlan/mac', wifi = self.wifi, logger = self.log)
         self.app.add_resource(Version, '/api/version', hid = self.hid, logger = self.log)

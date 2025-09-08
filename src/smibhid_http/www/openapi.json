@@ -1,0 +1,370 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "S.M.I.B.H.I.D. OpenAPI",
+    "description": "S.M.I.B.H.I.D. OpenAPI",
+    "version": "x.0.0"
+  },
+  "paths": {
+    "/api/version": {
+      "get": {
+        "tags": [
+          "System"
+        ],
+        "summary": "Get Smibhid Firmware Version",
+        "description": "Returns the firmware_files version of the SMIBHID device",
+        "operationId": "Get_SMIBHID_Firmware_Version_api_version_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string",
+                  "title": "SMIBHID Firmware Version",
+                  "example": "2.0.0"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/hostname": {
+      "get": {
+        "tags": [
+          "System"
+        ],
+        "summary": "Get Smibhid Hostname",
+        "description": "Returns the hostname of the SMIBHID device",
+        "operationId": "Get_SMIBHID_Hostname_api_hostname_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string",
+                  "title": "SMIBHID Hostname",
+                  "example": "smibhid-fan"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/wlan/mac": {
+      "get": {
+        "tags": [
+          "System"
+        ],
+        "summary": "Get Smibhid Wlan Mac Address",
+        "description": "Returns the WLAN MAC address of the SMIBHID device",
+        "operationId": "Get_SMIBHID_WLAN_MAC_Address_api_wlan_mac_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string",
+                  "title": "SMIBHID WLAN MAC Address",
+                  "example": "1A:2B:3C:4D:5E:6F"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/reset": {
+      "post": {
+        "tags": [
+          "System",
+          "Firmware Files"
+        ],
+        "summary": "Reset SMIBHID Device",
+        "description": "Resets the SMIBHID device - **request will hang and timeout**",
+        "operationId": "reset_api_reset_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/firmware_files": {
+      "get": {
+        "tags": [
+          "System",
+          "Firmware Files"
+        ],
+        "summary": "Get Firmware Files",
+        "description": "Returns a list of firmware files that are staged for update",
+        "operationId": "get_firmware_files_api_firmware_files_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array",
+                  "title": "Response Get Firmware Files Api Firmware Files Get"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "System",
+          "Firmware Files"
+        ],
+        "summary": "Update Firmware Files",
+        "description": "Adds or removes the firmware files in the firmware_files list",
+        "operationId": "update_firmware_files_api_firmware_files_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FirmwareFilesRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "boolean",
+                  "title": "Response Update Firmware Files Api Firmware Files Post"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/sensors/modules": {
+      "get": {
+        "tags": [
+          "Sensors"
+        ],
+        "summary": "Get Modules",
+        "description": "Returns a list of modules that are currently configured on the SMIBHID device",
+        "operationId": "get_modules_api_sensors_modules_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "type": "string",
+                    "examples": [
+                      "SGP30",
+                      "BME280",
+                      "SCD30"
+                    ]
+                  },
+                  "type": "array",
+                  "title": "Response Get Modules Api Sensors Modules Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/sensors/modules/{module}": {
+      "get": {
+        "tags": [
+          "Sensors"
+        ],
+        "summary": "Get Sensor Modules",
+        "description": "Returns a list of sensors for the given module",
+        "operationId": "get_sensor_modules_api_sensors_modules__module__get",
+        "parameters": [
+          {
+            "name": "module",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "examples": [
+                "SGP30",
+                "BME280",
+                "SCD30"
+              ],
+              "title": "Module"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Sensor"
+                  },
+                  "title": "Response Get Sensor Modules Api Sensors Modules  Module  Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/sensors/readings/latest": {
+      "get": {
+        "tags": [
+          "Sensors"
+        ],
+        "summary": "Get Latest Sensor Readings",
+        "description": "Returns the latest sensor readings for all modules",
+        "operationId": "get_latest_sensor_readings_api_sensors_readings_latest_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "additionalProperties": {
+                      "anyOf": [
+                        {
+                          "type": "integer"
+                        },
+                        {
+                          "type": "number"
+                        }
+                      ]
+                    },
+                    "type": "object",
+                    "examples": [
+                      {
+                        "temperature": 25.0
+                      },
+                      {
+                        "pressure": 1013.25
+                      }
+                    ]
+                  },
+                  "propertyNames": {
+                    "examples": [
+                      "SGP30",
+                      "BME280",
+                      "SCD30"
+                    ]
+                  },
+                  "type": "object",
+                  "title": "Response Get Latest Sensor Readings Api Sensors Readings Latest Get",
+                  "examples": [
+                    {
+                      "BME280": {
+                        "pressure": 1017.6,
+                        "humidity": 0,
+                        "temperature": 26.6
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "FirmwareFilesRequest": {
+        "properties": {
+          "action": {
+            "type": "string",
+            "enum": [
+              "add",
+              "remove"
+            ],
+            "title": "Action"
+          },
+          "url": {
+            "type": "string",
+            "title": "Url",
+            "examples": [
+              "https://github.com/somakeit/smibhid/blob/master/src/main.py"
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "action",
+          "url"
+        ],
+        "title": "FirmwareFilesRequest"
+      },
+      "Sensor": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "module": {
+            "type": "string",
+            "title": "Module"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "module"
+        ],
+        "title": "Sensor",
+        "examples": [
+          {
+            "name": "pressure",
+            "unit": "hPa"
+          },
+          {
+            "name": "temperature",
+            "unit": "C"
+          },
+          {
+            "name": "humidity",
+            "unit": "%"
+          }
+        ]
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "System",
+      "description": "System information"
+    },
+    {
+      "name": "Firmware Files",
+      "description": "Firmware Files Update"
+    },
+    {
+      "name": "Sensors",
+      "description": "Sensor information"
+    }
+  ]
+}
