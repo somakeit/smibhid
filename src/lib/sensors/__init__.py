@@ -28,8 +28,7 @@ class Sensors:
         self.available_modules: dict = {}
         self.configured_modules: dict = {}
         self.file_logger = FileLogger(init_files=True)
-        modules = ["SGP30", "BME280", "SCD30"]
-        self.load_modules(modules)
+        self.load_modules(self.SENSOR_MODULES)
         self._configure_modules()
         self.alarm = Alarm(self.display, self.space_state)
         if CO2_ALARM_THRESHOLD_PPM > 0 and 'SCD30' in self.configured_modules:
