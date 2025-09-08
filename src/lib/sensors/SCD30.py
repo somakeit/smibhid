@@ -177,13 +177,13 @@ class SCD30(SensorModule):
             crc = self.CRC_TABLE[crc]
         return crc
 
-    def get_formatted_reading(self) -> tuple[float, float, float]:
+    def get_formatted_reading(self) -> tuple[float|None, float|None, float|None]:
         co2, temperature, relative_humidity = self.read_measurement()
         if isnan(co2) or isnan(temperature) or isnan(relative_humidity):
             self.log.warn("SCD30 sensor returning NaN as not collecting samples, dropping reading")
-            return (0.0, 0.0, 0.0)
+            return (None, None, None)
         return round(float(co2), 1), round(float(temperature), 1), round(float(relative_humidity), 1)
     
-    def get_reading(self) -> dict[str, float]:
+    def get_reading(self) -> dict[str, float|None]:
         co2, temperature, relative_humidity = self.get_formatted_reading()
         return {"co2": co2, "temperature": temperature, "relative_humidity": relative_humidity}

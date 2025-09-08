@@ -28,8 +28,7 @@ class Sensors:
         self.available_modules: dict = {}
         self.configured_modules: dict = {}
         self.file_logger = FileLogger(init_files=True)
-        modules = ["SGP30", "BME280", "SCD30"]
-        self.load_modules(modules)
+        self.load_modules(self.SENSOR_MODULES)
         self._configure_modules()
         self.alarm = Alarm(self.display, self.space_state)
         if CO2_ALARM_THRESHOLD_PPM > 0 and 'SCD30' in self.configured_modules:
@@ -252,10 +251,41 @@ class Sensors:
         self.log.info(f"Available sensors for {module}: {sensors}")
         return sensors
 
+    def clean_readings(self, readings: dict) -> dict:
+        """
+        Remove None values from sensor readings and empty modules.
+        
+        Args:
+            readings: Raw sensor readings dictionary
+            
+        Returns:
+            Cleaned readings dictionary with None values and empty modules removed
+        """
+        self.log.info("Cleaning sensor readings of None values")
+        self.log.info(f"Raw sensor readings: {readings}")
+        
+        cleaned_readings = {}
+        for reading in readings:
+            cleaned_module_data = {}
+            for module in readings[reading]:
+                if readings[reading][module] is not None:
+                    cleaned_module_data[module] = readings[reading][module]
+                else:
+                    self.log.warn(f"Sensor {reading} from module {module} returned None, removing from reading data")
+
+            if cleaned_module_data:
+                cleaned_readings[reading] = cleaned_module_data
+            else:
+                self.log.warn(f"Module {reading} has no valid readings, removing entire module from reading data")
+        
+        self.log.info(f"Cleaned sensor readings: {cleaned_readings}")
+        return cleaned_readings
+
     def get_readings(self, module: str = "") -> dict:
         """
         Return readings from a specific module by passing it's name as a
         string, or all modules if none specified.
+        Remove any readings that return None to avoid logging invalid data.
         """
         readings = {}
         if module:
@@ -263,4 +293,5 @@ class Sensors:
         else:
             for name, instance in self.configured_modules.items():
                 readings[name] = instance.get_reading()
-        return readings
+
+        return self.clean_readings(readings)

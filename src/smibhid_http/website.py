@@ -2,7 +2,7 @@ from smibhid_http.webserver import Webserver
 from lib.ulogging import uLogger
 from lib.module_config import ModuleConfig
 from json import dumps
-import uasyncio
+from asyncio import run, create_task
 from lib.updater import UpdateCore
 from lib.sensors.file_logging import FileLogger
 from config import DEFAULT_CO2_CALIBRATION_VALUE
@@ -17,6 +17,7 @@ if TYPE_CHECKING:
     from lib.displays.display import Display
     from lib.sensors import Sensors
     from lib.networking import WirelessNetwork
+    from lib.space_state import SpaceState
 
 class WebApp:
 
@@ -54,10 +55,11 @@ class WebApp:
         self.create_update()
         self.create_sensors()
         self.create_scd30()
+        self.create_test_sensors()
         self.create_api()
 
     def startup(self):
-        network_access = uasyncio.run(self.wifi.check_network_access())
+        network_access = run(self.wifi.check_network_access())
 
         if network_access:
             self.log.info("Starting web server")
@@ -163,6 +165,11 @@ class WebApp:
         async def index(request, response):
             await response.send_file('/smibhid_http/www/sensors/scd30.html')
 
+    def create_test_sensors(self) -> None:
+        @self.app.route('/test_sensors')
+        async def index(request, response):
+            await response.send_file('/smibhid_http/www/test_sensors.html')
+
     def create_api(self) -> None:
         @self.app.route('/api')
         async def api(request, response):
@@ -190,6 +197,10 @@ class WebApp:
         self.app.add_resource(Alarm, '/api/sensors/alarm/reset_threshold', value = 'reset_threshold', sensors = self.sensors, logger = self.log)
         self.app.add_resource(Alarm, '/api/sensors/alarm/snooze_remaining', value = 'snooze_remaining', sensors = self.sensors, logger = self.log)
         self.app.add_resource(Alarm, '/api/sensors/alarm/snooze', sensors = self.sensors, logger = self.log)
+
+        self.app.add_resource(SpaceStateManagement, '/api/space/state', space_state = self.hid.space_state, logger = self.log)
+        self.app.add_resource(SpaceStateManagement, '/api/space/state/open', state = "open", space_state = self.hid.space_state, logger = self.log)
+        self.app.add_resource(SpaceStateManagement, '/api/space/state/closed', state = "closed", space_state = self.hid.space_state, logger = self.log)
 
 class WLANMAC():
 
@@ -379,5 +390,35 @@ class Alarm():
         logger.info("API request - PUT sensors/alarm/snooze")
         sensors.alarm.snooze_co2_alarm()
         html = dumps("Snoozed")
+        logger.info(f"Return value: {html}")
+        return html
+
+class SpaceStateManagement():
+    def get(self, data, space_state: SpaceState, logger: uLogger) -> str:
+        logger.info("API request - GET sensors/space/state")
+        try:
+            html = dumps(space_state.get_space_state())
+        except Exception as e:
+            logger.error(f"Failed to get space state: {e}")
+            html = "Failed to get space state"
+        logger.info(f"Return value: {html}")
+        return html
+
+    def put(self, data, state: str, space_state: SpaceState, logger: uLogger) -> str:
+        if state not in ["open", "closed"]:
+            logger.error(f"Invalid URL suffix: {state}")
+            return "Invalid URL suffix"
+        
+        logger.info(f"API request - PUT sensors/space/state/{state}")
+        try:
+            if state == "open":
+                create_task(space_state.async_virtual_press_open_button())
+            elif state == "closed":
+                create_task(space_state.async_virtual_press_close_button())
+            html = dumps("success")
+        except Exception as e:
+            logger.error(f"Failed to set space state: {e}")
+            html = dumps(f"Failed to set space state: {e}")
+
         logger.info(f"Return value: {html}")
         return html

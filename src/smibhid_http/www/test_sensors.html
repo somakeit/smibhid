@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sensor Navigation Test - SMIBHID</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <div id="header-container"></div>
+    
+    <main class="main-content">
+        <div class="container">
+            <h2>Sensor Navigation Test</h2>
+            
+            <div class="card">
+                <h3>Navigation State Debugging</h3>
+                <div id="debug-info">
+                    <p><strong>Sensors Available:</strong> <span id="sensors-status">Checking...</span></p>
+                    <p><strong>SCD30 Available:</strong> <span id="scd30-status">Checking...</span></p>
+                    <p><strong>Cache Age:</strong> <span id="cache-age">Checking...</span></p>
+                </div>
+                
+                <div class="button-group">
+                    <button onclick="checkSensorAvailability()" class="button">Refresh Sensor Check</button>
+                    <button onclick="clearSensorCache()" class="button">Clear Cache</button>
+                    <button onclick="showCacheDetails()" class="button">Show Cache Details</button>
+                </div>
+            </div>
+        </div>
+    </main>
+    
+    <div id="footer-container"></div>
+    
+    <script src="/js/common.js"></script>
+    <script>
+        // Enhanced debugging function
+        function showCacheDetails() {
+            const sensorsAvailable = localStorage.getItem('sensors-available');
+            const scd30Available = localStorage.getItem('scd30-available');
+            const cacheTimestamp = localStorage.getItem('sensors-cache-timestamp');
+            
+            const debugInfo = document.getElementById('debug-info');
+            
+            let cacheAge = 'No cache';
+            if (cacheTimestamp) {
+                const age = Date.now() - parseInt(cacheTimestamp);
+                cacheAge = `${Math.round(age / 1000)}s ago`;
+            }
+            
+            document.getElementById('sensors-status').textContent = sensorsAvailable || 'null';
+            document.getElementById('scd30-status').textContent = scd30Available || 'null';
+            document.getElementById('cache-age').textContent = cacheAge;
+            
+            console.log('Cache details:', {
+                sensorsAvailable,
+                scd30Available,
+                cacheTimestamp,
+                cacheAge
+            });
+        }
+        
+        // Update debug info periodically
+        setInterval(showCacheDetails, 2000);
+        
+        // Show initial state after DOM loads
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(showCacheDetails, 500);
+        });
+    </script>
+</body>
+</html>
