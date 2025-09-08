@@ -171,10 +171,17 @@ function startResetCountdown() {
     setTimeout(() => {
         const checkInterval = setInterval(async () => {
             try {
+                // Create AbortController for timeout
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 5000);
+                
                 const response = await fetch('/api/version', { 
-                    timeout: 5000,
+                    signal: controller.signal,
                     cache: 'no-cache'
                 });
+                
+                clearTimeout(timeoutId);
+                
                 if (response.ok) {
                     clearInterval(checkInterval);
                     clearInterval(interval);
