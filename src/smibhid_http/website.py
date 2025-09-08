@@ -48,6 +48,7 @@ class WebApp:
         self.create_sensors_js()
         self.create_update_js()
         self.create_scd30_js()
+        self.create_system_js()
         self.create_header_include()
         self.create_footer_include()
         self.create_favicon()
@@ -55,6 +56,7 @@ class WebApp:
         self.create_update()
         self.create_sensors()
         self.create_scd30()
+        self.create_system()
         self.create_test_sensors()
         self.create_api()
 
@@ -118,6 +120,11 @@ class WebApp:
         @self.app.route('/js/scd30.js')
         async def index(request, response):
             await response.send_file('/smibhid_http/www/js/scd30.js', content_type='application/javascript')
+
+    def create_system_js(self):
+        @self.app.route('/js/system.js')
+        async def index(request, response):
+            await response.send_file('/smibhid_http/www/js/system.js', content_type='application/javascript')
     
     def create_header_include(self):
         @self.app.route('/includes/header.html')
@@ -164,6 +171,11 @@ class WebApp:
         @self.app.route('/sensors/scd30')
         async def index(request, response):
             await response.send_file('/smibhid_http/www/sensors/scd30.html')
+
+    def create_system(self) -> None:
+        @self.app.route('/system')
+        async def index(request, response):
+            await response.send_file('/smibhid_http/www/system.html')
 
     def create_test_sensors(self) -> None:
         @self.app.route('/test_sensors')
