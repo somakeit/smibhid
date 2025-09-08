@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SMIBHID - System Information</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="js/common.js?v=1.0.0"></script>
+    <script src="js/system.js?v=1.0.0"></script>
+</head>
+
+<body data-subtitle="System Information & Management" data-footer-context="System Management">
+    <div class="container">
+        <div id="header-placeholder"></div>
+
+        <!-- Main content area -->
+        <main class="main-content">
+            <!-- Welcome section -->
+            <section class="welcome-section">
+                <h2>System Information</h2>
+                <p class="description">
+                    View device information and manage system functions for your SMIBHID device.
+                </p>
+            </section>
+
+            <!-- System panels grid -->
+            <div class="admin-grid">
+                <!-- Device Information Panel -->
+                <div class="admin-panel">
+                    <div class="panel-icon">📋</div>
+                    <h3>Device Information</h3>
+                    <div class="system-info-content">
+                        <div class="info-item">
+                            <span class="info-label">MAC Address:</span>
+                            <span class="info-value" id="mac-address">Loading...</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Hostname:</span>
+                            <span class="info-value" id="hostname">Loading...</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Firmware Version:</span>
+                            <span class="info-value" id="firmware-version">Loading...</span>
+                        </div>
+                    </div>
+                    <button class="panel-button" onclick="refreshSystemInfo()">Refresh Information</button>
+                </div>
+                
+                <!-- System Control Panel -->
+                <div class="admin-panel">
+                    <div class="panel-icon">🔧</div>
+                    <h3>Device Reset</h3>
+                    <p>Reset the SMIBHID device. This will restart the system and apply any pending updates.</p>
+                    <div class="reset-controls">
+                        <div class="warning-message">
+                            ⚠️ Warning: This will restart the device and temporarily disconnect all services.
+                        </div>
+                        <button class="panel-button reset-button" onclick="showResetConfirmation()">Reset Device</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Reset Confirmation Modal -->
+            <div id="reset-modal" class="modal" style="display: none;">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3>Confirm Device Reset</h3>
+                    </div>
+                    <div class="modal-body">
+                        <p>Are you sure you want to reset the SMIBHID device?</p>
+                        <p>This action will:</p>
+                        <ul>
+                            <li>Restart the device immediately</li>
+                            <li>Apply any pending firmware updates</li>
+                            <li>Temporarily disconnect all web services</li>
+                            <li>Take approximately 30-60 seconds to complete</li>
+                        </ul>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="modal-button cancel" onclick="hideResetConfirmation()">Cancel</button>
+                        <button class="modal-button confirm" onclick="performReset()">Reset Device</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Navigation -->
+            <div class="navigation-section">
+                <a href="/" class="nav-link">← Back to Dashboard</a>
+                <a href="/api" class="nav-link">API Documentation →</a>
+            </div>
+        </main>
+
+        <div id="footer-placeholder"></div>
+    </div>
+</body>
+</html>

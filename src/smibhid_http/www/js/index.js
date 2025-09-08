@@ -120,11 +120,6 @@ async function closeSpace() {
     }
 }
 
-function showSystemStatus() {
-    alert('System status coming soon!');
-}
-
 // Make functions globally available
-window.showSystemStatus = showSystemStatus;
 window.openSpace = openSpace;
 window.closeSpace = closeSpace;
