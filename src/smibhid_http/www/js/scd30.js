@@ -1,3 +1,6 @@
+// Configuration constants
+const STATUS_POLL_DELAY_MS = 1500; // Time to wait between status poll attempts
+
 async function setAutoMeasure() {
     const action = document.getElementById('autoMeasureAction').value;
     const response = await fetch(`/api/sensors/modules/SCD30/auto_measure/${action}`, {
@@ -60,15 +63,62 @@ async function setAutoMeasureEnhanced() {
         });
         const result = await response.text();
         
-        resultDiv.className = 'result-message success';
-        resultDiv.textContent = `Measurement ${action} command sent successfully`;
-        
-        // Refresh status after a delay
-        setTimeout(checkMeasurementStatus, 1000);
+        if (response.ok) {
+            resultDiv.className = 'result-message success';
+            resultDiv.textContent = `Measurement ${action} command sent successfully`;
+            
+            // Show updating status - safely update if element exists
+            const statusText = document.getElementById('status-text');
+            if (statusText) {
+                statusText.textContent = 'Updating status...';
+            }
+            
+            // Poll for status update with retries
+            await pollForStatusUpdate(action, 3);
+        } else {
+            resultDiv.className = 'result-message error';
+            resultDiv.textContent = `Error: ${result}`;
+        }
         
     } catch (error) {
         resultDiv.className = 'result-message error';
         resultDiv.textContent = `Error: ${error.message}`;
+    }
+}
+
+async function pollForStatusUpdate(expectedAction, maxRetries = 3) {
+    const resultDiv = document.getElementById('autoMeasureResult');
+    
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        // Wait before checking status (give sensor time to respond)
+        await new Promise(resolve => setTimeout(resolve, STATUS_POLL_DELAY_MS));
+        
+        try {
+            await checkMeasurementStatus();
+            
+            // Check if the status matches what we expected
+            const statusText = document.getElementById('status-text');
+            if (statusText) {
+                const statusContent = statusText.textContent;
+                const isEnabled = statusContent.includes('Enabled');
+                const expectedEnabled = expectedAction === 'start';
+                
+                if (isEnabled === expectedEnabled) {
+                    // Status updated successfully
+                    resultDiv.className = 'result-message success';
+                    resultDiv.textContent = `Setting applied successfully - Status updated to ${isEnabled ? 'Enabled' : 'Disabled'}`;
+                    return;
+                }
+            }
+        } catch (error) {
+            console.error(`Status check attempt ${attempt} failed:`, error);
+        }
+        
+        if (attempt === maxRetries) {
+            // Final attempt failed
+            resultDiv.className = 'result-message warning';
+            resultDiv.textContent = 'Command sent, but status update verification failed. Please refresh manually.';
+        }
     }
 }
 
@@ -102,23 +152,41 @@ async function setCalibrationEnhanced() {
     }
 }
 
+// Helper function to ensure status dot exists
+function ensureStatusDot() {
+    const statusElement = document.getElementById('measurement-status');
+    const statusText = document.getElementById('status-text');
+    
+    let statusDot = statusElement.querySelector('.status-dot');
+    if (!statusDot) {
+        statusDot = document.createElement('span');
+        statusDot.className = 'status-dot';
+        statusElement.insertBefore(statusDot, statusText);
+    }
+    
+    return { statusDot, statusText };
+}
+
 async function checkMeasurementStatus() {
     try {
         const response = await fetch('/api/sensors/modules/SCD30/auto_measure');
         const status = await response.text();
         
-        const statusElement = document.getElementById('measurement-status');
-        const statusText = document.getElementById('status-text');
+        const { statusDot, statusText } = ensureStatusDot();
         
         if (status === '1') {
-            statusElement.innerHTML = '<span class="status-dot active"></span>';
-            statusText.textContent = 'Measurement active';
+            statusDot.className = 'status-dot active';
+            statusText.textContent = 'Enabled - Measurement active';
         } else {
-            statusElement.innerHTML = '<span class="status-dot inactive"></span>';
-            statusText.textContent = 'Measurement stopped';
+            statusDot.className = 'status-dot inactive';
+            statusText.textContent = 'Disabled - Measurement stopped';
         }
     } catch (error) {
         console.error('Error checking status:', error);
+        
+        const { statusDot, statusText } = ensureStatusDot();
+        statusDot.className = 'status-dot error';
+        statusText.textContent = 'Error checking status';
     }
 }
 

@@ -133,6 +133,11 @@
     background: #dc3545;
 }
 
+.status-dot.error {
+    background: #6c757d;
+    animation: pulse 1s infinite;
+}
+
 @keyframes pulse {
     0%, 100% { opacity: 1; }
     50% { opacity: 0.5; }
@@ -227,6 +232,13 @@
     background: rgba(220, 53, 69, 0.1);
     border: 1px solid rgba(220, 53, 69, 0.3);
     color: #721c24;
+    display: block;
+}
+
+.result-message.warning {
+    background: rgba(255, 193, 7, 0.1);
+    border: 1px solid rgba(255, 193, 7, 0.3);
+    color: #856404;
     display: block;
 }
 
