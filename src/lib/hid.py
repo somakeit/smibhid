@@ -1,5 +1,6 @@
 from lib.ulogging import uLogger
-from asyncio import get_event_loop, Event
+from asyncio import get_event_loop, Event, create_task, sleep
+from time import ticks_ms, ticks_diff
 from lib.space_state import SpaceState, NoneState, OpenState, ClosedState
 from lib.error_handling import ErrorHandler
 from lib.module_config import ModuleConfig
@@ -48,6 +49,16 @@ class HID:
         self.ui_state_instance = StartUIState(self, self.space_state)
         self.ui_state_instance.on_enter()
 
+    async def async_timing_check(self) -> None:
+        current_time = ticks_ms()
+        while True:
+            old_time = current_time
+            await sleep(0.001)
+            current_time = ticks_ms()
+            diff = ticks_diff(current_time, old_time)
+            if diff > 50:
+                self.log.warn(f"Delay detected: {diff} ms")
+    
     def set_ui_state(self, state):
         self.ui_state_instance = state
     
@@ -60,6 +71,9 @@ class HID:
         """
         self.log.info("--------Starting SMIBHID--------")
         self.log.info(f"SMIBHID firmware version: {self.version}")
+
+        create_task(self.async_timing_check())
+
         self.wifi.startup()
         self.space_state.startup()
         if self.reader:
