@@ -72,7 +72,7 @@ class HID:
         self.log.info("--------Starting SMIBHID--------")
         self.log.info(f"SMIBHID firmware version: {self.version}")
 
-        create_task(self.async_timing_check())
+        self.timing_task = create_task(self.async_timing_check())
 
         self.wifi.startup()
         self.space_state.startup()
