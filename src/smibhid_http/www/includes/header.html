@@ -1,0 +1,57 @@
+<!-- Favicon links -->
+<link rel="icon" type="image/png" href="/favicon.ico">
+<link rel="apple-touch-icon" href="/logo">
+
+<!-- Header with logo, title and navigation -->
+<header class="header">
+    <div class="header-content">
+        <div class="logo-section">
+            <img src="/logo" alt="SMIBHID Logo" class="logo">
+            <div class="title-section">
+                <h1 class="title">SMIBHID</h1>
+                <div class="subtitle" id="page-subtitle"><!-- Page-specific subtitle will be set by JavaScript --></div>
+            </div>
+        </div>
+        
+        <nav class="navbar">
+            <ul class="nav-menu" id="nav-menu">
+                <li class="nav-item">
+                    <a href="/" class="nav-link" data-page="dashboard">
+                        <span class="nav-icon">🏠</span>
+                        <span class="nav-text">Dashboard</span>
+                    </a>
+                </li>
+                <li class="nav-item dropdown" id="nav-sensors">
+                    <a href="/sensors" class="nav-link" data-page="sensors">
+                        <span class="nav-icon">📊</span>
+                        <span class="nav-text">Sensors</span>
+                        <span class="dropdown-arrow">▼</span>
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li><a href="/sensors" class="dropdown-link">All Sensors</a></li>
+                        <li><a href="/sensors/scd30" class="dropdown-link" id="scd30-nav-link">SCD30 Control</a></li>
+                    </ul>
+                </li>
+                <li class="nav-item">
+                    <a href="/api" class="nav-link" data-page="api">
+                        <span class="nav-icon">🔌</span>
+                        <span class="nav-text">API</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="/update" class="nav-link" data-page="update">
+                        <span class="nav-icon">🔄</span>
+                        <span class="nav-text">Update</span>
+                    </a>
+                </li>
+            </ul>
+            
+            <!-- Mobile menu toggle -->
+            <button class="mobile-menu-toggle" id="mobile-menu-toggle" aria-label="Toggle navigation">
+                <span class="hamburger-line"></span>
+                <span class="hamburger-line"></span>
+                <span class="hamburger-line"></span>
+            </button>
+        </nav>
+    </div>
+</header>

@@ -1,0 +1,288 @@
+/* SCD30 Sensor Control Page Styles */
+
+.sensor-info {
+    margin-top: 1rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.info-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: rgba(255, 255, 255, 0.8);
+    border-radius: 6px;
+    border: 1px solid rgba(34, 139, 34, 0.2);
+}
+
+.info-icon {
+    font-size: 1.2rem;
+}
+
+.control-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.control-panel {
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 12px;
+    padding: 2rem;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(34, 139, 34, 0.1);
+    position: relative;
+    overflow: hidden;
+}
+
+.control-panel::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #228B22, #006400);
+}
+
+.panel-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.panel-header h3 {
+    margin: 0;
+    color: #2c3e50;
+    font-size: 1.4rem;
+    font-weight: 600;
+}
+
+.control-form {
+    margin: 1.5rem 0;
+}
+
+.form-group {
+    margin-bottom: 1rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    color: #2c3e50;
+}
+
+.form-input, .form-select {
+    width: 100%;
+    padding: 0.8rem;
+    border: 1px solid rgba(34, 139, 34, 0.3);
+    border-radius: 6px;
+    font-size: 1rem;
+    transition: border-color 0.3s ease;
+}
+
+.form-input:focus, .form-select:focus {
+    outline: none;
+    border-color: #228B22;
+    box-shadow: 0 0 0 2px rgba(34, 139, 34, 0.1);
+}
+
+.form-help {
+    display: block;
+    margin-top: 0.25rem;
+    color: #6c757d;
+    font-size: 0.875rem;
+}
+
+.status-section {
+    margin: 1rem 0;
+}
+
+.status-indicator {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.8rem;
+    background: rgba(248, 249, 250, 0.8);
+    border-radius: 6px;
+    border: 1px solid rgba(34, 139, 34, 0.2);
+}
+
+.status-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+.status-dot.loading {
+    background: #ffc107;
+    animation: pulse 1.5s infinite;
+}
+
+.status-dot.active {
+    background: #28a745;
+}
+
+.status-dot.inactive {
+    background: #dc3545;
+}
+
+.status-dot.error {
+    background: #6c757d;
+    animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+.calibration-notice {
+    background: rgba(52, 144, 220, 0.1);
+    border: 1px solid rgba(52, 144, 220, 0.3);
+    border-radius: 8px;
+    padding: 1rem;
+    margin: 1rem 0;
+    display: flex;
+    gap: 0.5rem;
+}
+
+.notice-icon {
+    font-size: 1.2rem;
+    margin-top: 0.2rem;
+}
+
+.calibration-notice ul {
+    margin: 0.5rem 0 0 0;
+    padding-left: 1.5rem;
+}
+
+.calibration-notice li {
+    margin: 0.25rem 0;
+    color: #2563eb;
+    font-size: 0.9rem;
+}
+
+.calibration-btn {
+    background: linear-gradient(135deg, #17a2b8, #138496);
+}
+
+.calibration-btn:hover {
+    background: linear-gradient(135deg, #138496, #117a8b);
+}
+
+.readings-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 1rem;
+    margin: 1.5rem 0;
+}
+
+.reading-card {
+    background: rgba(255, 255, 255, 0.8);
+    border-radius: 8px;
+    padding: 1rem;
+    text-align: center;
+    border: 1px solid rgba(34, 139, 34, 0.2);
+}
+
+.reading-card h4 {
+    margin: 0 0 0.5rem 0;
+    color: #2c3e50;
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.reading-value {
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: #228B22;
+}
+
+.panel-button.secondary {
+    background: linear-gradient(135deg, #6c757d, #5a6268);
+}
+
+.panel-button.secondary:hover {
+    background: linear-gradient(135deg, #5a6268, #495057);
+}
+
+.result-message {
+    margin-top: 1rem;
+    padding: 0.8rem;
+    border-radius: 6px;
+    display: none;
+    font-weight: 500;
+}
+
+.result-message.success {
+    background: rgba(40, 167, 69, 0.1);
+    border: 1px solid rgba(40, 167, 69, 0.3);
+    color: #155724;
+    display: block;
+}
+
+.result-message.error {
+    background: rgba(220, 53, 69, 0.1);
+    border: 1px solid rgba(220, 53, 69, 0.3);
+    color: #721c24;
+    display: block;
+}
+
+.result-message.warning {
+    background: rgba(255, 193, 7, 0.1);
+    border: 1px solid rgba(255, 193, 7, 0.3);
+    color: #856404;
+    display: block;
+}
+
+.navigation-section {
+    display: flex;
+    justify-content: space-between;
+    margin: 2rem 0;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.nav-link {
+    color: #228B22;
+    text-decoration: none;
+    font-weight: 500;
+    padding: 0.5rem 1rem;
+    border: 1px solid rgba(34, 139, 34, 0.3);
+    border-radius: 6px;
+    transition: all 0.3s ease;
+}
+
+.nav-link:hover {
+    background: rgba(34, 139, 34, 0.1);
+    border-color: #228B22;
+}
+
+@media (max-width: 768px) {
+    .control-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .sensor-info {
+        flex-direction: column;
+    }
+    
+    .navigation-section {
+        flex-direction: column;
+    }
+    
+    .control-panel {
+        padding: 1.5rem;
+    }
+
+    .readings-grid {
+        grid-template-columns: 1fr;
+    }
+}
