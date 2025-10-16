@@ -2,7 +2,7 @@ from lib.rfid.mfrc522 import MFRC522
 from lib.rfid.users import user_tag_mapping
 from asyncio import create_task, Event, sleep
 from lib.ulogging import uLogger
-from config import RFID_SCK, RFID_MOSI, RFID_MISO, RFID_RST, RFID_CS, CO2_ALARM_BUZZER_PIN
+from config import RFID_SCK, RFID_MOSI, RFID_MISO, RFID_RST, RFID_CS, BUZZER_PIN
 from lib.error_handling import ErrorHandler
 from machine import Pin
 
@@ -23,7 +23,7 @@ class RFIDReader:
         self.rfid_cs = rfid_cs
         self.tag_read_event = tag_read_event
         self.last_tag_id = None
-        self.co2_alarm_buzzer = Pin(CO2_ALARM_BUZZER_PIN, Pin.OUT)
+        self.co2_alarm_buzzer = Pin(BUZZER_PIN, Pin.OUT)
         self.configure_error_handler()
 
     def configure_error_handler(self) -> None:
@@ -50,10 +50,10 @@ class RFIDReader:
     
     async def beep_buzzer(self) -> None:
         """
-        Beep the buzzer for 0.1 seconds to indicate a tag has been read.
+        Beep the buzzer for 0.2 seconds
         """
         self.co2_alarm_buzzer.value(1)
-        await sleep(0.1)
+        await sleep(0.2)
         self.co2_alarm_buzzer.value(0)
 
     async def async_poll(self) -> None:
@@ -76,7 +76,7 @@ class RFIDReader:
                 (stat, uid) = rdr.SelectTagSN()
             
                 if stat == rdr.OK:
-                    await self.beep_buzzer()
+                    create_task(self.beep_buzzer())
                     print("User: %s" % user_tag_mapping.get(self.uidToString(uid), "Unknown: %s" % self.uidToString(uid)))
                     self.last_tag_id = self.uidToString(uid)
                     self.tag_read_event.set()

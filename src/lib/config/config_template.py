@@ -11,6 +11,8 @@ SPACE_OPEN_BUTTON = 12
 SPACE_CLOSED_BUTTON = 13
 SPACE_OPEN_LED = 15
 SPACE_CLOSED_LED = 16
+# Buzzer used for CO2 alarm and RFID reader feedback
+BUZZER_PIN = 4
 # Set to None if no relay/transistor is connected
 SPACE_OPEN_RELAY = None
 SPACE_OPEN_RELAY_ACTIVE_HIGH = False
@@ -68,7 +70,6 @@ CO2_ALARM_SILENCE_WINDOW_END_HOUR = 8
 
 # CO2 alarm GPIO pin config
 CO2_ALARM_LED_PIN = 6
-CO2_ALARM_BUZZER_PIN = 4
 CO2_ALARM_SNOOZE_BUTTON_PIN = 5
 
 ## Sensor logging

@@ -4,7 +4,7 @@ from config import (
     CO2_ALARM_RESET_THRESHOLD_PPM,
     CO2_ALARM_SNOOZE_DURATION_S,
     CO2_ALARM_LED_PIN,
-    CO2_ALARM_BUZZER_PIN,
+    BUZZER_PIN,
     CO2_ALARM_SNOOZE_BUTTON_PIN,
     CO2_ALARM_SILENCE_WINDOW_START_HOUR,
     CO2_ALARM_SILENCE_WINDOW_END_HOUR
@@ -42,7 +42,7 @@ class Alarm:
         """
         self.log.info("Enabling CO2 alarm")
         self.enabled = True
-        self.co2_alarm_buzzer = Pin(CO2_ALARM_BUZZER_PIN, Pin.OUT)
+        self.co2_alarm_buzzer = Pin(BUZZER_PIN, Pin.OUT)
         self.co2_alarm_led = Pin(CO2_ALARM_LED_PIN, Pin.OUT)
         self.co2_alarm_snooze_event = Event()
         self.co2_alarm_snooze_button = Button(CO2_ALARM_SNOOZE_BUTTON_PIN, "CO2 alarm snooze", self.co2_alarm_snooze_event)
