@@ -32,9 +32,9 @@ class HID:
         self.moduleConfig = ModuleConfig()
         self.moduleConfig.register_display(Display(self.i2c))
         self.moduleConfig.register_wifi(WirelessNetwork())
-        if RFID_ENABLED:
-            self.moduleConfig.register_rfid(RFIDReader(Event()))
         self.display = self.moduleConfig.get_display()
+        if RFID_ENABLED:
+            self.moduleConfig.register_rfid(RFIDReader(Event(), self.display))
         self.wifi = self.moduleConfig.get_wifi()
         self.moduleConfig.register_ui_log(UILog(self.wifi))
         self.reader = self.moduleConfig.get_rfid()

@@ -81,7 +81,7 @@ class Display:
         self._execute_command("clear")
     
     def print_update_startup(self) -> None:
-        """Display update startup information on all screens."""
+        """Display startup information on all screens."""
         self._execute_command("print_update_startup")
 
     def print_download_progress(self, current: int, total: int) -> None:
@@ -89,8 +89,12 @@ class Display:
         self._execute_command("print_download_progress", current, total)
     
     def print_update_status(self, status: str) -> None:
-        """Display update status information on all screens."""
+        """Display updated status information on all screens."""
         self._execute_command("print_update_status", status)
+
+    def print_show_status(self) -> None:
+        """Display current status information on all screens."""
+        self._update_status()
     
     def print_startup(self, version: str) -> None:
         """Display startup information on all screens."""
@@ -155,3 +159,8 @@ class Display:
         """Power on all screens."""
         self.log.info("Powering on all screens")
         self._execute_command("power_on")
+
+    def tag_read(self, user: str) -> None:
+        """Display RFID tag read information on all screens."""
+        self.log.info("Displaying RFID tag read information")
+        self._execute_command("tag_read", user)

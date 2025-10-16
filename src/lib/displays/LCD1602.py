@@ -216,6 +216,12 @@ class LCD1602:
         self.print_on_line(0, "Cancelling")
         self.print_on_line(1, "Please wait...")
 
+    def tag_read(self, user: str) -> None:
+        """Display RFID tag read information on screen."""
+        self.log.info("Displaying RFID tag read information")
+        self.print_on_line(0, "RFID Tag Read:")
+        self.print_on_line(1, f"{user}")
+
     def _begin(self, lines: int) -> None:
         """Configure and set initial display output."""
         if (lines > 1):

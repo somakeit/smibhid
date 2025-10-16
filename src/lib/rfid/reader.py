@@ -5,9 +5,10 @@ from lib.ulogging import uLogger
 from config import RFID_SCK, RFID_MOSI, RFID_MISO, RFID_RST, RFID_CS, BUZZER_PIN
 from lib.error_handling import ErrorHandler
 from machine import Pin
+from lib.displays.display import Display
 
 class RFIDReader:
-    def __init__(self, tag_read_event: Event, rfid_sck: int = RFID_SCK, rfid_mosi: int = RFID_MOSI, rfid_miso: int = RFID_MISO, rfid_rst: int = RFID_RST, rfid_cs: int = RFID_CS) -> None:
+    def __init__(self, tag_read_event: Event, display: Display, rfid_sck: int = RFID_SCK, rfid_mosi: int = RFID_MOSI, rfid_miso: int = RFID_MISO, rfid_rst: int = RFID_RST, rfid_cs: int = RFID_CS) -> None:
         """
         Pass in GPIO pins for RFID reader and an asyncio Event to signal when a tag is read. Defaults to config file values.
         Call startup() to start the RFID reader.
@@ -24,6 +25,7 @@ class RFIDReader:
         self.tag_read_event = tag_read_event
         self.last_tag_id = None
         self.co2_alarm_buzzer = Pin(BUZZER_PIN, Pin.OUT)
+        self.display = display
         self.configure_error_handler()
 
     def configure_error_handler(self) -> None:
@@ -48,13 +50,18 @@ class RFIDReader:
         self.log.info("Starting RFID reader")
         create_task(self.async_poll())
     
-    async def beep_buzzer(self) -> None:
+    async def async_beep_buzzer(self) -> None:
         """
         Beep the buzzer for 0.2 seconds
         """
         self.co2_alarm_buzzer.value(1)
         await sleep(0.2)
         self.co2_alarm_buzzer.value(0)
+    
+    async def async_timeout_tag_display(self, timeout: int = 5) -> None:
+        """Clear the tag display after a timeout period."""
+        await sleep(timeout)
+        self.display.print_show_status()
 
     async def async_poll(self) -> None:
         """Poll the RFID reader for tags, store the tag value and signal the tag_read_event when a tag detected."""
@@ -76,10 +83,13 @@ class RFIDReader:
                 (stat, uid) = rdr.SelectTagSN()
             
                 if stat == rdr.OK:
-                    create_task(self.beep_buzzer())
-                    print("User: %s" % user_tag_mapping.get(self.uidToString(uid), "Unknown: %s" % self.uidToString(uid)))
+                    create_task(self.async_beep_buzzer())
                     self.last_tag_id = self.uidToString(uid)
+                    username = user_tag_mapping.get(self.last_tag_id, "TagID: %s" % self.last_tag_id)
+                    self.log.info(f"Tag read: {username}")
                     self.tag_read_event.set()
+                    self.display.tag_read(username)
+                    self.tag_display_timeout_task = create_task(self.async_timeout_tag_display(5))
                 else:
                     print("Authentication error")
     
