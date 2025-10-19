@@ -91,7 +91,7 @@ class SpaceState:
         if new_period_s != 0 and new_period_s < 5:
             new_period_s = 5
         
-        if period_s == 0:
+        if new_period_s == 0:
             self.log.info("Disabling space state poller as period set to 0")
             if self.space_state_poll_task is not None:
                 self.space_state_poll_task.cancel()
