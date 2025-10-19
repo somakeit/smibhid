@@ -87,8 +87,15 @@ class SpaceState:
             new_period_s = config.SPACE_STATE_POLL_PERIOD_S
         else:
             new_period_s = period_s
+
         if new_period_s != 0 and new_period_s < 5:
             new_period_s = 5
+        
+        if period_s == 0:
+            self.log.info("Disabling space state poller as period set to 0")
+            if self.space_state_poll_task is not None:
+                self.space_state_poll_task.cancel()
+        
         self.space_state_poll_period = new_period_s
 
     def get_space_state_poll_period(self) -> int:
