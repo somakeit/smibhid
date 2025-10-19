@@ -21,6 +21,16 @@
                     <h2>Configuration Management</h2>
                     <p class="description">Configure various aspects of your SMIBHID device to customize its behavior and functionality.</p>
                     <p class="description">Changes made here will be applied immediately but will not persist across device restarts.</p>
+                    <div class="section-actions">
+                        <div class="auto-refresh-note">
+                            <span class="note-icon">ℹ️</span>
+                            <span class="note-text">Values refresh automatically every 30 seconds</span>
+                        </div>
+                        <button id="refreshValuesBtn" class="refresh-button" onclick="refreshAllValues()" title="Refresh all values">
+                            <span class="refresh-icon">🔄</span>
+                            <span class="refresh-text">Refresh Values</span>
+                        </button>
+                    </div>
                 </section>
 
                 <!-- Configuration panels grid -->

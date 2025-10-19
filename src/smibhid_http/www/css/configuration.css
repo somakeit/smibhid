@@ -9,6 +9,86 @@
     margin-bottom: 1rem;
 }
 
+/* Section actions at bottom of header */
+.section-actions {
+    margin-top: 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.auto-refresh-note {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #6c757d;
+    font-size: 0.875rem;
+    font-style: italic;
+}
+
+.note-icon {
+    font-size: 1rem;
+    opacity: 0.8;
+}
+
+.note-text {
+    white-space: nowrap;
+}
+
+.refresh-button {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: linear-gradient(135deg, #17a2b8, #138496);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(23, 162, 184, 0.3);
+    white-space: nowrap;
+}
+
+.refresh-button:hover {
+    background: linear-gradient(135deg, #138496, #117a8b);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(23, 162, 184, 0.4);
+}
+
+.refresh-button:active {
+    transform: translateY(0);
+}
+
+.refresh-button:disabled {
+    background: #bdc3c7;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+.refresh-icon {
+    font-size: 1rem;
+    transition: transform 0.3s ease;
+}
+
+.refresh-button.refreshing .refresh-icon {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from { 
+        transform: rotate(0deg); 
+    }
+    to { 
+        transform: rotate(360deg); 
+    }
+}
+
 /* Configuration panels grid */
 .config-grid {
     display: grid;
@@ -334,6 +414,23 @@
 
 /* Responsive design */
 @media (max-width: 768px) {
+    .section-actions {
+        flex-direction: column;
+        align-items: center;
+        gap: 1rem;
+    }
+    
+    .auto-refresh-note {
+        order: 2;
+        text-align: center;
+    }
+    
+    .refresh-button {
+        order: 1;
+        flex: 1;
+        max-width: 200px;
+    }
+    
     .config-grid {
         grid-template-columns: 1fr;
     }
@@ -373,7 +470,8 @@
 
 /* Focus styles for accessibility */
 .form-input:focus,
-.panel-button:focus {
+.panel-button:focus,
+.refresh-button:focus {
     outline: 2px solid rgba(34, 139, 34, 0.5);
     outline-offset: 2px;
 }

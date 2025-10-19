@@ -3,22 +3,37 @@
 let currentPollPeriodValue = null;
 let pollPeriodUpdateInterval = null;
 
+// Registry of refresh functions for future-proof extensibility
+const refreshFunctions = [];
+
+// Register a refresh function (future-proof for adding more configuration values)
+function registerRefreshFunction(refreshFn) {
+    if (typeof refreshFn === 'function') {
+        refreshFunctions.push(refreshFn);
+    }
+}
+
 // Initialize the page when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
     initializeConfigurationPage();
 });
 
 function initializeConfigurationPage() {
+    // Register refresh functions for all dynamic values
+    registerRefreshFunction(loadCurrentPollPeriod);
+    // Future configuration values can be registered here:
+    // registerRefreshFunction(loadOtherConfigValue);
+    
     // Load initial poll period value
     loadCurrentPollPeriod();
     
     // Set up input validation
     setupInputValidation();
     
-    // Start periodic updates of current poll period (every 5 seconds)
+    // Start periodic updates of current poll period (every 30 seconds)
     pollPeriodUpdateInterval = setInterval(() => {
         loadCurrentPollPeriod();
-    }, 5000);
+    }, 30000);
     
     // Clean up interval when page is unloaded
     window.addEventListener('beforeunload', () => {
@@ -322,10 +337,65 @@ function getUpdateSuccessMessage(newValue, currentValue) {
     return `Poll period successfully ${action} to ${valueDescription}`;
 }
 
+async function refreshAllValues() {
+    const refreshButton = document.getElementById('refreshValuesBtn');
+    const refreshIcon = refreshButton?.querySelector('.refresh-icon');
+    const refreshText = refreshButton?.querySelector('.refresh-text');
+    
+    if (!refreshButton) return;
+    
+    // Disable button and show loading state
+    refreshButton.disabled = true;
+    refreshButton.classList.add('refreshing');
+    if (refreshText) refreshText.textContent = 'Refreshing...';
+    
+    try {
+        // Execute all registered refresh functions
+        const refreshPromises = refreshFunctions.map(fn => {
+            try {
+                return Promise.resolve(fn());
+            } catch (error) {
+                console.error('Error in refresh function:', error);
+                return Promise.resolve(); // Continue with other refreshes
+            }
+        });
+        
+        // Wait for all refresh operations to complete
+        await Promise.allSettled(refreshPromises);
+        
+        console.log('All configuration values refreshed');
+        
+        // Show brief success feedback
+        if (refreshText) {
+            refreshText.textContent = 'Refreshed!';
+            setTimeout(() => {
+                if (refreshText) refreshText.textContent = 'Refresh Values';
+            }, 1000);
+        }
+        
+    } catch (error) {
+        console.error('Error refreshing values:', error);
+        
+        // Show error feedback
+        if (refreshText) {
+            refreshText.textContent = 'Error';
+            setTimeout(() => {
+                if (refreshText) refreshText.textContent = 'Refresh Values';
+            }, 2000);
+        }
+    } finally {
+        // Re-enable button and remove loading state
+        refreshButton.disabled = false;
+        refreshButton.classList.remove('refreshing');
+    }
+}
+
 // Export functions for potential external use
 window.configurationPage = {
     updatePollPeriod,
     disablePollPeriod,
     loadCurrentPollPeriod,
-    validatePollPeriodInput
+    validatePollPeriodInput,
+    refreshAllValues,
+    registerRefreshFunction
 };
