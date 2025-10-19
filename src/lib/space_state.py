@@ -67,7 +67,7 @@ class SpaceState:
         self.space_state = None
         self.checking_space_state = False
         self.checking_space_state_timeout_s = 30
-        self.set_space_state_poll_period()        
+        self.set_space_state_poll_period()
         self.state_check_error_open_led_flash_task = None
         self.state_check_error_closed_led_flash_task = None
         self.last_button_press_ms = 0
