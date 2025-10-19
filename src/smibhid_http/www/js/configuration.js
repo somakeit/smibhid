@@ -15,10 +15,10 @@ function initializeConfigurationPage() {
     // Set up input validation
     setupInputValidation();
     
-    // Start periodic updates of current poll period (every 30 seconds)
+    // Start periodic updates of current poll period (every 5 seconds)
     pollPeriodUpdateInterval = setInterval(() => {
         loadCurrentPollPeriod();
-    }, 30000);
+    }, 5000);
     
     // Clean up interval when page is unloaded
     window.addEventListener('beforeunload', () => {
@@ -200,8 +200,8 @@ async function updatePollPeriod() {
             const data = await response.json();
             
             // Show success message
-            const action = value === 0 ? 'disabled' : (currentPollPeriodValue === 0 ? 'enabled' : 'updated');
-            showResultMessage('pollPeriodResult', 'success', `Poll period successfully ${action} to ${value === 0 ? 'disabled' : value + ' seconds'}`);
+            const successMessage = getUpdateSuccessMessage(value, currentPollPeriodValue);
+            showResultMessage('pollPeriodResult', 'success', successMessage);
             
             // Clear input
             input.value = '';
@@ -301,6 +301,25 @@ function showResultMessage(elementId, type, message) {
             element.style.display = 'none';
         }, 10000);
     }
+}
+
+function getUpdateSuccessMessage(newValue, currentValue) {
+    let action;
+    let valueDescription;
+    
+    // Determine the action based on current and new values
+    if (newValue === 0) {
+        action = 'disabled';
+        valueDescription = 'disabled';
+    } else if (currentValue === 0) {
+        action = 'enabled';
+        valueDescription = newValue + ' seconds';
+    } else {
+        action = 'updated';
+        valueDescription = newValue + ' seconds';
+    }
+    
+    return `Poll period successfully ${action} to ${valueDescription}`;
 }
 
 // Export functions for potential external use
