@@ -324,8 +324,7 @@ function getUpdateSuccessMessage(newValue, currentValue) {
     
     // Determine the action based on current and new values
     if (newValue === 0) {
-        action = 'disabled';
-        valueDescription = 'disabled';
+        return 'Poll period successfully disabled';
     } else if (currentValue === 0) {
         action = 'enabled';
         valueDescription = newValue + ' seconds';
