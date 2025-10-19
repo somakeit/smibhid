@@ -67,13 +67,13 @@ class SpaceState:
         self.space_state = None
         self.checking_space_state = False
         self.checking_space_state_timeout_s = 30
+        self.space_state_poll_task: Optional[Task] = None
         self.space_state_poll_period = 5
         self.set_space_state_poll_period()
         self.state_check_error_open_led_flash_task = None
         self.state_check_error_closed_led_flash_task = None
         self.last_button_press_ms = 0
         self.flash_task: Optional[Task] = None
-        self.space_state_poll_task: Optional[Task] = None
         self.configure_error_handling()
 
     def set_space_state_poll_period(self, period_s: int = -1, delay_start_s: int = 0) -> None:
