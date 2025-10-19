@@ -213,6 +213,10 @@ class WebApp:
         self.app.add_resource(SpaceStateManagement, '/api/space/state', space_state = self.hid.space_state, logger = self.log)
         self.app.add_resource(SpaceStateManagement, '/api/space/state/open', state = "open", space_state = self.hid.space_state, logger = self.log)
         self.app.add_resource(SpaceStateManagement, '/api/space/state/closed', state = "closed", space_state = self.hid.space_state, logger = self.log)
+        
+        self.app.add_resource(SpaceStateConfiguration, '/api/space/state/config/poll_period', space_state = self.hid.space_state, logger = self.log)
+        self.app.add_resource(SpaceStateConfiguration, '/api/space/state/config/poll_period/<value>', space_state = self.hid.space_state, logger = self.log)
+        
 
 class WLANMAC():
 
@@ -431,6 +435,30 @@ class SpaceStateManagement():
         except Exception as e:
             logger.error(f"Failed to set space state: {e}")
             html = dumps(f"Failed to set space state: {e}")
+
+        logger.info(f"Return value: {html}")
+        return html
+
+class SpaceStateConfiguration():
+    def get(self, data, space_state: SpaceState, logger: uLogger) -> str:
+        logger.info("API request - GET sensors/space/config/poll_period")
+        try:
+            html = dumps(space_state.get_space_state_poll_period())
+        except Exception as e:
+            logger.error(f"Failed to get space state poll period: {e}")
+            html = "Failed to get space state poll period"
+        logger.info(f"Return value: {html}")
+        return html
+
+    def put(self, data, value: str, space_state: SpaceState, logger: uLogger) -> str:
+        try:
+            period_s = int(value)
+            logger.info(f"API request - PUT sensors/space/config/poll_period - value: {period_s}")
+            space_state.set_space_state_poll_period(period_s)
+            html = dumps("success")
+        except Exception as e:
+            logger.error(f"Failed to set space state poll period: {e}")
+            html = dumps(f"Failed to set space state poll period: {e}")
 
         logger.info(f"Return value: {html}")
         return html
