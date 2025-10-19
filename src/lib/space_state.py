@@ -67,15 +67,29 @@ class SpaceState:
         self.space_state = None
         self.checking_space_state = False
         self.checking_space_state_timeout_s = 30
-        self.space_state_poll_frequency = config.SPACE_STATE_POLL_FREQUENCY_S
-        if self.space_state_poll_frequency != 0 and self.space_state_poll_frequency < 5:
-            self.space_state_poll_frequency = 5
+        self.set_space_state_poll_period()
         self.state_check_error_open_led_flash_task = None
         self.state_check_error_closed_led_flash_task = None
         self.last_button_press_ms = 0
         self.flash_task: Optional[Task] = None
         self.space_state_poll_task: Optional[Task] = None
         self.configure_error_handling()
+
+    def set_space_state_poll_period(self, period_s: int = -1) -> None:
+        """
+        Set the active space state poll period.
+        If -1 (default) is passed as an argument, the value from config.py is
+        used.
+        Where the config value is used, ensures that the period is >= 5s
+        unless disabled (0).
+        """
+        if period_s == -1:
+            new_period_s = config.SPACE_STATE_POLL_PERIOD_S
+        else:
+            new_period_s = period_s
+        if new_period_s != 0 and new_period_s < 5:
+            new_period_s = 5
+        self.space_state_poll_period = new_period_s
 
     def configure_error_handling(self) -> None:
         """
@@ -108,10 +122,10 @@ class SpaceState:
         )
         create_task(self.async_space_close_button_watcher())
 
-        if self.space_state_poll_frequency != 0:
+        if self.space_state_poll_period != 0:
             self.log.info(
-                f"Starting space state poller with frequency of \
-                    {self.space_state_poll_frequency} seconds"
+                f"Starting space state poller with period of \
+                    {self.space_state_poll_period} seconds"
             )
             self.space_state_poll_task = create_task(self.async_space_state_watcher())
         else:
@@ -318,8 +332,8 @@ class SpaceState:
         while True:
             try:
                 self.log.info("Polling space state")
-                await sleep(self.space_state_poll_frequency)
                 create_task(task_wrapper_for_error_handling())
+                await sleep(self.space_state_poll_period)
             except CancelledError as e:
                 self.log.info(f"State poller task cancelled: {e}")
                 break 
