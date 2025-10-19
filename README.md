@@ -14,7 +14,7 @@ Press the space_open or space_closed buttons to call the smib server endpoint ap
 - Press the closed button multiple times to set the minutes the space will be temporarily closed for
 - LED flashes while trying to set state so you know it's trying to do something
 - Confirms the space state after change by calling space_state
-- Regularly polls for space state (polling period configurable in config.py) and updates the SMIBHID status appropriately to sync with other space state controls
+- Regularly polls for space state (polling period configurable in config.py and web UI) and updates the SMIBHID status appropriately to sync with other space state controls
 - Flashes both space state LEDs at 2Hz if space state cannot be determined
 - 2x16 character I2C LCD display support (Space state)
 - 32x128 I2C OLED display support (Sensors)
@@ -28,6 +28,9 @@ Press the space_open or space_closed buttons to call the smib server endpoint ap
   - Sensors page listing connected sensors, status of CO2 alarm with snooze control and sub page for SCD30 configuration and calibration
   - API documentation page that details API endpoints available and their usage
   - Firmware Update page for performing over the air firmware updates and remote reset to apply them
+  - Configuration management page for viewing and updating certain configuration parameters
+    - Get and set space state poll period
+  - System status page for viewing basic device information and remotely resetting the device
 - Pinger watchdog - Optionally ping an IP address and toggle a GPIO pin on ping failure. Useful for network device monitoring and reset.
 - Extensible sensor module framework for async polling of I2C sensors and presentation of sensors and readings on the web API and recording to log file
   - Supported sensors
