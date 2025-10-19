@@ -124,8 +124,7 @@ class SpaceState:
 
         if self.space_state_poll_period != 0:
             self.log.info(
-                f"Starting space state poller with period of \
-                    {self.space_state_poll_period} seconds"
+                f"Starting space state poller with period of {self.space_state_poll_period} seconds"
             )
             self.space_state_poll_task = create_task(self.async_space_state_watcher())
         else:
@@ -315,7 +314,7 @@ class SpaceState:
             self.ui_log.log_button_press(self.closed_button)
             await self.hid.ui_state_instance.async_on_space_closed_button()
 
-    async def async_space_state_watcher(self) -> None:
+    async def async_space_state_watcher(self, delay_start_s: int = 0) -> None:
         """
         Coroutine to frequently poll the space state from the slack server and
         update SMIBHID output if the state has changed.
@@ -328,6 +327,12 @@ class SpaceState:
                 self.log.error(
                     f"State poller task encountered an error updating space state: {e}"
                 )
+
+        self.log.info("Starting space state watcher")
+        
+        if delay_start_s > 0:
+            self.log.info(f"Delaying space state watcher start by {delay_start_s}s")
+            await sleep(delay_start_s)
 
         while True:
             try:
@@ -485,7 +490,7 @@ class AddingOpenHoursState(SpaceStateUIState):
         super().on_exit()
 
         self.log.info("Exiting AddingOpenHoursState, restarting space state watcher")
-        self.space_state.space_state_poll_task = create_task(self.space_state.async_space_state_watcher())
+        self.space_state.space_state_poll_task = create_task(self.space_state.async_space_state_watcher(delay_start_s=5))
 
 class AddingClosedMinutesState(SpaceStateUIState):
     """
@@ -528,5 +533,5 @@ class AddingClosedMinutesState(SpaceStateUIState):
         super().on_exit()
 
         self.log.info("Exiting AddingClosedMinutesState, restarting space state watcher")
-        self.space_state.space_state_poll_task = create_task(self.space_state.async_space_state_watcher())
+        self.space_state.space_state_poll_task = create_task(self.space_state.async_space_state_watcher(delay_start_s=5))
     
