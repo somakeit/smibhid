@@ -333,7 +333,7 @@ class SpaceState:
             try:
                 self.log.info("Polling space state")
                 create_task(task_wrapper_for_error_handling())
-                await sleep(self.space_state_poll_period)                
+                await sleep(self.space_state_poll_period)
             except CancelledError as e:
                 self.log.info(f"State poller task cancelled: {e}")
                 break 
