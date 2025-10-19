@@ -371,7 +371,7 @@
     gap: 1rem;
 }
 
-.nav-link {
+.navigation-section .nav-link {
     color: #228B22;
     text-decoration: none;
     font-weight: 500;
@@ -381,7 +381,7 @@
     transition: all 0.3s ease;
 }
 
-.nav-link:hover {
+.navigation-section .nav-link:hover {
     background: rgba(34, 139, 34, 0.1);
     border-color: #228B22;
 }
