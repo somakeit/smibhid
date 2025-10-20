@@ -104,7 +104,7 @@ class SpaceState:
                 self.log.info("Disabling space state poller as period set to 0")
                 if self.space_state_poll_task is not None:
                     self.space_state_poll_task.cancel()
-                    self.space_state_poll_period = new_period_s
+                self.space_state_poll_period = new_period_s
             
             else:
                 self.log.warn(f"Space state poll period {new_period_s} is invalid, not changing")
