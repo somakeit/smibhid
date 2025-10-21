@@ -231,7 +231,69 @@ async function refreshLogs() {
         const response = await fetch('/api/logs/read');
         
         if (response.ok) {
-            const logData = await response.text();
+            const contentType = response.headers.get('content-type');
+            let logData;
+            
+            // Check if the response is JSON
+            if (contentType && contentType.includes('application/json')) {
+                // API returns JSON - parse it first
+                logData = await response.json();
+                // If it's a JSON string, it might be escaped
+                if (typeof logData === 'string') {
+                    // Handle JSON-escaped newlines
+                    try {
+                        logData = JSON.parse('"' + logData + '"'); // Safely parse escaped string
+                    } catch (e) {
+                        // If parsing fails, use the string as-is
+                        console.warn('Failed to parse escaped JSON string, using as-is:', e);
+                    }
+                }
+            } else {
+                // API returns plain text
+                logData = await response.text();
+            }
+            
+            // Ensure logData is a string for further processing
+            if (typeof logData !== 'string') {
+                // If it's an object or array, extract log content
+                if (logData === null || logData === undefined) {
+                    logData = '';
+                } else if (typeof logData === 'object') {
+                    // Try to extract log content from common JSON structures
+                    if (logData.logs) {
+                        logData = logData.logs;
+                    } else if (logData.content) {
+                        logData = logData.content;
+                    } else if (logData.data) {
+                        logData = logData.data;
+                    } else if (logData.log) {
+                        logData = logData.log;
+                    } else if (Array.isArray(logData)) {
+                        // If it's an array of log lines, join them
+                        logData = logData.join('\n');
+                    } else {
+                        // If no common log property found, check if it has a single string property
+                        const keys = Object.keys(logData);
+                        if (keys.length === 1 && typeof logData[keys[0]] === 'string') {
+                            logData = logData[keys[0]];
+                        } else {
+                            // Last resort: stringify but remove outer braces for cleaner display
+                            logData = JSON.stringify(logData, null, 2)
+                                .replace(/^\{\s*/, '')  // Remove opening brace and whitespace
+                                .replace(/\s*\}$/, '')  // Remove closing brace and whitespace
+                                .replace(/^\s*"[^"]+"\s*:\s*/, '') // Remove key: prefix if single property
+                                .replace(/,\s*$/m, ''); // Remove trailing comma
+                        }
+                    }
+                } else {
+                    logData = String(logData);
+                }
+                
+                // Ensure we have a string after extraction
+                if (typeof logData !== 'string') {
+                    logData = String(logData);
+                }
+            }
             
             if (logData === "" || logData.trim() === "") {
                 // No log files present
@@ -244,14 +306,25 @@ async function refreshLogs() {
                     statusDiv.className = 'logs-status info';
                 }
             } else {
-                // Parse log data and replace \n with actual line breaks
-                const formattedLogs = logData.replace(/\\n/g, '\n');
+                // Ensure we have proper line breaks regardless of format
+                let formattedLogs = logData;
+                
+                // Handle different newline formats
+                if (typeof formattedLogs === 'string') {
+                    // Replace various newline representations with actual newlines
+                    formattedLogs = formattedLogs
+                        .replace(/\\r\\n/g, '\n')  // Windows CRLF
+                        .replace(/\\r/g, '\n')     // Old Mac CR
+                        .replace(/\\n/g, '\n');    // Unix LF
+                }
+                
                 if (textarea) {
                     textarea.value = formattedLogs;
                     textarea.placeholder = 'Log contents will appear here after pressing refresh...';
                 }
                 if (statusDiv) {
-                    statusDiv.textContent = `Logs loaded successfully (${formattedLogs.split('\n').length} lines)`;
+                    const lineCount = formattedLogs.split('\n').filter(line => line.trim() !== '').length;
+                    statusDiv.textContent = `Logs loaded successfully (${lineCount} lines)`;
                     statusDiv.className = 'logs-status success';
                 }
             }
