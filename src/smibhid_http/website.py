@@ -30,6 +30,7 @@ class WebApp:
         """
         self.log = uLogger("Web app")
         self.log.info("Init webserver")
+        self.logging_file = File()
         self.app = Webserver()
         self.hid: 'HID' = hid
         self.wifi: 'WirelessNetwork' = module_config.get_wifi()
@@ -235,7 +236,7 @@ class WebApp:
         self.app.add_resource(SpaceStateConfiguration, '/api/space/state/config/poll_period', space_state = self.hid.space_state, logger = self.log)
         self.app.add_resource(SpaceStateConfiguration, '/api/space/state/config/poll_period/<value>', space_state = self.hid.space_state, logger = self.log)
 
-        self.app.add_resource(Logging, '/api/logs/read', logger = self.log, File = File())
+        self.app.add_resource(Logging, '/api/logs/read', logger = self.log, File = self.logging_file)
         
 
 class WLANMAC():
