@@ -60,6 +60,26 @@
                 </div>
             </div>
 
+            <!-- Logs Panel -->
+            <div class="admin-grid" style="margin-top: 2rem;">
+                <div class="admin-panel" style="grid-column: 1 / -1;">
+                    <div class="panel-icon">📄</div>
+                    <h3>Logs</h3>
+                    <p>View system log files to troubleshoot issues and monitor device activity.</p>
+                    <div class="logs-controls">
+                        <button class="panel-button" onclick="refreshLogs()" id="refresh-logs-btn">
+                            <span id="refresh-logs-icon">🔄</span>
+                            <span id="refresh-logs-text">Refresh Logs</span>
+                        </button>
+                        <small class="form-help">Press refresh to load the latest log file contents</small>
+                    </div>
+                    <div class="logs-content">
+                        <textarea id="logs-textarea" class="logs-display" readonly placeholder="Log contents will appear here after pressing refresh..."></textarea>
+                        <div id="logs-status" class="logs-status" style="display: none;"></div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Reset Confirmation Modal -->
             <div id="reset-modal" class="modal" style="display: none;">
                 <div class="modal-content">

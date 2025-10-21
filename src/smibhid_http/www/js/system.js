@@ -209,8 +209,86 @@ document.addEventListener('keydown', function(event) {
     }
 });
 
+async function refreshLogs() {
+    const refreshButton = document.getElementById('refresh-logs-btn');
+    const refreshIcon = document.getElementById('refresh-logs-icon');
+    const refreshText = document.getElementById('refresh-logs-text');
+    const textarea = document.getElementById('logs-textarea');
+    const statusDiv = document.getElementById('logs-status');
+    
+    // Show loading state
+    if (refreshButton) refreshButton.disabled = true;
+    if (refreshIcon) refreshIcon.textContent = '🔄';
+    if (refreshText) refreshText.textContent = 'Loading...';
+    if (refreshIcon) refreshIcon.style.animation = 'spin 1s linear infinite';
+    if (statusDiv) {
+        statusDiv.style.display = 'block';
+        statusDiv.textContent = 'Loading log files...';
+        statusDiv.className = 'logs-status loading';
+    }
+    
+    try {
+        const response = await fetch('/api/logs/read');
+        
+        if (response.ok) {
+            const logData = await response.text();
+            
+            if (logData === "" || logData.trim() === "") {
+                // No log files present
+                if (textarea) {
+                    textarea.value = '';
+                    textarea.placeholder = 'No log files present';
+                }
+                if (statusDiv) {
+                    statusDiv.textContent = 'No log files present';
+                    statusDiv.className = 'logs-status info';
+                }
+            } else {
+                // Parse log data and replace \n with actual line breaks
+                const formattedLogs = logData.replace(/\\n/g, '\n');
+                if (textarea) {
+                    textarea.value = formattedLogs;
+                    textarea.placeholder = 'Log contents will appear here after pressing refresh...';
+                }
+                if (statusDiv) {
+                    statusDiv.textContent = `Logs loaded successfully (${formattedLogs.split('\n').length} lines)`;
+                    statusDiv.className = 'logs-status success';
+                }
+            }
+        } else {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+    } catch (error) {
+        console.error('Error loading logs:', error);
+        if (textarea) {
+            textarea.value = '';
+            textarea.placeholder = 'Error loading logs. Please try again.';
+        }
+        if (statusDiv) {
+            statusDiv.textContent = `Error loading logs: ${error.message}`;
+            statusDiv.className = 'logs-status error';
+        }
+    } finally {
+        // Reset button state
+        if (refreshButton) refreshButton.disabled = false;
+        if (refreshIcon) {
+            refreshIcon.textContent = '🔄';
+            refreshIcon.style.animation = '';
+        }
+        if (refreshText) refreshText.textContent = 'Refresh Logs';
+        
+        // Hide status after 5 seconds if successful
+        if (statusDiv && statusDiv.className.includes('success')) {
+            setTimeout(() => {
+                statusDiv.style.display = 'none';
+            }, 5000);
+        }
+    }
+}
+
 // Make functions globally available
 window.refreshSystemInfo = refreshSystemInfo;
 window.showResetConfirmation = showResetConfirmation;
 window.hideResetConfirmation = hideResetConfirmation;
 window.performReset = performReset;
+window.refreshLogs = refreshLogs;
