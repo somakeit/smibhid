@@ -264,15 +264,21 @@ body {
 
 .panel-icon {
     font-size: 2.5rem;
+    margin-right: 1rem;
+    display: inline-block;
+}
+
+.panel-header {
+    display: flex;
+    align-items: center;
     margin-bottom: 1rem;
-    display: block;
 }
 
 .admin-panel h3 {
     color: #2c3e50;
     font-size: 1.4rem;
     font-weight: 600;
-    margin-bottom: 1rem;
+    margin: 0;
 }
 
 .admin-panel p {
@@ -909,6 +915,17 @@ a:hover {
     
     .logs-controls {
         align-items: stretch;
+    }
+    
+    .panel-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+    
+    .panel-icon {
+        margin-right: 0;
+        margin-bottom: 0.5rem;
     }
 }
 
