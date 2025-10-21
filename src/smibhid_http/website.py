@@ -1,5 +1,5 @@
 from smibhid_http.webserver import Webserver
-from lib.ulogging import uLogger
+from lib.ulogging import uLogger, File
 from lib.module_config import ModuleConfig
 from json import dumps
 from asyncio import run, create_task
@@ -30,6 +30,7 @@ class WebApp:
         """
         self.log = uLogger("Web app")
         self.log.info("Init webserver")
+        self.logging_file = File()
         self.app = Webserver()
         self.hid: 'HID' = hid
         self.wifi: 'WirelessNetwork' = module_config.get_wifi()
@@ -43,12 +44,14 @@ class WebApp:
         self.create_update_css()
         self.create_sensors_css()
         self.create_scd30_css()
+        self.create_configuration_css()
         self.create_common_js()
         self.create_index_js()
         self.create_sensors_js()
         self.create_update_js()
         self.create_scd30_js()
         self.create_system_js()
+        self.create_configuration_js()
         self.create_header_include()
         self.create_footer_include()
         self.create_favicon()
@@ -57,6 +60,7 @@ class WebApp:
         self.create_sensors()
         self.create_scd30()
         self.create_system()
+        self.create_configuration()
         self.create_test_sensors()
         self.create_api()
 
@@ -96,6 +100,11 @@ class WebApp:
         async def index(request, response):
             await response.send_file('/smibhid_http/www/css/scd30.css', content_type='text/css')
 
+    def create_configuration_css(self):
+        @self.app.route('/css/configuration.css')
+        async def index(request, response):
+            await response.send_file('/smibhid_http/www/css/configuration.css', content_type='text/css')
+
     def create_common_js(self):
         @self.app.route('/js/common.js')
         async def index(request, response):
@@ -125,6 +134,11 @@ class WebApp:
         @self.app.route('/js/system.js')
         async def index(request, response):
             await response.send_file('/smibhid_http/www/js/system.js', content_type='application/javascript')
+
+    def create_configuration_js(self):
+        @self.app.route('/js/configuration.js')
+        async def index(request, response):
+            await response.send_file('/smibhid_http/www/js/configuration.js', content_type='application/javascript')
     
     def create_header_include(self):
         @self.app.route('/includes/header.html')
@@ -177,6 +191,11 @@ class WebApp:
         async def index(request, response):
             await response.send_file('/smibhid_http/www/system.html')
 
+    def create_configuration(self) -> None:
+        @self.app.route('/configuration')
+        async def index(request, response):
+            await response.send_file('/smibhid_http/www/configuration.html')
+
     def create_test_sensors(self) -> None:
         @self.app.route('/test_sensors')
         async def index(request, response):
@@ -213,6 +232,12 @@ class WebApp:
         self.app.add_resource(SpaceStateManagement, '/api/space/state', space_state = self.hid.space_state, logger = self.log)
         self.app.add_resource(SpaceStateManagement, '/api/space/state/open', state = "open", space_state = self.hid.space_state, logger = self.log)
         self.app.add_resource(SpaceStateManagement, '/api/space/state/closed', state = "closed", space_state = self.hid.space_state, logger = self.log)
+        
+        self.app.add_resource(SpaceStateConfiguration, '/api/space/state/config/poll_period', space_state = self.hid.space_state, logger = self.log)
+        self.app.add_resource(SpaceStateConfiguration, '/api/space/state/config/poll_period/<value>', space_state = self.hid.space_state, logger = self.log)
+
+        self.app.add_resource(Logging, '/api/logs/read', logger = self.log, File = self.logging_file)
+        
 
 class WLANMAC():
 
@@ -433,4 +458,42 @@ class SpaceStateManagement():
             html = dumps(f"Failed to set space state: {e}")
 
         logger.info(f"Return value: {html}")
+        return html
+
+class SpaceStateConfiguration():
+    def get(self, data, space_state: SpaceState, logger: uLogger) -> str:
+        logger.info("API request - GET /api/space/state/config/poll_period")
+        try:
+            poll_period = space_state.get_space_state_poll_period()
+            html = dumps({"poll_period_seconds": poll_period})
+        except Exception as e:
+            logger.error(f"Failed to get space state poll period: {e}")
+            html = "Failed to get space state poll period"
+        logger.info(f"Return value: {html}")
+        return html
+
+    def put(self, data, value: str, space_state: SpaceState, logger: uLogger) -> str:
+        logger.info(f"API request - PUT /api/space/state/config/poll_period/{value}")
+        try:
+            period_s = int(value)
+            logger.info(f"Setting poll period to: {period_s}")
+            space_state.set_space_state_poll_period(period_s)
+            html = dumps("success")
+        except Exception as e:
+            logger.error(f"Failed to set space state poll period: {e}")
+            html = dumps(f"Failed to set space state poll period: {e}")
+
+        logger.info(f"Return value: {html}")
+        return html
+
+class Logging():
+    def get(self, data, logger: uLogger, File: File) -> str:
+        logger.info("API request - GET /api/logs/read")
+        try:
+            log_contents = File.read_logs()
+            html = dumps({"log": log_contents})
+        except Exception as e:
+            logger.error(f"Failed to read log file: {e}")
+            html = dumps(f"Failed to read log file: {e}")
+        logger.info("Returning log contents")
         return html

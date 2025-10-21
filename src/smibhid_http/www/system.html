@@ -27,8 +27,10 @@
             <div class="admin-grid">
                 <!-- Device Information Panel -->
                 <div class="admin-panel">
-                    <div class="panel-icon">📋</div>
-                    <h3>Device Information</h3>
+                    <div class="panel-header">
+                        <div class="panel-icon">📋</div>
+                        <h3>Device Information</h3>
+                    </div>
                     <div class="system-info-content">
                         <div class="info-item">
                             <span class="info-label">MAC Address:</span>
@@ -48,14 +50,38 @@
                 
                 <!-- System Control Panel -->
                 <div class="admin-panel">
-                    <div class="panel-icon">🔧</div>
-                    <h3>Device Reset</h3>
+                    <div class="panel-header">
+                        <div class="panel-icon">🔧</div>
+                        <h3>Device Reset</h3>
+                    </div>
                     <p>Reset the SMIBHID device. This will restart the system and apply any pending updates.</p>
                     <div class="reset-controls">
                         <div class="warning-message">
                             ⚠️ Warning: This will restart the device and temporarily disconnect all services.
                         </div>
                         <button class="panel-button reset-button" onclick="showResetConfirmation()">Reset Device</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Logs Panel -->
+            <div class="admin-grid" style="margin-top: 2rem;">
+                <div class="admin-panel" style="grid-column: 1 / -1;">
+                    <div class="panel-header">
+                        <div class="panel-icon">📄</div>
+                        <h3>Logs</h3>
+                    </div>
+                    <p>View system log files to troubleshoot issues and monitor device activity.</p>
+                    <div class="logs-controls">
+                        <button class="panel-button" onclick="refreshLogs()" id="refresh-logs-btn">
+                            <span id="refresh-logs-icon">🔄</span>
+                            <span id="refresh-logs-text">Refresh Logs</span>
+                        </button>
+                        <small class="form-help">Press refresh to load the latest log file contents</small>
+                    </div>
+                    <div class="logs-content">
+                        <textarea id="logs-textarea" class="logs-display" readonly placeholder="Log contents will appear here after pressing refresh..."></textarea>
+                        <div id="logs-status" class="logs-status" style="display: none;"></div>
                     </div>
                 </div>
             </div>
@@ -85,8 +111,9 @@
 
             <!-- Navigation -->
             <div class="navigation-section">
-                <a href="/" class="nav-link">← Back to Dashboard</a>
-                <a href="/api" class="nav-link">API Documentation →</a>
+                <a href="/configuration" class="nav-link">← Configuration</a>
+                <a href="/" class="nav-link">🏠 Dashboard</a>
+                <a href="/sensors" class="nav-link">Environmental Sensors →</a>
             </div>
         </main>
 

@@ -209,8 +209,159 @@ document.addEventListener('keydown', function(event) {
     }
 });
 
+async function refreshLogs() {
+    const refreshButton = document.getElementById('refresh-logs-btn');
+    const refreshIcon = document.getElementById('refresh-logs-icon');
+    const refreshText = document.getElementById('refresh-logs-text');
+    const textarea = document.getElementById('logs-textarea');
+    const statusDiv = document.getElementById('logs-status');
+    
+    // Show loading state
+    if (refreshButton) refreshButton.disabled = true;
+    if (refreshIcon) refreshIcon.textContent = '🔄';
+    if (refreshText) refreshText.textContent = 'Loading...';
+    if (refreshIcon) refreshIcon.style.animation = 'spin 1s linear infinite';
+    if (statusDiv) {
+        statusDiv.style.display = 'block';
+        statusDiv.textContent = 'Loading log files...';
+        statusDiv.className = 'logs-status loading';
+    }
+    
+    try {
+        const response = await fetch('/api/logs/read');
+        
+        if (response.ok) {
+            const contentType = response.headers.get('content-type');
+            let logData;
+            
+            // Check if the response is JSON
+            if (contentType && contentType.includes('application/json')) {
+                // API returns JSON - parse it first
+                logData = await response.json();
+                // If it's a JSON string, it might be escaped
+                if (typeof logData === 'string') {
+                    // Handle JSON-escaped newlines
+                    try {
+                        logData = JSON.parse('"' + logData + '"'); // Safely parse escaped string
+                    } catch (e) {
+                        // If parsing fails, use the string as-is
+                        console.warn('Failed to parse escaped JSON string, using as-is:', e);
+                    }
+                }
+            } else {
+                // API returns plain text
+                logData = await response.text();
+            }
+            
+            // Ensure logData is a string for further processing
+            if (typeof logData !== 'string') {
+                // If it's an object or array, extract log content
+                if (logData === null || logData === undefined) {
+                    logData = '';
+                } else if (typeof logData === 'object') {
+                    // Try to extract log content from common JSON structures
+                    if (logData.logs) {
+                        logData = logData.logs;
+                    } else if (logData.content) {
+                        logData = logData.content;
+                    } else if (logData.data) {
+                        logData = logData.data;
+                    } else if (logData.log) {
+                        logData = logData.log;
+                    } else if (Array.isArray(logData)) {
+                        // If it's an array of log lines, join them
+                        logData = logData.join('\n');
+                    } else {
+                        // If no common log property found, check if it has a single string property
+                        const keys = Object.keys(logData);
+                        if (keys.length === 1 && typeof logData[keys[0]] === 'string') {
+                            logData = logData[keys[0]];
+                        } else {
+                            // Last resort: stringify but remove outer braces for cleaner display
+                            logData = JSON.stringify(logData, null, 2)
+                                .replace(/^\{\s*/, '')  // Remove opening brace and whitespace
+                                .replace(/\s*\}$/, '')  // Remove closing brace and whitespace
+                                .replace(/^\s*"[^"]+"\s*:\s*/, '') // Remove key: prefix if single property
+                                .replace(/,\s*$/m, ''); // Remove trailing comma
+                        }
+                    }
+                } else {
+                    logData = String(logData);
+                }
+                
+                // Ensure we have a string after extraction
+                if (typeof logData !== 'string') {
+                    logData = String(logData);
+                }
+            }
+            
+            if (logData === "" || logData.trim() === "") {
+                // No log files present
+                if (textarea) {
+                    textarea.value = '';
+                    textarea.placeholder = 'No log files present';
+                }
+                if (statusDiv) {
+                    statusDiv.textContent = 'No log files present';
+                    statusDiv.className = 'logs-status info';
+                }
+            } else {
+                // Ensure we have proper line breaks regardless of format
+                let formattedLogs = logData;
+                
+                // Handle different newline formats
+                if (typeof formattedLogs === 'string') {
+                    // Replace various newline representations with actual newlines
+                    formattedLogs = formattedLogs
+                        .replace(/\\r\\n/g, '\n')  // Windows CRLF
+                        .replace(/\\r/g, '\n')     // Old Mac CR
+                        .replace(/\\n/g, '\n');    // Unix LF
+                }
+                
+                if (textarea) {
+                    textarea.value = formattedLogs;
+                    textarea.placeholder = 'Log contents will appear here after pressing refresh...';
+                }
+                if (statusDiv) {
+                    const lineCount = formattedLogs.split('\n').filter(line => line.trim() !== '').length;
+                    statusDiv.textContent = `Logs loaded successfully (${lineCount} lines)`;
+                    statusDiv.className = 'logs-status success';
+                }
+            }
+        } else {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+    } catch (error) {
+        console.error('Error loading logs:', error);
+        if (textarea) {
+            textarea.value = '';
+            textarea.placeholder = 'Error loading logs. Please try again.';
+        }
+        if (statusDiv) {
+            statusDiv.textContent = `Error loading logs: ${error.message}`;
+            statusDiv.className = 'logs-status error';
+        }
+    } finally {
+        // Reset button state
+        if (refreshButton) refreshButton.disabled = false;
+        if (refreshIcon) {
+            refreshIcon.textContent = '🔄';
+            refreshIcon.style.animation = '';
+        }
+        if (refreshText) refreshText.textContent = 'Refresh Logs';
+        
+        // Hide status after 5 seconds if successful
+        if (statusDiv && statusDiv.className.includes('success')) {
+            setTimeout(() => {
+                statusDiv.style.display = 'none';
+            }, 5000);
+        }
+    }
+}
+
 // Make functions globally available
 window.refreshSystemInfo = refreshSystemInfo;
 window.showResetConfirmation = showResetConfirmation;
 window.hideResetConfirmation = hideResetConfirmation;
 window.performReset = performReset;
+window.refreshLogs = refreshLogs;
