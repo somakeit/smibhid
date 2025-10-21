@@ -67,15 +67,67 @@ class SpaceState:
         self.space_state = None
         self.checking_space_state = False
         self.checking_space_state_timeout_s = 30
-        self.space_state_poll_frequency = config.SPACE_STATE_POLL_FREQUENCY_S
-        if self.space_state_poll_frequency != 0 and self.space_state_poll_frequency < 5:
-            self.space_state_poll_frequency = 5
+        self.space_state_poll_task: Optional[Task] = None
+        self.space_state_poll_period = 5
+        self.set_space_state_poll_period()
         self.state_check_error_open_led_flash_task = None
         self.state_check_error_closed_led_flash_task = None
         self.last_button_press_ms = 0
         self.flash_task: Optional[Task] = None
-        self.space_state_poll_task: Optional[Task] = None
         self.configure_error_handling()
+
+    def set_space_state_poll_period(self, period_s: int = -1, delay_start_s: int = 0) -> None:
+        """
+        Set the active space state poll period.
+        If -1 (default) is passed as an argument, the value from config.py is
+        used.
+        Where the config value is used, ensures that the period is >= 5s
+        unless disabled (0).
+        Enables/disables the space state poller task as appropriate.
+        """
+        if period_s == -1:
+            new_period_s = config.SPACE_STATE_POLL_PERIOD_S
+        else:
+            new_period_s = period_s
+
+        if new_period_s != 0 and new_period_s < 5:
+            new_period_s = 5
+        
+        if new_period_s != self.space_state_poll_period:
+            
+            if new_period_s > 0:
+                self.log.info(f"Setting space state poller period to {new_period_s} seconds with delay start of {delay_start_s} seconds.")
+                self.space_state_poll_period = new_period_s
+                self.start_space_state_poller(delay_start_s)
+            
+            elif new_period_s == 0:
+                self.log.info("Disabling space state poller as period set to 0")
+                if self.space_state_poll_task is not None:
+                    self.space_state_poll_task.cancel()
+                self.space_state_poll_period = new_period_s
+            
+            else:
+                self.log.warn(f"Space state poll period {new_period_s} is invalid, not changing")
+
+    def start_space_state_poller(self, delay_start_s: int = 0) -> None:
+        """
+        Start the space state poller task if not already running and poll period is > 0.
+        Pass through delay_start_s to the poller task, default 0.
+        """
+        if self.space_state_poll_period > 0:
+            if self.space_state_poll_task is None or self.space_state_poll_task.done():
+                self.log.info("Starting space state poller task")
+                self.space_state_poll_task = create_task(self.async_space_state_watcher(delay_start_s))
+            else:
+                self.log.info("Space state poller task already running")
+        else:
+            self.log.info("Space state poller disabled by config")
+
+    def get_space_state_poll_period(self) -> int:
+        """
+        Get the active space state poll period.
+        """
+        return self.space_state_poll_period
 
     def configure_error_handling(self) -> None:
         """
@@ -108,14 +160,7 @@ class SpaceState:
         )
         create_task(self.async_space_close_button_watcher())
 
-        if self.space_state_poll_frequency != 0:
-            self.log.info(
-                f"Starting space state poller with frequency of \
-                    {self.space_state_poll_frequency} seconds"
-            )
-            self.space_state_poll_task = create_task(self.async_space_state_watcher())
-        else:
-            self.log.info("Space state poller disabled by config")
+        self.start_space_state_poller()
 
     def set_space_open_relay_state(self, state: bool) -> None:
         """
@@ -301,7 +346,7 @@ class SpaceState:
             self.ui_log.log_button_press(self.closed_button)
             await self.hid.ui_state_instance.async_on_space_closed_button()
 
-    async def async_space_state_watcher(self) -> None:
+    async def async_space_state_watcher(self, delay_start_s: int = 0) -> None:
         """
         Coroutine to frequently poll the space state from the slack server and
         update SMIBHID output if the state has changed.
@@ -315,11 +360,17 @@ class SpaceState:
                     f"State poller task encountered an error updating space state: {e}"
                 )
 
+        self.log.info("Starting space state watcher")
+        
+        if delay_start_s > 0:
+            self.log.info(f"Delaying space state watcher start by {delay_start_s}s")
+            await sleep(delay_start_s)
+
         while True:
             try:
                 self.log.info("Polling space state")
-                await sleep(self.space_state_poll_frequency)
                 create_task(task_wrapper_for_error_handling())
+                await sleep(self.space_state_poll_period)
             except CancelledError as e:
                 self.log.info(f"State poller task cancelled: {e}")
                 break 
@@ -471,7 +522,7 @@ class AddingOpenHoursState(SpaceStateUIState):
         super().on_exit()
 
         self.log.info("Exiting AddingOpenHoursState, restarting space state watcher")
-        self.space_state.space_state_poll_task = create_task(self.space_state.async_space_state_watcher())
+        self.space_state.start_space_state_poller(delay_start_s=5)
 
 class AddingClosedMinutesState(SpaceStateUIState):
     """
@@ -514,5 +565,5 @@ class AddingClosedMinutesState(SpaceStateUIState):
         super().on_exit()
 
         self.log.info("Exiting AddingClosedMinutesState, restarting space state watcher")
-        self.space_state.space_state_poll_task = create_task(self.space_state.async_space_state_watcher())
+        self.space_state.start_space_state_poller(delay_start_s=5)
     

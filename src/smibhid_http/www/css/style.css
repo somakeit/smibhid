@@ -32,11 +32,14 @@ body {
 }
 
 .header-content {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.header-main-row {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    max-width: 1200px;
-    margin: 0 auto;
 }
 
 .logo-section {
@@ -47,8 +50,8 @@ body {
 
 .title-section {
     display: flex;
-    align-items: baseline;
-    gap: 1rem;
+    flex-direction: column;
+    align-items: flex-start;
 }
 
 .logo {
@@ -67,9 +70,11 @@ body {
 
 .subtitle {
     color: #7f8c8d;
-    font-size: 1.1rem;
+    font-size: 0.9rem;
     font-weight: 400;
     margin: 0;
+    margin-top: 0.25rem;
+    text-align: left;
     white-space: nowrap;
 }
 
@@ -370,22 +375,16 @@ a:hover {
         padding: 1rem;
     }
     
-    .header-content {
+    .header-main-row {
         flex-direction: column;
-        gap: 1rem;
         align-items: flex-start;
+        gap: 1rem;
     }
     
     .logo-section {
         flex-direction: column;
         align-items: flex-start;
         gap: 0.5rem;
-    }
-    
-    .title-section {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 0.25rem;
     }
     
     .title {
@@ -395,6 +394,7 @@ a:hover {
     .subtitle {
         font-size: 1rem;
         white-space: normal;
+        text-align: left;
     }
     
     .navbar {
