@@ -194,7 +194,9 @@ function highlightActivePage() {
             (currentPath === '/' && linkPath === '/') ||
             (currentPath.startsWith('/sensors') && linkPath === '/sensors') ||
             (currentPath === '/api' && linkPath === '/api') ||
-            (currentPath === '/update' && linkPath === '/update')) {
+            (currentPath === '/update' && linkPath === '/update') ||
+            (currentPath === '/configuration' && linkPath === '/configuration') ||
+            (currentPath === '/system' && linkPath === '/system')) {
             link.classList.add('active');
         }
     });

@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>SMIBHID - Configuration</title>
+        <link rel="stylesheet" href="css/style.css">
+        <link rel="stylesheet" href="css/configuration.css">
+        <script src="js/common.js?v=1.0.0"></script>
+        <script src="js/configuration.js?v=1.0.0"></script>
+    </head>
+
+    <body data-subtitle="Configuration Management" data-footer-context="Configuration">
+        <div class="container">
+            <div id="header-placeholder"></div>
+
+            <!-- Main content area -->
+            <main class="main-content">
+                <!-- Welcome section -->
+                <section class="welcome-section">
+                    <h2>Configuration Management</h2>
+                    <p class="description">Configure various aspects of your SMIBHID device to customize its behavior and functionality.</p>
+                    <p class="description">Changes made here will be applied immediately but will not persist across device restarts.</p>
+                    <div class="section-actions">
+                        <div class="auto-refresh-note">
+                            <span class="note-icon">ℹ️</span>
+                            <span class="note-text">Values refresh automatically every 30 seconds</span>
+                        </div>
+                        <button id="refreshValuesBtn" class="refresh-button" onclick="refreshAllValues()" title="Refresh all values">
+                            <span class="refresh-icon">🔄</span>
+                            <span class="refresh-text">Refresh Values</span>
+                        </button>
+                    </div>
+                </section>
+
+                <!-- Configuration panels grid -->
+                <div class="config-grid">
+                    <!-- Space State Configuration Panel -->
+                    <div class="config-panel">
+                        <div class="panel-header">
+                            <div class="panel-icon">🔄</div>
+                            <h3>Space State Polling</h3>
+                        </div>
+                        <p class="panel-description">Configure how frequently the device checks for space state changes from the server.</p>
+                        
+                        <div class="config-item">
+                            <div class="config-label">Current Poll Period:</div>
+                            <div id="currentPollPeriod" class="config-value">Loading...</div>
+                        </div>
+                        
+                        <div class="config-form">
+                            <div class="form-group">
+                                <label for="pollPeriodInput">Poll Period (seconds):</label>
+                                <input type="number" id="pollPeriodInput" class="form-input" min="5" max="600" placeholder="Enter value between 5-600">
+                                <span class="form-help">Set polling interval between 5-600 seconds, or 0 to disable</span>
+                                <div id="pollPeriodValidation" class="validation-message"></div>
+                            </div>
+                            
+                            <div class="form-actions">
+                                <button id="updatePollPeriodBtn" class="panel-button primary" onclick="updatePollPeriod()">Update</button>
+                                <button id="disablePollPeriodBtn" class="panel-button danger" onclick="disablePollPeriod()" style="display: none;">Disable</button>
+                            </div>
+                        </div>
+                        
+                        <div id="pollPeriodResult" class="result-message"></div>
+                    </div>
+
+                    <!-- Future configuration panels can be added here -->
+                </div>
+
+                <!-- Navigation section -->
+                <div class="navigation-section">
+                    <a href="/" class="nav-link">← Back to Dashboard</a>
+                </div>
+            </main>
+
+            <div id="footer-placeholder"></div>
+        </div>
+    </body>
+</html>

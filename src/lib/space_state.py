@@ -123,6 +123,12 @@ class SpaceState:
         else:
             self.log.info("Space state poller disabled by config")
 
+    def get_space_state_poll_period(self) -> int:
+        """
+        Get the active space state poll period.
+        """
+        return self.space_state_poll_period
+
     def configure_error_handling(self) -> None:
         """
         Register errors with the error handler for the space state module.
