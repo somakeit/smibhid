@@ -5,7 +5,7 @@ from json import dumps
 from asyncio import run, create_task
 from lib.updater import UpdateCore
 from lib.sensors.file_logging import FileLogger
-from config import DEFAULT_CO2_CALIBRATION_VALUE
+from config import DEFAULT_CO2_CALIBRATION_VALUE, CONFIG_SECTIONS
 
 try:
     from typing import TYPE_CHECKING
@@ -234,6 +234,8 @@ class WebApp:
         
         self.app.add_resource(SpaceStateConfiguration, '/api/space/state/config/poll_period', space_state = self.hid.space_state, logger = self.log)
         self.app.add_resource(SpaceStateConfiguration, '/api/space/state/config/poll_period/<value>', space_state = self.hid.space_state, logger = self.log)
+
+        self.app.add_resource(SMIBHIDConfiguration, '/api/configuration/list', logger = self.log)
         
 
 class WLANMAC():
@@ -480,5 +482,18 @@ class SpaceStateConfiguration():
             logger.error(f"Failed to set space state poll period: {e}")
             html = dumps(f"Failed to set space state poll period: {e}")
 
+        logger.info(f"Return value: {html}")
+        return html
+
+class SMIBHIDConfiguration():
+
+    def get(self, data, logger: uLogger) -> str:
+        logger.info("API request - GET /api/configuration/list")
+        try:
+            html = dumps(CONFIG_SECTIONS)
+        except Exception as e:
+            logger.error(f"Failed to get configuration list: {e}")
+            html = dumps({"error": f"Failed to get configuration list: {e}"})
+        
         logger.info(f"Return value: {html}")
         return html
