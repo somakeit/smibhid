@@ -30,6 +30,8 @@ Press the space_open or space_closed buttons to call the smib server endpoint ap
   - Firmware Update page for performing over the air firmware updates and remote reset to apply them
   - Configuration management page for viewing and updating certain configuration parameters
     - Get and set space state poll period
+    - List runtime configuration
+    - Supports adding new configuration sections without modifying javascript
   - System status page for viewing basic device information and remotely resetting the device
 - Pinger watchdog - Optionally ping an IP address and toggle a GPIO pin on ping failure. Useful for network device monitoring and reset.
 - Extensible sensor module framework for async polling of I2C sensors and presentation of sensors and readings on the web API and recording to log file
