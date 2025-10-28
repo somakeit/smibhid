@@ -494,12 +494,14 @@ class SMIBHIDConfiguration():
         """
         logger.info("API request - GET /api/configuration/list")
         try:
+            # Build configuration dictionary using CONFIG_SECTIONS structure
             configuration = {}
             
             for section_name, config_items in config.CONFIG_SECTIONS.items():
                 section_config = {}
                 for config_item in config_items:
                     try:
+                        # Get the value from the config module
                         section_config[config_item] = getattr(config, config_item)
                     except AttributeError:
                         logger.warn(f"Configuration item '{config_item}' not found in config module")

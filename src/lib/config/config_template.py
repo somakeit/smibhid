@@ -98,6 +98,27 @@ ENABLE_UI_LOGGING_UPLOAD = False
 CLOCK_FREQUENCY = 250000000
 
 ## Configuration sections for API output
+# 
+# This dictionary defines the logical grouping and order of configuration variables
+# for the web UI and API responses. When adding new configuration variables:
+#
+# 1. ADD NEW VARIABLES TO EXISTING SECTIONS:
+#    Simply add the variable name to the appropriate list below.
+#    The frontend will automatically pick up new variables.
+#
+# 2. ADD NEW SECTIONS:
+#    a) Add the new section here with its variables
+#    b) Update the frontend JavaScript file: src/smibhid_http/www/js/configuration.js
+#       - Add to SECTION_ORDER array (line ~440)  
+#       - Add icon to getSectionIcon() function (line ~580)
+#       - Add special name formatting to formatSectionName() if needed (line ~560)
+#    c) Update CSS file: src/smibhid_http/www/css/configuration.css
+#       - Add section color in the "Section icons mapping" section (line ~180)
+#
+# 3. SECTION ORDER:
+#    The order of sections below determines the display order in the web UI.
+#    Reorder sections here to change the display order.
+#
 CONFIG_SECTIONS = {
     "Logging": ["LOG_LEVEL", "LOG_HANDLERS", "LOG_FILE_MAX_SIZE"],
     "IO": ["SPACE_OPEN_BUTTON", "SPACE_CLOSED_BUTTON", "SPACE_OPEN_LED", "SPACE_CLOSED_LED", "SPACE_OPEN_RELAY", "SPACE_OPEN_RELAY_ACTIVE_HIGH"],

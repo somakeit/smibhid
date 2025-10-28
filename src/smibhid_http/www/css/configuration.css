@@ -362,6 +362,279 @@
     display: block;
 }
 
+/* Runtime Configuration Section */
+.runtime-config-section {
+    margin: 3rem 0 2rem 0;
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 12px;
+    padding: 2rem;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(34, 139, 34, 0.1);
+    position: relative;
+    overflow: hidden;
+}
+
+.runtime-config-section::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #17a2b8, #138496);
+}
+
+.section-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.section-header .section-icon {
+    font-size: 2rem;
+    margin: 0;
+}
+
+.section-header h2 {
+    margin: 0;
+    color: #2c3e50;
+    font-size: 1.8rem;
+    font-weight: 600;
+}
+
+.section-description {
+    color: #5d6d7e;
+    margin-bottom: 2rem;
+    line-height: 1.6;
+    font-size: 1rem;
+}
+
+.runtime-config-container {
+    min-height: 200px;
+}
+
+.loading-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    padding: 3rem;
+    color: #6c757d;
+    font-size: 1.1rem;
+}
+
+.loading-spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid rgba(23, 162, 184, 0.2);
+    border-top: 4px solid #17a2b8;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+.config-sections-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: 1.5rem;
+}
+
+.config-section {
+    background: rgba(248, 249, 250, 0.8);
+    border-radius: 10px;
+    padding: 1.5rem;
+    border: 1px solid rgba(23, 162, 184, 0.15);
+    transition: all 0.3s ease;
+}
+
+.config-section:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(23, 162, 184, 0.1);
+    background: rgba(248, 249, 250, 1);
+}
+
+.config-section-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1.25rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 2px solid rgba(23, 162, 184, 0.2);
+}
+
+.config-section-icon {
+    font-size: 1.5rem;
+    color: #17a2b8;
+}
+
+.config-section-title {
+    margin: 0;
+    color: #2c3e50;
+    font-size: 1.2rem;
+    font-weight: 600;
+}
+
+.config-items {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.config-item-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem;
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 6px;
+    border: 1px solid rgba(23, 162, 184, 0.1);
+    transition: all 0.2s ease;
+}
+
+.config-item-row:hover {
+    background: rgba(255, 255, 255, 1);
+    border-color: rgba(23, 162, 184, 0.2);
+    transform: translateX(3px);
+}
+
+.config-item-label {
+    font-weight: 500;
+    color: #34495e;
+    flex: 0 0 auto;
+    max-width: 60%;
+    word-break: break-word;
+}
+
+.config-item-value {
+    font-family: 'Courier New', monospace;
+    font-weight: 500;
+    color: #2c3e50;
+    text-align: right;
+    background: rgba(23, 162, 184, 0.05);
+    padding: 0.4rem 0.6rem;
+    border-radius: 4px;
+    border: 1px solid rgba(23, 162, 184, 0.1);
+    max-width: 40%;
+    word-break: break-all;
+    font-size: 0.9rem;
+}
+
+.config-item-value.null {
+    color: #6c757d;
+    font-style: italic;
+    background: rgba(108, 117, 125, 0.05);
+    border-color: rgba(108, 117, 125, 0.1);
+}
+
+.config-item-value.boolean {
+    font-weight: 600;
+}
+
+.config-item-value.boolean.true {
+    color: #28a745;
+    background: rgba(40, 167, 69, 0.1);
+    border-color: rgba(40, 167, 69, 0.2);
+}
+
+.config-item-value.boolean.false {
+    color: #dc3545;
+    background: rgba(220, 53, 69, 0.1);
+    border-color: rgba(220, 53, 69, 0.2);
+}
+
+.config-item-value.number {
+    color: #6610f2;
+    background: rgba(102, 16, 242, 0.05);
+    border-color: rgba(102, 16, 242, 0.1);
+}
+
+.config-item-value.string {
+    color: #fd7e14;
+    background: rgba(253, 126, 20, 0.05);
+    border-color: rgba(253, 126, 20, 0.1);
+}
+
+.config-item-value.array {
+    color: #20c997;
+    background: rgba(32, 201, 151, 0.05);
+    border-color: rgba(32, 201, 151, 0.1);
+}
+
+.error-message {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    padding: 3rem;
+    color: #dc3545;
+    background: rgba(220, 53, 69, 0.05);
+    border: 1px solid rgba(220, 53, 69, 0.2);
+    border-radius: 8px;
+}
+
+.error-icon {
+    font-size: 3rem;
+    opacity: 0.7;
+}
+
+.error-text {
+    font-size: 1.1rem;
+    font-weight: 500;
+    text-align: center;
+}
+
+/* Section icons mapping */
+.section-logging { --section-color: #28a745; }
+.section-io { --section-color: #ffc107; }
+.section-wifi { --section-color: #17a2b8; }
+.section-ntp { --section-color: #6f42c1; }
+.section-pinger { --section-color: #e83e8c; }
+.section-web { --section-color: #fd7e14; }
+.section-space { --section-color: #20c997; }
+.section-i2c { --section-color: #6610f2; }
+.section-sensors { --section-color: #198754; }
+.section-co2_alarm { --section-color: #dc3545; }
+.section-sensor_logging { --section-color: #0d6efd; }
+.section-displays { --section-color: #6f42c1; }
+.section-rfid { --section-color: #fd7e14; }
+.section-ui_logging { --section-color: #20c997; }
+.section-overclocking { --section-color: #e83e8c; }
+
+.config-section.section-logging .config-section-icon { color: var(--section-color); }
+.config-section.section-io .config-section-icon { color: var(--section-color); }
+.config-section.section-wifi .config-section-icon { color: var(--section-color); }
+.config-section.section-ntp .config-section-icon { color: var(--section-color); }
+.config-section.section-pinger .config-section-icon { color: var(--section-color); }
+.config-section.section-web .config-section-icon { color: var(--section-color); }
+.config-section.section-space .config-section-icon { color: var(--section-color); }
+.config-section.section-i2c .config-section-icon { color: var(--section-color); }
+.config-section.section-sensors .config-section-icon { color: var(--section-color); }
+.config-section.section-co2_alarm .config-section-icon { color: var(--section-color); }
+.config-section.section-sensor_logging .config-section-icon { color: var(--section-color); }
+.config-section.section-displays .config-section-icon { color: var(--section-color); }
+.config-section.section-rfid .config-section-icon { color: var(--section-color); }
+.config-section.section-ui_logging .config-section-icon { color: var(--section-color); }
+.config-section.section-overclocking .config-section-icon { color: var(--section-color); }
+
+/* Unknown/New sections styling */
+.config-section.unknown-section {
+    border: 2px dashed rgba(255, 193, 7, 0.5);
+    background: rgba(255, 193, 7, 0.05);
+}
+
+.config-section.unknown-section .config-section-icon {
+    color: #ffc107;
+}
+
+.unknown-indicator {
+    font-size: 0.8rem;
+    color: #ffc107;
+    font-weight: normal;
+    font-style: italic;
+}
+
 /* Navigation section */
 .navigation-section {
     display: flex;
@@ -460,6 +733,46 @@
     
     .navigation-section {
         flex-direction: column;
+    }
+    
+    /* Runtime configuration responsive styles */
+    .runtime-config-section {
+        padding: 1.5rem;
+        margin: 2rem 0 1.5rem 0;
+    }
+    
+    .section-header {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        gap: 0.5rem;
+    }
+    
+    .config-sections-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .config-section {
+        padding: 1.25rem;
+    }
+    
+    .config-item-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+        padding: 1rem;
+    }
+    
+    .config-item-label {
+        max-width: 100%;
+        font-size: 0.95rem;
+    }
+    
+    .config-item-value {
+        max-width: 100%;
+        text-align: left;
+        font-size: 0.85rem;
+        word-break: break-word;
     }
 }
 

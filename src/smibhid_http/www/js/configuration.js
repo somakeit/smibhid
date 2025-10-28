@@ -27,6 +27,9 @@ function initializeConfigurationPage() {
     // Load initial poll period value
     loadCurrentPollPeriod();
     
+    // Load runtime configuration (one-time load, no refresh needed)
+    loadRuntimeConfiguration();
+    
     // Set up input validation
     setupInputValidation();
     
@@ -394,7 +397,276 @@ window.configurationPage = {
     updatePollPeriod,
     disablePollPeriod,
     loadCurrentPollPeriod,
+    loadRuntimeConfiguration,
     validatePollPeriodInput,
     refreshAllValues,
     registerRefreshFunction
 };
+
+// Runtime Configuration Functions
+
+// Define the desired section order to match CONFIG_SECTIONS in config.py
+// When adding new sections to config.py, add them here to control display order
+const SECTION_ORDER = [
+    'Logging',
+    'IO', 
+    'WIFI',
+    'NTP',
+    'Pinger',
+    'Web',
+    'Space',
+    'I2C',
+    'Sensors',
+    'CO2_Alarm',
+    'Sensor_Logging',
+    'Displays',
+    'RFID',
+    'UI_Logging',
+    'Overclocking'
+];
+
+async function loadRuntimeConfiguration() {
+    const container = document.getElementById('runtimeConfigContainer');
+    
+    if (!container) return;
+    
+    try {
+        // Show loading state
+        container.innerHTML = `
+            <div class="loading-placeholder">
+                <div class="loading-spinner"></div>
+                <span>Loading configuration...</span>
+            </div>
+        `;
+        
+        const response = await fetch('/api/configuration/list');
+        
+        if (response.ok) {
+            const configData = await response.json();
+            renderRuntimeConfiguration(configData);
+            console.log('Runtime configuration loaded successfully');
+        } else {
+            throw new Error(`Failed to fetch configuration: ${response.status} ${response.statusText}`);
+        }
+    } catch (error) {
+        console.error('Error loading runtime configuration:', error);
+        showConfigurationError(error.message);
+    }
+}
+
+function renderRuntimeConfiguration(configData) {
+    const container = document.getElementById('runtimeConfigContainer');
+    
+    if (!container) return;
+    
+    // Create the sections grid
+    const sectionsGrid = document.createElement('div');
+    sectionsGrid.className = 'config-sections-grid';
+    
+    // Keep track of processed sections
+    const processedSections = new Set();
+    
+    // Process sections in the defined order first
+    SECTION_ORDER.forEach(sectionName => {
+        if (configData[sectionName]) {
+            const sectionData = configData[sectionName];
+            const sectionElement = createConfigSection(sectionName, sectionData);
+            sectionsGrid.appendChild(sectionElement);
+            processedSections.add(sectionName);
+        }
+    });
+    
+    // Process any remaining sections that aren't in the defined order
+    // These will be grouped under "Other" or displayed individually
+    const remainingSections = Object.keys(configData).filter(name => !processedSections.has(name));
+    
+    if (remainingSections.length > 0) {
+        // Create an "Other" section for unknown sections, or display them individually
+        remainingSections.forEach(sectionName => {
+            const sectionData = configData[sectionName];
+            const sectionElement = createConfigSection(sectionName, sectionData, true); // Mark as unknown
+            sectionsGrid.appendChild(sectionElement);
+        });
+    }
+    
+    // Replace container content
+    container.innerHTML = '';
+    container.appendChild(sectionsGrid);
+}
+
+function createConfigSection(sectionName, sectionData, isUnknown = false) {
+    const section = document.createElement('div');
+    const sectionClass = `config-section section-${sectionName.toLowerCase().replace('_', '')}`;
+    section.className = isUnknown ? `${sectionClass} unknown-section` : sectionClass;
+    
+    // Create section header
+    const header = document.createElement('div');
+    header.className = 'config-section-header';
+    
+    const icon = document.createElement('div');
+    icon.className = 'config-section-icon';
+    icon.textContent = getSectionIcon(sectionName, isUnknown);
+    
+    const title = document.createElement('h3');
+    title.className = 'config-section-title';
+    title.textContent = formatSectionName(sectionName);
+    
+    // Add indicator for unknown sections
+    if (isUnknown) {
+        const indicator = document.createElement('span');
+        indicator.className = 'unknown-indicator';
+        indicator.textContent = ' (New)';
+        indicator.title = 'This section is not yet configured in the frontend. See config.py for instructions.';
+        title.appendChild(indicator);
+    }
+    
+    header.appendChild(icon);
+    header.appendChild(title);
+    
+    // Create config items container
+    const itemsContainer = document.createElement('div');
+    itemsContainer.className = 'config-items';
+    
+    // Process each config item in order - new variables are automatically handled
+    Object.keys(sectionData).forEach(itemName => {
+        const itemValue = sectionData[itemName];
+        const itemElement = createConfigItem(itemName, itemValue);
+        itemsContainer.appendChild(itemElement);
+    });
+    
+    section.appendChild(header);
+    section.appendChild(itemsContainer);
+    
+    return section;
+}
+
+function createConfigItem(itemName, itemValue) {
+    const row = document.createElement('div');
+    row.className = 'config-item-row';
+    
+    const label = document.createElement('div');
+    label.className = 'config-item-label';
+    label.textContent = formatConfigName(itemName);
+    
+    const value = document.createElement('div');
+    value.className = 'config-item-value';
+    
+    // Format and style value based on type
+    const formattedValue = formatConfigValue(itemValue);
+    value.textContent = formattedValue.text;
+    value.classList.add(formattedValue.type);
+    
+    // Add specific type classes for boolean values
+    if (formattedValue.type === 'boolean') {
+        value.classList.add(itemValue.toString());
+    }
+    
+    row.appendChild(label);
+    row.appendChild(value);
+    
+    return row;
+}
+
+function formatConfigValue(value) {
+    if (value === null || value === undefined) {
+        return { text: 'null', type: 'null' };
+    }
+    
+    if (typeof value === 'boolean') {
+        return { text: value.toString(), type: 'boolean' };
+    }
+    
+    if (typeof value === 'number') {
+        return { text: value.toString(), type: 'number' };
+    }
+    
+    if (Array.isArray(value)) {
+        const displayText = value.length === 0 ? '[]' : `[${value.join(', ')}]`;
+        return { text: displayText, type: 'array' };
+    }
+    
+    if (typeof value === 'string') {
+        // Handle empty strings
+        if (value === '') {
+            return { text: '""', type: 'string' };
+        }
+        return { text: value, type: 'string' };
+    }
+    
+    // Fallback for objects or other types
+    return { text: JSON.stringify(value), type: 'object' };
+}
+
+function formatConfigName(configName) {
+    // Convert UPPER_CASE_WITH_UNDERSCORES to readable format
+    return configName
+        .split('_')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+        .join(' ');
+}
+
+function formatSectionName(sectionName) {
+    // Handle special cases and format section names
+    const specialCases = {
+        'CO2_Alarm': 'CO₂ Alarm',
+        'I2C': 'I²C',
+        'NTP': 'NTP',
+        'WIFI': 'WiFi',
+        'UI_Logging': 'UI Logging',
+        'RFID': 'RFID'
+    };
+    
+    if (specialCases[sectionName]) {
+        return specialCases[sectionName];
+    }
+    
+    // Convert section name to readable format
+    return sectionName
+        .split('_')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+        .join(' ');
+}
+
+function getSectionIcon(sectionName, isUnknown = false) {
+    const iconMap = {
+        'Logging': '📝',
+        'IO': '🔌',
+        'WIFI': '📶',
+        'NTP': '🕐',
+        'Pinger': '📡',
+        'Web': '🌐',
+        'Space': '🏢',
+        'I2C': '🔗',
+        'Sensors': '🌡️',
+        'CO2_Alarm': '🚨',
+        'Sensor_Logging': '📊',
+        'Displays': '🖥️',
+        'RFID': '💳',
+        'UI_Logging': '📋',
+        'Overclocking': '⚡'
+    };
+    
+    // Return specific icon if known, otherwise return default or new section indicator
+    if (iconMap[sectionName]) {
+        return iconMap[sectionName];
+    } else if (isUnknown) {
+        return '🆕'; // New section indicator
+    } else {
+        return '⚙️'; // Default fallback
+    }
+}
+
+function showConfigurationError(errorMessage) {
+    const container = document.getElementById('runtimeConfigContainer');
+    
+    if (!container) return;
+    
+    container.innerHTML = `
+        <div class="error-message">
+            <div class="error-icon">❌</div>
+            <div class="error-text">
+                Failed to load configuration: ${errorMessage}
+            </div>
+        </div>
+    `;
+}
