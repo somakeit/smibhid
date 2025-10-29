@@ -134,6 +134,9 @@ Example: `LOG_HANDLERS = ["Console", "File"]`
 #### Log file max size
 Set the LOG_FILE_MAX_SIZE value in config.py to set the maximum size of the log file in bytes before rotating. The log rotator will create a maximum of 2 files at this size, so configure appropriately for anticipated flash free space.
 
+#### Viewing in the Web UI and API
+The log files can be read using the API and the web UI leverages this to display logs on the system info page to allow log review without stopping the device and connecting to a PC.
+
 Example: `LOG_FILE_MAX_SIZE = 10240`
 
 ### Error handling

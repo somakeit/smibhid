@@ -221,18 +221,22 @@ class Sensors:
         self.log.info("Starting sensor polling")
         
         while True:
-            readings = self.get_readings()
-            self.log.info(f"Sensor readings: {readings}")
-            
-            if len(readings) > 0:
-                if self.alarm.enabled:
-                    self.alarm.assess_co2_alarm(readings)
+            try:
+                readings = self.get_readings()
+                self.log.info(f"Sensor readings: {readings}")
+                
+                if len(readings) > 0:
+                    if self.alarm.enabled:
+                        self.alarm.assess_co2_alarm(readings)
 
-                self.update_display_and_log_cache(readings)
-                await self.async_gather_and_push_all_readings(readings)
+                    self.update_display_and_log_cache(readings)
+                    await self.async_gather_and_push_all_readings(readings)
+                
+                else:
+                    self.log.error("No sensor readings available")
             
-            else:
-                self.log.error("No sensor readings available")
+            except Exception as e:
+                self.log.error(f"Error in sensor polling cycle: {e}")
             
             await sleep(60)
     

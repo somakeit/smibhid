@@ -1,5 +1,5 @@
 from smibhid_http.webserver import Webserver
-from lib.ulogging import uLogger
+from lib.ulogging import uLogger, File
 from lib.module_config import ModuleConfig
 from json import dumps
 from asyncio import run, create_task
@@ -30,6 +30,7 @@ class WebApp:
         """
         self.log = uLogger("Web app")
         self.log.info("Init webserver")
+        self.logging_file = File()
         self.app = Webserver()
         self.hid: 'HID' = hid
         self.wifi: 'WirelessNetwork' = module_config.get_wifi()
@@ -234,6 +235,8 @@ class WebApp:
         
         self.app.add_resource(SpaceStateConfiguration, '/api/space/state/config/poll_period', space_state = self.hid.space_state, logger = self.log)
         self.app.add_resource(SpaceStateConfiguration, '/api/space/state/config/poll_period/<value>', space_state = self.hid.space_state, logger = self.log)
+
+        self.app.add_resource(Logging, '/api/logs/read', logger = self.log, File = self.logging_file)
 
         self.app.add_resource(SMIBHIDConfiguration, '/api/configuration/list', logger = self.log)
         
@@ -515,4 +518,48 @@ class SMIBHIDConfiguration():
             html = dumps({"error": f"Failed to get configuration list: {e}"})
         
         logger.info(f"Return value: {html}")
+        return html
+
+class SMIBHIDConfiguration():
+
+    def get(self, data, logger: uLogger) -> str:
+        """
+        Get the current SMIBHID configuration as a JSON object.
+        The configuration layout is built dynamically based on the CONFIG_SECTIONS
+        """
+        logger.info("API request - GET /api/configuration/list")
+        try:
+            # Build configuration dictionary using CONFIG_SECTIONS structure
+            configuration = {}
+            
+            for section_name, config_items in config.CONFIG_SECTIONS.items():
+                section_config = {}
+                for config_item in config_items:
+                    try:
+                        # Get the value from the config module
+                        section_config[config_item] = getattr(config, config_item)
+                    except AttributeError:
+                        logger.warn(f"Configuration item '{config_item}' not found in config module")
+                        section_config[config_item] = None
+                
+                configuration[section_name] = section_config
+            
+            html = dumps(configuration)
+        except Exception as e:
+            logger.error(f"Failed to get configuration list: {e}")
+            html = dumps({"error": f"Failed to get configuration list: {e}"})
+        
+        logger.info(f"Return value: {html}")
+        return html
+
+class Logging():
+    def get(self, data, logger: uLogger, File: File) -> str:
+        logger.info("API request - GET /api/logs/read")
+        try:
+            log_contents = File.read_logs()
+            html = dumps({"log": log_contents})
+        except Exception as e:
+            logger.error(f"Failed to read log file: {e}")
+            html = dumps(f"Failed to read log file: {e}")
+        logger.info("Returning log contents")
         return html
