@@ -495,9 +495,10 @@ class SMIBHIDConfiguration():
         """
         Get the current SMIBHID configuration as a JSON object.
         The configuration layout is built dynamically based on the CONFIG_SECTIONS.
-        This implementation uses OrderedDict for both the overall configuration and
-        each section so the order of sections and the order of variables within
-        each section exactly match the order defined in config.CONFIG_SECTIONS.
+        Note: In modern Python (>=3.7) and MicroPython (>=1.12), regular dicts preserve insertion order,
+        so using OrderedDict is not strictly necessary for order preservation. OrderedDict is used here
+        for compatibility with older Python/MicroPython versions. The order of sections and the order of
+        variables within each section will match the order defined in config.CONFIG_SECTIONS.
         """
         logger.info("API request - GET /api/configuration/list")
         try:
