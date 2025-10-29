@@ -1,5 +1,5 @@
 from smibhid_http.webserver import Webserver
-from lib.ulogging import uLogger
+from lib.ulogging import uLogger, File
 from lib.module_config import ModuleConfig
 from json import dumps
 from asyncio import run, create_task
@@ -30,6 +30,7 @@ class WebApp:
         """
         self.log = uLogger("Web app")
         self.log.info("Init webserver")
+        self.logging_file = File()
         self.app = Webserver()
         self.hid: 'HID' = hid
         self.wifi: 'WirelessNetwork' = module_config.get_wifi()
@@ -234,6 +235,8 @@ class WebApp:
         
         self.app.add_resource(SpaceStateConfiguration, '/api/space/state/config/poll_period', space_state = self.hid.space_state, logger = self.log)
         self.app.add_resource(SpaceStateConfiguration, '/api/space/state/config/poll_period/<value>', space_state = self.hid.space_state, logger = self.log)
+
+        self.app.add_resource(Logging, '/api/logs/read', logger = self.log, File = self.logging_file)
         
 
 class WLANMAC():
@@ -481,4 +484,16 @@ class SpaceStateConfiguration():
             html = dumps(f"Failed to set space state poll period: {e}")
 
         logger.info(f"Return value: {html}")
+        return html
+
+class Logging():
+    def get(self, data, logger: uLogger, File: File) -> str:
+        logger.info("API request - GET /api/logs/read")
+        try:
+            log_contents = File.read_logs()
+            html = dumps({"log": log_contents})
+        except Exception as e:
+            logger.error(f"Failed to read log file: {e}")
+            html = dumps(f"Failed to read log file: {e}")
+        logger.info("Returning log contents")
         return html

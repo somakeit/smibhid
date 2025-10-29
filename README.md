@@ -30,7 +30,7 @@ Press the space_open or space_closed buttons to call the smib server endpoint ap
   - Firmware Update page for performing over the air firmware updates and remote reset to apply them
   - Configuration management page for viewing and updating certain configuration parameters
     - Get and set space state poll period
-  - System status page for viewing basic device information and remotely resetting the device
+  - System status page for viewing basic device information, viewing the log files and remotely resetting the device
 - Pinger watchdog - Optionally ping an IP address and toggle a GPIO pin on ping failure. Useful for network device monitoring and reset.
 - Extensible sensor module framework for async polling of I2C sensors and presentation of sensors and readings on the web API and recording to log file
   - Supported sensors
@@ -131,6 +131,9 @@ Example: `LOG_HANDLERS = ["Console", "File"]`
 
 #### Log file max size
 Set the LOG_FILE_MAX_SIZE value in config.py to set the maximum size of the log file in bytes before rotating. The log rotator will create a maximum of 2 files at this size, so configure appropriately for anticipated flash free space.
+
+#### Viewing in the Web UI and API
+The log files can be read using the API and the web UI leverages this to display logs on the system info page to allow log review without stopping the device and connecting to a PC.
 
 Example: `LOG_FILE_MAX_SIZE = 10240`
 
