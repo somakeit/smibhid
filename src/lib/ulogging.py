@@ -119,3 +119,22 @@ class File:
         
         rename(self.log_file, self.second_log_file)
     
+    def read_logs(self) -> str:
+        """ 
+        Read both log files and return their contents as a single string.
+        """
+        logs = ""
+        try:
+            with open(self.second_log_file, "r") as log_file:
+                logs += log_file.read()
+        except OSError:
+            pass
+        
+        try:
+            with open(self.log_file, "r") as log_file:
+                logs += log_file.read()
+        except OSError:
+            pass
+        
+        return logs
+    
