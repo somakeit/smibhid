@@ -502,7 +502,7 @@ class SMIBHIDConfiguration():
         """
         logger.info("API request - GET /api/configuration/list")
         try:
-            # Use OrderedDict so insertion order (as defined in CONFIG_SECTIONS) is preserved
+            # OrderedDict is used for explicitness and compatibility with older MicroPython versions; in v1.25.0+ regular dicts also preserve insertion order
             configuration = OrderedDict()
 
             for section_name, config_items in config.CONFIG_SECTIONS.items():
