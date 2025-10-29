@@ -113,7 +113,7 @@ CLOCK_FREQUENCY = 250000000
 #       - Add icon to getSectionIcon() function (line ~580)
 #       - Add special name formatting to formatSectionName() if needed (line ~560)
 #    c) Update CSS file: src/smibhid_http/www/css/configuration.css
-#       - Add section color in the "Section icons mapping" section (line ~180)
+#       - Add section color in the "Section icons mapping" section (line 588)
 #
 # 3. SECTION ORDER:
 #    The order of sections below determines the display order in the web UI.
