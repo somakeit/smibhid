@@ -496,7 +496,7 @@ function renderRuntimeConfiguration(configData) {
 
 function createConfigSection(sectionName, sectionData, isUnknown = false) {
     const section = document.createElement('div');
-    const sectionClass = `config-section section-${sectionName.toLowerCase().replace('_', '')}`;
+    const sectionClass = `config-section section-${sectionName.toLowerCase().replace(/_/g, '')}`;
     section.className = isUnknown ? `${sectionClass} unknown-section` : sectionClass;
     
     // Create section header
