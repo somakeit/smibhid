@@ -5,7 +5,7 @@ from json import dumps
 from asyncio import run, create_task
 from lib.updater import UpdateCore
 from lib.sensors.file_logging import FileLogger
-from config import DEFAULT_CO2_CALIBRATION_VALUE
+import config
 
 try:
     from typing import TYPE_CHECKING
@@ -237,6 +237,8 @@ class WebApp:
         self.app.add_resource(SpaceStateConfiguration, '/api/space/state/config/poll_period/<value>', space_state = self.hid.space_state, logger = self.log)
 
         self.app.add_resource(Logging, '/api/logs/read', logger = self.log, File = self.logging_file)
+
+        self.app.add_resource(SMIBHIDConfiguration, '/api/configuration/list', logger = self.log)
         
 
 class WLANMAC():
@@ -375,7 +377,7 @@ class SCD30():
             
             if value == 0:
                 logger.info("Setting SCD30 calibration to default value")
-                value = DEFAULT_CO2_CALIBRATION_VALUE
+                value = config.DEFAULT_CO2_CALIBRATION_VALUE
                 logger.info(f"Default calibration value: {value}")
             logger.info(f"API request - sensors/scd30/calibration/{value}")
             
@@ -483,6 +485,70 @@ class SpaceStateConfiguration():
             logger.error(f"Failed to set space state poll period: {e}")
             html = dumps(f"Failed to set space state poll period: {e}")
 
+        logger.info(f"Return value: {html}")
+        return html
+
+class SMIBHIDConfiguration():
+
+    def get(self, data, logger: uLogger) -> str:
+        """
+        Get the current SMIBHID configuration as a JSON object.
+        The configuration layout is built dynamically based on the CONFIG_SECTIONS
+        """
+        logger.info("API request - GET /api/configuration/list")
+        try:
+            # Build configuration dictionary using CONFIG_SECTIONS structure
+            configuration = {}
+            
+            for section_name, config_items in config.CONFIG_SECTIONS.items():
+                section_config = {}
+                for config_item in config_items:
+                    try:
+                        # Get the value from the config module
+                        section_config[config_item] = getattr(config, config_item)
+                    except AttributeError:
+                        logger.warn(f"Configuration item '{config_item}' not found in config module")
+                        section_config[config_item] = None
+                
+                configuration[section_name] = section_config
+            
+            html = dumps(configuration)
+        except Exception as e:
+            logger.error(f"Failed to get configuration list: {e}")
+            html = dumps({"error": f"Failed to get configuration list: {e}"})
+        
+        logger.info(f"Return value: {html}")
+        return html
+
+class SMIBHIDConfiguration():
+
+    def get(self, data, logger: uLogger) -> str:
+        """
+        Get the current SMIBHID configuration as a JSON object.
+        The configuration layout is built dynamically based on the CONFIG_SECTIONS
+        """
+        logger.info("API request - GET /api/configuration/list")
+        try:
+            # Build configuration dictionary using CONFIG_SECTIONS structure
+            configuration = {}
+            
+            for section_name, config_items in config.CONFIG_SECTIONS.items():
+                section_config = {}
+                for config_item in config_items:
+                    try:
+                        # Get the value from the config module
+                        section_config[config_item] = getattr(config, config_item)
+                    except AttributeError:
+                        logger.warn(f"Configuration item '{config_item}' not found in config module")
+                        section_config[config_item] = None
+                
+                configuration[section_name] = section_config
+            
+            html = dumps(configuration)
+        except Exception as e:
+            logger.error(f"Failed to get configuration list: {e}")
+            html = dumps({"error": f"Failed to get configuration list: {e}"})
+        
         logger.info(f"Return value: {html}")
         return html
 

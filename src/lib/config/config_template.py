@@ -96,3 +96,43 @@ ENABLE_UI_LOGGING_UPLOAD = False
 
 ## Overclocking - Pico1 default 133MHz, Pico2 default 150MHz
 CLOCK_FREQUENCY = 250000000
+
+## Configuration sections for API output
+# 
+# This dictionary defines the logical grouping and order of configuration variables
+# for the web UI and API responses. When adding new configuration variables:
+#
+# 1. ADD NEW VARIABLES TO EXISTING SECTIONS:
+#    Simply add the variable name to the appropriate list below.
+#    The frontend will automatically pick up new variables.
+#
+# 2. ADD NEW SECTIONS:
+#    a) Add the new section here with its variables
+#    b) Update the frontend JavaScript file: src/smibhid_http/www/js/configuration.js
+#       - Add to SECTION_ORDER array (line ~440)  
+#       - Add icon to getSectionIcon() function (line ~580)
+#       - Add special name formatting to formatSectionName() if needed (line ~560)
+#    c) Update CSS file: src/smibhid_http/www/css/configuration.css
+#       - Add section color in the "Section icons mapping" section (line 588)
+#
+# 3. SECTION ORDER:
+#    The order of sections below determines the display order in the web UI.
+#    Reorder sections here to change the display order.
+#
+CONFIG_SECTIONS = {
+    "Logging": ["LOG_LEVEL", "LOG_HANDLERS", "LOG_FILE_MAX_SIZE"],
+    "IO": ["SPACE_OPEN_BUTTON", "SPACE_CLOSED_BUTTON", "SPACE_OPEN_LED", "SPACE_CLOSED_LED", "SPACE_OPEN_RELAY", "SPACE_OPEN_RELAY_ACTIVE_HIGH"],
+    "WIFI": ["WIFI_SSID", "WIFI_PASSWORD", "WIFI_COUNTRY", "WIFI_CONNECT_TIMEOUT_SECONDS", "WIFI_CONNECT_RETRIES", "WIFI_RETRY_BACKOFF_SECONDS", "CUSTOM_HOSTNAME"],
+    "NTP": ["NTP_SYNC_INTERVAL_SECONDS"],
+    "Pinger": ["PINGER_WATCHDOG_IP", "PINGER_WATCHDOG_INTERVAL_SECONDS", "PINGER_WATCHDOG_RETRY_COUNT", "PINGER_WATCHDOG_RELAY_PIN", "PINGER_WATCHDOG_RELAY_ACTIVE_HIGH", "PINGER_WATCHDOG_TOGGLE_DURATION_MS"],
+    "Web": ["WEBSERVER_HOST", "WEBSERVER_PORT"],
+    "Space": ["SPACE_STATE_POLL_PERIOD_S", "ADD_HOURS_INPUT_TIMEOUT"],
+    "I2C": ["SDA_PIN", "SCL_PIN", "I2C_ID", "I2C_FREQ"],
+    "Sensors": ["SENSOR_MODULES", "DEFAULT_CO2_CALIBRATION_VALUE"],
+    "CO2_Alarm": ["CO2_ALARM_THRESHOLD_PPM", "CO2_ALARM_RESET_THRESHOLD_PPM", "CO2_ALARM_SNOOZE_DURATION_S", "CO2_ALARM_SILENCE_WINDOW_START_HOUR", "CO2_ALARM_SILENCE_WINDOW_END_HOUR", "CO2_ALARM_LED_PIN", "CO2_ALARM_BUZZER_PIN", "CO2_ALARM_SNOOZE_BUTTON_PIN"],
+    "Sensor_Logging": ["SENSOR_LOGGING_ENABLED", "SENSOR_LOG_CACHE_ENABLED", "SENSOR_LOG_FILE_MAX_SIZE"],
+    "Displays": ["DISPLAY_DRIVERS", "SCROLL_SPEED"],
+    "RFID": ["RFID_ENABLED", "RFID_SCK", "RFID_MOSI", "RFID_MISO", "RFID_RST", "RFID_CS"],
+    "UI_Logging": ["ENABLE_UI_LOGGING_UPLOAD"],
+    "Overclocking": ["CLOCK_FREQUENCY"],
+}

@@ -68,6 +68,24 @@
                     <!-- Future configuration panels can be added here -->
                 </div>
 
+                <!-- Runtime Configuration Section -->
+                <section class="runtime-config-section">
+                    <div class="section-header">
+                        <div class="section-icon">⚙️</div>
+                        <h2>Runtime Configuration</h2>
+                    </div>
+                    <p class="section-description">
+                        Current configuration values loaded from the device. This shows the actual runtime configuration that was active on main.py load.
+                    </p>
+                    
+                    <div id="runtimeConfigContainer" class="runtime-config-container">
+                        <div class="loading-placeholder">
+                            <div class="loading-spinner"></div>
+                            <span>Loading configuration...</span>
+                        </div>
+                    </div>
+                </section>
+
                 <!-- Navigation section -->
                 <div class="navigation-section">
                     <a href="/update" class="nav-link">← Firmware Update</a>

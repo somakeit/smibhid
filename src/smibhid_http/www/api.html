@@ -224,6 +224,34 @@
                             <td>Get the contents of the log files.</td>
                         </tr>
                         </tr>
+                        <tr>
+                            <td><a href="/api/configuration/list">/api/configuration/list</a></td>
+                            <td>GET</td>
+                            <td>
+                                <strong>Example Response Structure:</strong>
+                                <pre><code>{
+  "Logging": {
+    "LOG_LEVEL": 2,
+    "LOG_HANDLERS": ["Console", "File"],
+    "LOG_FILE_MAX_SIZE": 10240
+  },
+  "WIFI": {
+    "WIFI_SSID": "MyNetwork",
+    "WIFI_PASSWORD": "password123",
+    "WIFI_COUNTRY": "GB",
+    "WIFI_CONNECT_TIMEOUT_SECONDS": 10,
+    "CUSTOM_HOSTNAME": null
+  },
+  "Sensors": {
+    "SENSOR_MODULES": ["BME280", "SCD30"],
+    "DEFAULT_CO2_CALIBRATION_VALUE": 427
+  }
+  // ... additional sections
+                                }</code></pre>
+                                <em>Returns all configuration sections with their respective key-value pairs. Order is preserved as defined in CONFIG_SECTIONS.</em>
+                            </td>
+                            <td>Get the current SMIBHID configuration as a JSON object, grouped by section. Returns all configuration variables organized by their logical sections (Logging, IO, WIFI, Sensors, etc.).</td>
+                        </tr>
                     </table>
                 </div>
             </section>
