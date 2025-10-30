@@ -2,6 +2,7 @@ from smibhid_http.webserver import Webserver
 from lib.ulogging import uLogger, File
 from lib.module_config import ModuleConfig
 from json import dumps
+from collections import OrderedDict
 from asyncio import run, create_task
 from lib.updater import UpdateCore
 from lib.sensors.file_logging import FileLogger
@@ -493,15 +494,19 @@ class SMIBHIDConfiguration():
     def get(self, data, logger: uLogger) -> str:
         """
         Get the current SMIBHID configuration as a JSON object.
-        The configuration layout is built dynamically based on the CONFIG_SECTIONS
+        The configuration layout is built dynamically based on the CONFIG_SECTIONS.
+        Note: In modern Python (>=3.7) and MicroPython (>=1.12), regular dicts preserve insertion order,
+        so using OrderedDict is not strictly necessary for order preservation. OrderedDict is used here
+        for compatibility with older Python/MicroPython versions. The order of sections and the order of
+        variables within each section will match the order defined in config.CONFIG_SECTIONS.
         """
         logger.info("API request - GET /api/configuration/list")
         try:
-            # Build configuration dictionary using CONFIG_SECTIONS structure
-            configuration = {}
-            
+            # OrderedDict is used for explicitness and compatibility with older MicroPython versions; in v1.25.0+ regular dicts also preserve insertion order
+            configuration = OrderedDict()
+
             for section_name, config_items in config.CONFIG_SECTIONS.items():
-                section_config = {}
+                section_config = OrderedDict()
                 for config_item in config_items:
                     try:
                         # Get the value from the config module
@@ -509,46 +514,14 @@ class SMIBHIDConfiguration():
                     except AttributeError:
                         logger.warn(f"Configuration item '{config_item}' not found in config module")
                         section_config[config_item] = None
-                
+
                 configuration[section_name] = section_config
-            
+
             html = dumps(configuration)
         except Exception as e:
             logger.error(f"Failed to get configuration list: {e}")
             html = dumps({"error": f"Failed to get configuration list: {e}"})
-        
-        logger.info(f"Return value: {html}")
-        return html
 
-class SMIBHIDConfiguration():
-
-    def get(self, data, logger: uLogger) -> str:
-        """
-        Get the current SMIBHID configuration as a JSON object.
-        The configuration layout is built dynamically based on the CONFIG_SECTIONS
-        """
-        logger.info("API request - GET /api/configuration/list")
-        try:
-            # Build configuration dictionary using CONFIG_SECTIONS structure
-            configuration = {}
-            
-            for section_name, config_items in config.CONFIG_SECTIONS.items():
-                section_config = {}
-                for config_item in config_items:
-                    try:
-                        # Get the value from the config module
-                        section_config[config_item] = getattr(config, config_item)
-                    except AttributeError:
-                        logger.warn(f"Configuration item '{config_item}' not found in config module")
-                        section_config[config_item] = None
-                
-                configuration[section_name] = section_config
-            
-            html = dumps(configuration)
-        except Exception as e:
-            logger.error(f"Failed to get configuration list: {e}")
-            html = dumps({"error": f"Failed to get configuration list: {e}"})
-        
         logger.info(f"Return value: {html}")
         return html
 
