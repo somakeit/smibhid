@@ -19,7 +19,7 @@ class BH1750(SensorModule):
     
     RESOLUTION_HIGH = const(0)
     RESOLUTION_HIGH_2 = const(1)
-    RESOLUTION_LOW = const(2)
+    RESOLUTION_LOW = const(3)
     
     MEASUREMENT_TIME_DEFAULT = const(69)
     MEASUREMENT_TIME_MIN = const(31)
@@ -72,7 +72,7 @@ class BH1750(SensorModule):
                 
         buffer[0] = self._measurement_mode << 4 | self._resolution
         self._i2c.writeto(self._address, buffer)
-        sleep_ms(24 if self._measurement_time == BH1750.RESOLUTION_LOW else 180)
+        sleep_ms(24 if self._resolution == BH1750.RESOLUTION_LOW else 180)
         
     def reset(self):
         """Clear the illuminance data register."""
