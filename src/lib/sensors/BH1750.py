@@ -121,7 +121,7 @@ class BH1750(SensorModule):
             yield self.measurement
             
             if self._measurement_mode == BH1750.MEASUREMENT_MODE_CONTINUOUSLY:
-                base_measurement_time = 16 if self._measurement_time == BH1750.RESOLUTION_LOW else 120
+                base_measurement_time = 16 if self._resolution == BH1750.RESOLUTION_LOW else 120
                 sleep_ms(math.ceil(base_measurement_time * self._measurement_time / BH1750.MEASUREMENT_TIME_DEFAULT))
     
     def get_reading(self) -> dict[str, float]:
