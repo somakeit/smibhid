@@ -6,7 +6,7 @@ from micropython import const
 from utime import sleep_ms
 from lib.sensors.sensor_module import SensorModule
 
-BH1750_I2CADDR = 0x76
+BH1750_I2CADDR = 0x23
 
 class BH1750(SensorModule):
     """Class for the BH1750 digital Ambient Light Sensor
