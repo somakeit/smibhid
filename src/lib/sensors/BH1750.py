@@ -107,7 +107,7 @@ class BH1750(SensorModule):
         else:
             return lux
     
-    def measurements(self) -> float:
+    def measurements(self):
         """This is a generator function that continues to provide the latest measurement. Because the measurement time
         is greatly affected by resolution and the configured measurement time, this function attemts to calculate the
         appropriate sleep time between measurements.
