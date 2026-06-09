@@ -221,7 +221,7 @@
                             <td>
                                 
                             </td>
-                            <td>Get the current light-based state. Returns True if light level is above threshold (space "open"), False if below threshold (space "closed"), or None if not configured/unavailable.</td>
+                            <td>Get the current light-based state. Returns JSON: {"light_state": true/false/null}, where true indicates light level is above threshold (space "open"), false indicates below threshold (space "closed"), or null if not configured/unavailable.</td>
                         </tr>
                         <tr>
                             <td><a href="/api/space/light/value">/api/space/light/value</a></td>
@@ -229,7 +229,7 @@
                             <td>
                                 
                             </td>
-                            <td>Get the light level value (in lux) that was used when the space light state was last calculated. Returns the cached light value or None if sensor not configured/unavailable. For latest live sensor readings, use /api/sensors/readings/latest instead.</td>
+                            <td>Get the light level value that was used when the space light state was last calculated. Returns JSON: {"light_value_lux": number/null}, where the value is in lux or null if sensor not configured/unavailable. For latest live sensor readings, use /api/sensors/readings/latest instead.</td>
                         </tr>
                         <tr>
                             <td><a href="/api/space/light/threshold">/api/space/light/threshold</a></td>
@@ -237,7 +237,7 @@
                             <td>
                                 
                             </td>
-                            <td>Get the current light threshold value in lux. Returns the threshold or None if disabled.</td>
+                            <td>Get the current light threshold value. Returns JSON: {"light_threshold_lux": number/null}, where the value is in lux or null if disabled.</td>
                         </tr>
                         <tr>
                             <td>/api/space/light/threshold/{value}</td>
