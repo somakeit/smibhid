@@ -44,6 +44,12 @@ class BH1750(SensorModule):
         resolution -- return measurements in either high, high2 or low resolution
         measurement_time -- the duration of a single measurement
         """
+        if measurement_mode not in (BH1750.MEASUREMENT_MODE_CONTINUOUSLY, BH1750.MEASUREMENT_MODE_ONE_TIME):
+            raise ValueError("measurement_mode must be either MEASUREMENT_MODE_CONTINUOUSLY (1) or MEASUREMENT_MODE_ONE_TIME (2)")
+        
+        if resolution not in (BH1750.RESOLUTION_HIGH, BH1750.RESOLUTION_HIGH_2, BH1750.RESOLUTION_LOW):
+            raise ValueError("resolution must be RESOLUTION_HIGH (0), RESOLUTION_HIGH_2 (1), or RESOLUTION_LOW (3)")
+        
         if measurement_time not in range(BH1750.MEASUREMENT_TIME_MIN, BH1750.MEASUREMENT_TIME_MAX + 1):
             raise ValueError("measurement_time must be between {0} and {1}"
                              .format(BH1750.MEASUREMENT_TIME_MIN, BH1750.MEASUREMENT_TIME_MAX))
