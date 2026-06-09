@@ -262,6 +262,7 @@ setattr(asyncio, 'sleep_ms', sleep_ms)
 
 setattr(time, 'ticks_ms', mock_ticks_ms)
 setattr(time, 'ticks_diff', mock_ticks_diff)
+setattr(time, 'sleep_ms', lambda ms: time.sleep(ms / 1000.0))  # Convert ms to seconds for CPython compatibility
 
 setattr(os, 'statvfs', mock_statvfs)
 setattr(os, 'uname', mock_uname)
