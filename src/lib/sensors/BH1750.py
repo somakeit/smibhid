@@ -109,7 +109,7 @@ class BH1750(SensorModule):
     
     def measurements(self):
         """This is a generator function that continues to provide the latest measurement. Because the measurement time
-        is greatly affected by resolution and the configured measurement time, this function attemts to calculate the
+        is greatly affected by resolution and the configured measurement time, this function attempts to calculate the
         appropriate sleep time between measurements.
 
         Example usage:
