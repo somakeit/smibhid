@@ -111,8 +111,12 @@ class BH1750(SensorModule):
         """This is a generator function that continues to provide the latest measurement. Because the measurement time
         is greatly affected by resolution and the configured measurement time, this function attempts to calculate the
         appropriate sleep time between measurements.
+        
+        NOTE: This method is preserved from the original pico-bh1750 library (https://github.com/flrrth/pico-bh1750)
+        but is NOT compatible with smibhid's asyncio event loop. It uses blocking sleep_ms() calls that will block
+        the entire event loop. For smibhid use, only one-shot measurement mode via get_reading() is supported.
 
-        Example usage:
+        Example usage (non-async code only):
 
         for measurement in bh1750.measurements():  # bh1750 is an instance of this class
             print(measurement)
