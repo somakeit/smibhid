@@ -24,6 +24,24 @@ class Wrapper:
         json_minutes = dumps({"minutes": minutes})
         await self.async_slack_api_request("PUT", "space/state/closed", json_minutes)
 
+    async def async_space_light_update(self, light_state: bool | None, light_value: float | None, threshold: float | None) -> None:
+        """Push space light state update to SMIB.
+        
+        Args:
+            light_state: True if light level is above threshold (space "open"), 
+                        False if below threshold (space "closed"), 
+                        None if not configured/unavailable
+            light_value: The light level reading in lux
+            threshold: The configured threshold value in lux
+        """
+        payload = {
+            "light_state": light_state,
+            "light_value_lux": light_value,
+            "threshold_lux": threshold
+        }
+        json_payload = dumps(payload)
+        await self.async_slack_api_request("PUT", "space/light/state", json_payload)
+
     async def async_get_space_state(self) -> bool | None:
         """Call space_state and return boolean: True = Open, False = closed."""
         response = await self.async_slack_api_request("GET", "space/state")

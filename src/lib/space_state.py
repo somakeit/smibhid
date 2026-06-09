@@ -482,6 +482,18 @@ class SpaceState:
                         f"Light state changed: {old_light_state} -> {self.space_light_state} "
                         f"(light={light_level:.2f}lx, threshold={config.SPACE_OPEN_LIGHT_THRESHOLD_LX}lx)"
                     )
+                    # Push light state change to SMIB
+                    try:
+                        create_task(
+                            self.slack_api.async_space_light_update(
+                                self.space_light_state,
+                                self.space_light_value,
+                                config.SPACE_OPEN_LIGHT_THRESHOLD_LX
+                            )
+                        )
+                        self.log.info("Light state update pushed to SMIB")
+                    except Exception as e:
+                        self.log.error(f"Failed to push light state update to SMIB: {e}")
                 else:
                     self.log.info(
                         f"Light level: {light_level:.2f}lx, state: {self.space_light_state} "
