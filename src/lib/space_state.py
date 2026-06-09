@@ -157,9 +157,9 @@ class SpaceState:
         try:
             self.sensors = self.module_config.get_sensors()
             self.log.info("Sensors module loaded for light level detection")
-        except Exception:
+        except Exception as e:
             self.sensors = None
-            self.log.warn("Sensors module not available for light level detection")
+            self.log.warn(f"Sensors module not available for light level detection: {e}")
         
         self.log.info(f"Starting {self.open_button.get_name()} button watcher")
         create_task(self.open_button.wait_for_press())
