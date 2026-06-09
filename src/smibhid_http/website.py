@@ -237,6 +237,11 @@ class WebApp:
         self.app.add_resource(SpaceStateConfiguration, '/api/space/state/config/poll_period', space_state = self.hid.space_state, logger = self.log)
         self.app.add_resource(SpaceStateConfiguration, '/api/space/state/config/poll_period/<value>', space_state = self.hid.space_state, logger = self.log)
 
+        self.app.add_resource(SpaceLightState, '/api/space/light/state', space_state = self.hid.space_state, logger = self.log)
+        self.app.add_resource(SpaceLightValue, '/api/space/light/value', space_state = self.hid.space_state, logger = self.log)
+        self.app.add_resource(SpaceLightThreshold, '/api/space/light/threshold', space_state = self.hid.space_state, logger = self.log)
+        self.app.add_resource(SpaceLightThreshold, '/api/space/light/threshold/<value>', space_state = self.hid.space_state, logger = self.log)
+
         self.app.add_resource(Logging, '/api/logs/read', logger = self.log, File = self.logging_file)
 
         self.app.add_resource(SMIBHIDConfiguration, '/api/configuration/list', logger = self.log)
@@ -485,6 +490,67 @@ class SpaceStateConfiguration():
         except Exception as e:
             logger.error(f"Failed to set space state poll period: {e}")
             html = dumps(f"Failed to set space state poll period: {e}")
+
+        logger.info(f"Return value: {html}")
+        return html
+
+class SpaceLightState():
+    def get(self, data, space_state: SpaceState, logger: uLogger) -> str:
+        logger.info("API request - GET /api/space/light/state")
+        try:
+            light_state = space_state.get_space_light_state()
+            html = dumps({"light_state": light_state})
+        except Exception as e:
+            logger.error(f"Failed to get space light state: {e}")
+            html = dumps({"error": f"Failed to get space light state: {e}"})
+        logger.info(f"Return value: {html}")
+        return html
+
+class SpaceLightValue():
+    def get(self, data, space_state: SpaceState, logger: uLogger) -> str:
+        logger.info("API request - GET /api/space/light/value")
+        try:
+            light_value = space_state.get_space_light_value()
+            html = dumps({"light_value_lux": light_value})
+        except Exception as e:
+            logger.error(f"Failed to get space light value: {e}")
+            html = dumps({"error": f"Failed to get space light value: {e}"})
+        logger.info(f"Return value: {html}")
+        return html
+
+class SpaceLightThreshold():
+    def get(self, data, space_state: SpaceState, logger: uLogger) -> str:
+        logger.info("API request - GET /api/space/light/threshold")
+        try:
+            threshold = config.SPACE_OPEN_LIGHT_THRESHOLD_LX
+            html = dumps({"light_threshold_lux": threshold})
+        except Exception as e:
+            logger.error(f"Failed to get light threshold: {e}")
+            html = dumps({"error": f"Failed to get light threshold: {e}"})
+        logger.info(f"Return value: {html}")
+        return html
+
+    def put(self, data, value: str, space_state: SpaceState, logger: uLogger) -> str:
+        logger.info(f"API request - PUT /api/space/light/threshold/{value}")
+        try:
+            # Allow setting to None by passing 'none' or '0'
+            if value.lower() == 'none' or value == '0':
+                config.SPACE_OPEN_LIGHT_THRESHOLD_LX = None
+                logger.info("Light threshold disabled (set to None)")
+            else:
+                threshold = float(value)
+                if threshold < 0:
+                    raise ValueError("Threshold must be non-negative")
+                config.SPACE_OPEN_LIGHT_THRESHOLD_LX = threshold
+                logger.info(f"Light threshold set to: {threshold} lux")
+            
+            html = dumps({"success": True, "light_threshold_lux": config.SPACE_OPEN_LIGHT_THRESHOLD_LX})
+        except ValueError as e:
+            logger.error(f"Invalid threshold value: {e}")
+            html = dumps({"error": f"Invalid threshold value: {e}"})
+        except Exception as e:
+            logger.error(f"Failed to set light threshold: {e}")
+            html = dumps({"error": f"Failed to set light threshold: {e}"})
 
         logger.info(f"Return value: {html}")
         return html
