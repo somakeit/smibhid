@@ -16,7 +16,7 @@ SPACE_OPEN_RELAY = None
 
 # Relay active high/low config. Set to True if the relay is activated by setting the pin HIGH, False if activated by setting the pin LOW. Only applicable if SPACE_OPEN_RELAY is set to a valid GPIO pin number.
 SPACE_OPEN_RELAY_ACTIVE_HIGH = False
-# If true, the space open relay will be activated when the space is opened either by button press or light sensor threshold, if configured. If false, the relay will be driven soley by the button presses and not affected by the light sensor threshold even if configured.
+# If true, the space open relay will be activated when the space is opened either by button press or light sensor threshold, if configured. If false, the relay will be driven solely by the button presses and not affected by the light sensor threshold even if configured.
 SPACE_OPEN_RELAY_OR_WITH_LIGHT_SENSOR = False
 
 # Light level threshold for space open/closed light state changes, set to None to disable light level state changes
