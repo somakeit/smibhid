@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>SMIBHID - BH1750 Sensor Control</title>
+        <link rel="stylesheet" href="../css/style.css">
+        <link rel="stylesheet" href="../css/bh1750.css">
+        <script src="../js/common.js"></script>
+        <script src="../js/bh1750.js"></script>
+    </head>
+    
+    <body data-subtitle="BH1750 Light Sensor Control" data-footer-context="BH1750 Sensor Control">
+        <div class="container">
+            <div id="header-placeholder"></div>
+
+            <!-- Main content area -->
+            <main class="main-content">
+                <!-- Welcome section -->
+                <section class="welcome-section">
+                    <h2>BH1750 Light Sensor Management</h2>
+                    <p class="description">
+                        Configure your BH1750 digital ambient light sensor for accurate lux measurements and 
+                        space occupancy detection. The sensor continuously monitors light levels and can help 
+                        determine whether your space is open or closed based on configured thresholds.
+                    </p>
+                    <div class="sensor-info">
+                        <div class="info-item">
+                            <span class="info-icon">🎯</span>
+                            <span><strong>Resolution:</strong> 1 lux (high-res mode), 0.5 lux (high-res mode 2)</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-icon">📊</span>
+                            <span><strong>Range:</strong> 1-65535 lux</span>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Control Panels Grid -->
+                <div class="control-grid">
+                    <!-- Light Threshold Control Panel -->
+                    <div class="control-panel">
+                        <div class="panel-header">
+                            <div class="panel-icon">🌟</div>
+                            <h3>Light Threshold Configuration</h3>
+                        </div>
+                        <p>Set the light level threshold for space occupancy detection. Light levels above this threshold indicate the space is "open".</p>
+                        
+                        <div class="threshold-notice">
+                            <span class="notice-icon">💡</span>
+                            <div>
+                                <strong>Configuration Tips:</strong>
+                                <ul>
+                                    <li>Monitor typical light levels when space is occupied</li>
+                                    <li>Set threshold below typical occupied light levels</li>
+                                    <li>Consider ambient light from windows/skylights</li>
+                                    <li>Set to 0 or "none" to disable light-based detection</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div class="status-section">
+                            <div id="threshold-status" class="status-indicator">
+                                <span class="status-dot loading"></span>
+                                <span id="threshold-status-text">Loading threshold configuration...</span>
+                            </div>
+                        </div>
+
+                        <form id="thresholdForm" class="control-form">
+                            <div class="form-group">
+                                <label for="thresholdValue">Light Threshold (lux):</label>
+                                <input type="number" id="thresholdValue" name="value" min="0" max="65535" 
+                                       placeholder="100" class="form-input" step="0.1">
+                                <small class="form-help">Enter 0 to disable light-based space detection</small>
+                            </div>
+                            <button type="button" onclick="setThreshold()" class="panel-button threshold-btn">
+                                Apply Threshold
+                            </button>
+                        </form>
+
+                        <div id="thresholdResult" class="result-message"></div>
+                    </div>
+
+                    <!-- Current Readings Panel -->
+                    <div class="control-panel readings-panel">
+                        <div class="panel-header">
+                            <div class="panel-icon">📈</div>
+                            <h3>Current Readings</h3>
+                        </div>
+                        <p>Live readings from the BH1750 sensor. Values update automatically.</p>
+                        
+                        <div class="readings-grid">
+                            <div class="reading-card">
+                                <h4>Light Level</h4>
+                                <div class="reading-value" id="light-reading">-- lux</div>
+                            </div>
+                            <div class="reading-card">
+                                <h4>Light-Based State</h4>
+                                <div class="reading-value" id="space-state-reading">--</div>
+                            </div>
+                            <div class="reading-card">
+                                <h4>Current Threshold</h4>
+                                <div class="reading-value" id="threshold-reading">-- lux</div>
+                            </div>
+                        </div>
+
+                        <button class="panel-button secondary" onclick="refreshReadings()">
+                            🔄 Refresh Readings
+                        </button>
+                    </div>
+
+                    <!-- Space State Information Panel -->
+                    <div class="control-panel">
+                        <div class="panel-header">
+                            <div class="panel-icon">🔌</div>
+                            <h3>Relay State Control</h3>
+                        </div>
+                        <p>The BH1750 sensor can control the space relay output by monitoring ambient light levels.</p>
+                        
+                        <div class="state-info">
+                            <div class="state-card" id="button-state-card">
+                                <h4>Button-Based State</h4>
+                                <div class="state-value" id="button-state-value">--</div>
+                                <small class="state-description">State from physical buttons</small>
+                            </div>
+                            <div class="state-card" id="light-state-card">
+                                <h4>Light-Based State</h4>
+                                <div class="state-value" id="light-state-value">--</div>
+                                <small class="state-description">State determined by light threshold</small>
+                            </div>
+                            <div class="state-card" id="overall-state-card">
+                                <h4>Overall Relay State</h4>
+                                <div class="state-value" id="overall-state-value">--</div>
+                                <small class="state-description">Combined relay output state</small>
+                            </div>
+                        </div>
+
+                        <div class="info-note">
+                            <span class="info-icon">ℹ️</span>
+                            <span>Light-based detection can be combined with button controls using OR logic to determine the relay output state.</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Navigation -->
+                <div class="navigation-section">
+                    <a href="/sensors" class="nav-link">← Back to Sensors</a>
+                    <a href="/" class="nav-link">Dashboard</a>
+                    <a href="/api" class="nav-link">API Documentation →</a>
+                </div>
+            </main>
+
+            <div id="footer-placeholder"></div>
+        </div>
+    </body>
+</html>

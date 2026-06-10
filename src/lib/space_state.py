@@ -434,6 +434,25 @@ class SpaceState:
         """
         return self.space_light_value
 
+    def get_relay_state(self) -> bool | None:
+        """
+        Get the current calculated relay state.
+        Returns True if relay should be active (space "open"), False if inactive,
+        or None if relay is not configured.
+        This represents the actual output state of the relay based on space_state
+        and space_light_state combined with the configured OR logic.
+        """
+        if config.SPACE_OPEN_RELAY is None:
+            return None
+        
+        # Calculate relay state using the same logic as _calculate_and_set_relay_output
+        relay_state = self.space_state if self.space_state is not None else False
+        
+        if config.SPACE_OPEN_RELAY_OR_WITH_LIGHT_SENSOR and self.space_light_state is not None:
+            relay_state = relay_state or self.space_light_state
+        
+        return relay_state
+
     def _check_and_update_light_state(self) -> None:
         """
         Check the BH1750 light sensor (if configured) and update space_light_state

@@ -26,17 +26,93 @@ async function loadAvailableSensors() {
             statusIndicator.className = 'status-indicator success';
             statusText.textContent = `Sensors successfully polled - ${sensors.length} sensor(s) detected: ${sensors.join(', ')}`;
             
-            // Show relevant sensor panels
-            sensors.forEach(sensor => {
-                const panel = document.getElementById(`${sensor.toLowerCase()}-panel`);
+            // Get all sensor panels
+            const allSensorPanels = ['bme280', 'sgp30', 'scd30', 'bh1750'];
+            
+            allSensorPanels.forEach(sensorName => {
+                const panel = document.getElementById(`${sensorName}-panel`);
                 if (panel) {
                     panel.style.display = 'block';
+                    
+                    // Check if this sensor is available
+                    const isAvailable = sensors.some(s => s.toLowerCase() === sensorName);
+                    
+                    if (isAvailable) {
+                        // Sensor is available - make it fully functional
+                        panel.classList.remove('sensor-unavailable');
+                        const buttons = panel.querySelectorAll('.panel-button');
+                        buttons.forEach(btn => {
+                            btn.classList.remove('disabled');
+                            btn.style.pointerEvents = 'auto';
+                        });
+                    } else {
+                        // Sensor is not available - grey it out
+                        panel.classList.add('sensor-unavailable');
+                        const buttons = panel.querySelectorAll('.panel-button');
+                        buttons.forEach(btn => {
+                            btn.classList.add('disabled');
+                            btn.style.pointerEvents = 'none';
+                        });
+                    }
                 }
             });
+            
+            // Handle alarm panel - available only if SCD30 is present
+            const alarmPanel = document.getElementById('alarm-panel');
+            if (alarmPanel) {
+                const scd30Available = sensors.some(s => s.toLowerCase() === 'scd30');
+                if (scd30Available) {
+                    alarmPanel.classList.remove('sensor-unavailable');
+                    const buttons = alarmPanel.querySelectorAll('.panel-button');
+                    buttons.forEach(btn => {
+                        btn.classList.remove('disabled');
+                        btn.style.pointerEvents = 'auto';
+                    });
+                } else {
+                    alarmPanel.classList.add('sensor-unavailable');
+                    const buttons = alarmPanel.querySelectorAll('.panel-button');
+                    buttons.forEach(btn => {
+                        btn.classList.add('disabled');
+                        btn.style.pointerEvents = 'none';
+                    });
+                }
+            }
+            
+            // Reorder panels so unavailable sensors appear last
+            reorderSensorPanels();
         } else {
             statusIndicator.innerHTML = '⚠️';
             statusIndicator.className = 'status-indicator warning';
             statusText.textContent = 'Sensors successfully polled - No sensors detected';
+            
+            // Grey out all sensor panels if no sensors detected
+            const allSensorPanels = ['bme280', 'sgp30', 'scd30', 'bh1750'];
+            allSensorPanels.forEach(sensorName => {
+                const panel = document.getElementById(`${sensorName}-panel`);
+                if (panel) {
+                    panel.style.display = 'block';
+                    panel.classList.add('sensor-unavailable');
+                    const buttons = panel.querySelectorAll('.panel-button');
+                    buttons.forEach(btn => {
+                        btn.classList.add('disabled');
+                        btn.style.pointerEvents = 'none';
+                    });
+                }
+            });
+            
+            // Grey out alarm panel
+            const alarmPanel = document.getElementById('alarm-panel');
+            if (alarmPanel) {
+                alarmPanel.classList.add('sensor-unavailable');
+                const buttons = alarmPanel.querySelectorAll('.panel-button');
+                buttons.forEach(btn => {
+                    btn.classList.add('disabled');
+                    btn.style.pointerEvents = 'none';
+                });
+            }
+            
+            // Reorder panels so unavailable sensors appear last
+            reorderSensorPanels();
         }
     } catch (error) {
         console.error('Error loading sensors:', error);
@@ -45,7 +121,64 @@ async function loadAvailableSensors() {
         statusIndicator.innerHTML = '❌';
         statusIndicator.className = 'status-indicator error';
         statusText.textContent = 'Sensors unsuccessfully polled - Error loading sensor information';
+        
+        // Show all sensor panels as unavailable on error
+        const allSensorPanels = ['bme280', 'sgp30', 'scd30', 'bh1750'];
+        allSensorPanels.forEach(sensorName => {
+            const panel = document.getElementById(`${sensorName}-panel`);
+            if (panel) {
+                panel.style.display = 'block';
+                panel.classList.add('sensor-unavailable');
+                const buttons = panel.querySelectorAll('.panel-button');
+                buttons.forEach(btn => {
+                    btn.classList.add('disabled');
+                    btn.style.pointerEvents = 'none';
+                });
+            }
+        });
+        
+        // Grey out alarm panel
+        const alarmPanel = document.getElementById('alarm-panel');
+        if (alarmPanel) {
+            alarmPanel.classList.add('sensor-unavailable');
+            const buttons = alarmPanel.querySelectorAll('.panel-button');
+            buttons.forEach(btn => {
+                btn.classList.add('disabled');
+                btn.style.pointerEvents = 'none';
+            });
+        }
+        
+        // Reorder panels so unavailable sensors appear last
+        reorderSensorPanels();
     }
+}
+
+function reorderSensorPanels() {
+    const grid = document.getElementById('sensor-grid');
+    if (!grid) return;
+    
+    // Get all sensor panels (not alarm panel)
+    const panels = Array.from(grid.querySelectorAll('.sensor-panel'));
+    const alarmPanel = document.getElementById('alarm-panel');
+    
+    // Separate available and unavailable panels
+    const availablePanels = [];
+    const unavailablePanels = [];
+    
+    panels.forEach(panel => {
+        if (panel.classList.contains('sensor-unavailable')) {
+            unavailablePanels.push(panel);
+        } else {
+            availablePanels.push(panel);
+        }
+    });
+    
+    // Re-append in order: available sensors, alarm panel, unavailable sensors
+    availablePanels.forEach(panel => grid.appendChild(panel));
+    if (alarmPanel) {
+        grid.appendChild(alarmPanel);
+    }
+    unavailablePanels.forEach(panel => grid.appendChild(panel));
 }
 
 async function loadAlarmStatus() {
@@ -127,6 +260,12 @@ async function loadAlarmStatus() {
 
 async function viewSensorData(sensorType, event) {
     try {
+        // Check if the button is disabled
+        if (event.target.classList.contains('disabled')) {
+            console.log(`${sensorType} sensor is not available`);
+            return;
+        }
+        
         const sensorGroup = document.getElementById(`${sensorType.toLowerCase()}-readings`);
         const button = event.target;
         
@@ -219,6 +358,13 @@ function updateDataCards(data) {
             document.getElementById('sgp30-eco2-value').textContent = `${data.SGP30.eco2} ppm`;
         }
     }
+
+    // Update BH1750 readings
+    if (data.BH1750 && activeSensorGroups.has('BH1750')) {
+        if (data.BH1750.light !== undefined) {
+            document.getElementById('bh1750-light-value').textContent = `${data.BH1750.light.toFixed(2)} lux`;
+        }
+    }
 }
 
 function startLiveData() {
@@ -247,6 +393,12 @@ function toggleLiveData() {
 }
 
 function refreshAlarmStatus() {
+    // Check if alarm panel is available
+    const alarmPanel = document.getElementById('alarm-panel');
+    if (alarmPanel && alarmPanel.classList.contains('sensor-unavailable')) {
+        console.log('Alarm functionality not available - SCD30 sensor not detected');
+        return;
+    }
     loadAlarmStatus();
 }
 
@@ -264,6 +416,13 @@ function updateSnoozeButtonText(alarmStatus) {
 }
 
 async function snoozeAlarm(buttonElement) {
+    // Check if alarm panel is available
+    const alarmPanel = document.getElementById('alarm-panel');
+    if (alarmPanel && alarmPanel.classList.contains('sensor-unavailable')) {
+        console.log('Alarm functionality not available - SCD30 sensor not detected');
+        return;
+    }
+    
     try {
         console.log('Attempting to snooze alarm...');
         const response = await fetch('/api/sensors/alarm/snooze', {
