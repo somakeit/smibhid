@@ -3,32 +3,11 @@
 // Configuration constants
 const THRESHOLD_POLL_DELAY_MS = 1500; // Time to wait between status poll attempts
 
-// Cache for relay configuration
-let relayActiveHigh = null;
-
 // Load page data when DOM is ready
 document.addEventListener('DOMContentLoaded', function() {
-    loadRelayConfiguration();
     loadThresholdConfiguration();
     refreshReadings();
 });
-
-async function loadRelayConfiguration() {
-    try {
-        const response = await fetch('/api/configuration/list');
-        const config = await response.json();
-        
-        // Extract SPACE_OPEN_RELAY_ACTIVE_HIGH from the IO section
-        if (config && config.IO && config.IO.SPACE_OPEN_RELAY_ACTIVE_HIGH !== undefined) {
-            relayActiveHigh = config.IO.SPACE_OPEN_RELAY_ACTIVE_HIGH;
-            console.log('Relay active high configuration loaded:', relayActiveHigh);
-        } else {
-            console.warn('SPACE_OPEN_RELAY_ACTIVE_HIGH not found in configuration');
-        }
-    } catch (error) {
-        console.error('Error loading relay configuration:', error);
-    }
-}
 
 async function loadThresholdConfiguration() {
     try {
@@ -211,25 +190,14 @@ async function refreshReadings() {
             document.getElementById('light-state-value').textContent = 'N/A';
         }
         
-        // Update overall state card - show On/Off based on relay state and active high/low config
+        // Update overall state card - show On/Off based on relay state
         if (relayStateData && relayStateData.relay_state !== undefined && relayStateData.relay_state !== null) {
             const relayState = relayStateData.relay_state;
             const overallStateValue = document.getElementById('overall-state-value');
             
-            // Determine if relay is "On" or "Off"
-            // If active high: true = On, false = Off
-            // If active low: true = Off, false = On
-            let isOn;
-            if (relayActiveHigh === true) {
-                isOn = relayState === true;
-            } else if (relayActiveHigh === false) {
-                isOn = relayState === false;
-            } else {
-                // If we don't know the config, assume active high
-                isOn = relayState === true;
-            }
-            
-            if (isOn) {
+            // relay_state true = relay energized (On), false = relay de-energized (Off)
+            // The active high/low config only affects pin voltage, not the semantic meaning
+            if (relayState === true) {
                 overallStateValue.textContent = '✅ On';
                 overallStateValue.style.color = '#28a745';
             } else {
