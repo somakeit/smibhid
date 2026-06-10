@@ -258,3 +258,101 @@ def test_space_light_threshold_endpoint_returns_json(hid_log):
     
     # Assert that the response contains the expected key
     assert "light_threshold_lux" in response_data, "Response should contain 'light_threshold_lux' key"
+
+def test_space_light_threshold_put_sets_valid_threshold(hid_log):
+    """
+    Test that PUT to space light threshold endpoint sets valid threshold values.
+    """
+    from smibhid_http.website import SpaceLightThreshold
+    from json import loads
+    import config
+    hid, log = hid_log
+    space_light_threshold = SpaceLightThreshold()
+    
+    # Set a valid threshold
+    response = space_light_threshold.put("", "100", hid.space_state, log)
+    response_data = loads(response)
+    
+    assert response_data["success"] == True, "PUT should succeed"
+    assert response_data["light_threshold_lux"] == 100, "Threshold should be set to 100"
+    assert config.SPACE_OPEN_LIGHT_THRESHOLD_LX == 100, "Config should be updated"
+
+def test_space_light_threshold_put_disables_with_none_string(hid_log):
+    """
+    Test that PUT with 'none' disables the threshold (sets to None).
+    """
+    from smibhid_http.website import SpaceLightThreshold
+    from json import loads
+    import config
+    hid, log = hid_log
+    space_light_threshold = SpaceLightThreshold()
+    
+    # First set a threshold
+    config.SPACE_OPEN_LIGHT_THRESHOLD_LX = 100
+    
+    # Disable with 'none'
+    response = space_light_threshold.put("", "none", hid.space_state, log)
+    response_data = loads(response)
+    
+    assert response_data["success"] == True, "PUT should succeed"
+    assert response_data["light_threshold_lux"] is None, "Threshold should be None"
+    assert config.SPACE_OPEN_LIGHT_THRESHOLD_LX is None, "Config should be None"
+
+def test_space_light_threshold_put_disables_with_zero_string(hid_log):
+    """
+    Test that PUT with '0' disables the threshold (sets to None).
+    """
+    from smibhid_http.website import SpaceLightThreshold
+    from json import loads
+    import config
+    hid, log = hid_log
+    space_light_threshold = SpaceLightThreshold()
+    
+    # First set a threshold
+    config.SPACE_OPEN_LIGHT_THRESHOLD_LX = 100
+    
+    # Disable with '0'
+    response = space_light_threshold.put("", "0", hid.space_state, log)
+    response_data = loads(response)
+    
+    assert response_data["success"] == True, "PUT should succeed"
+    assert response_data["light_threshold_lux"] is None, "Threshold should be None"
+    assert config.SPACE_OPEN_LIGHT_THRESHOLD_LX is None, "Config should be None"
+
+def test_space_light_threshold_put_disables_with_zero_float(hid_log):
+    """
+    Test that PUT with '0.0' disables the threshold (sets to None).
+    """
+    from smibhid_http.website import SpaceLightThreshold
+    from json import loads
+    import config
+    hid, log = hid_log
+    space_light_threshold = SpaceLightThreshold()
+    
+    # First set a threshold
+    config.SPACE_OPEN_LIGHT_THRESHOLD_LX = 100
+    
+    # Disable with '0.0'
+    response = space_light_threshold.put("", "0.0", hid.space_state, log)
+    response_data = loads(response)
+    
+    assert response_data["success"] == True, "PUT should succeed"
+    assert response_data["light_threshold_lux"] is None, "Threshold should be None"
+    assert config.SPACE_OPEN_LIGHT_THRESHOLD_LX is None, "Config should be None"
+
+def test_space_light_threshold_put_rejects_negative(hid_log):
+    """
+    Test that PUT rejects negative threshold values.
+    """
+    from smibhid_http.website import SpaceLightThreshold
+    from json import loads
+    import config
+    hid, log = hid_log
+    space_light_threshold = SpaceLightThreshold()
+    
+    # Try to set a negative threshold
+    response = space_light_threshold.put("", "-10", hid.space_state, log)
+    response_data = loads(response)
+    
+    assert "error" in response_data, "PUT should return error for negative value"
+    assert "non-negative" in response_data["error"].lower(), "Error message should mention non-negative"

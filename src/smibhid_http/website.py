@@ -550,7 +550,12 @@ class SpaceLightThreshold():
         logger.info(f"Return value: {html}")
         return html
 
-    def put(self, data, value: str, space_state: SpaceState, logger: uLogger) -> str:
+    def put(self, data, value: str = None, space_state: SpaceState = None, logger: uLogger = None) -> str:
+        # value is required for PUT - reject if missing
+        if value is None:
+            logger.error("PUT requires threshold value in URL path")
+            return dumps({"error": "PUT requires threshold value in URL path (use /api/space/light/threshold/<value>)"})
+        
         logger.info(f"API request - PUT /api/space/light/threshold/{value}")
         try:
             # Allow setting to None by passing 'none' or '0'
@@ -561,8 +566,13 @@ class SpaceLightThreshold():
                 threshold = float(value)
                 if threshold < 0:
                     raise ValueError("Threshold must be non-negative")
-                config.SPACE_OPEN_LIGHT_THRESHOLD_LX = threshold
-                logger.info(f"Light threshold set to: {threshold} lux")
+                # Also treat 0.0 as disabled to match documentation
+                if threshold == 0:
+                    config.SPACE_OPEN_LIGHT_THRESHOLD_LX = None
+                    logger.info("Light threshold disabled (set to None via 0.0)")
+                else:
+                    config.SPACE_OPEN_LIGHT_THRESHOLD_LX = threshold
+                    logger.info(f"Light threshold set to: {threshold} lux")
             
             html = dumps({"success": True, "light_threshold_lux": config.SPACE_OPEN_LIGHT_THRESHOLD_LX})
         except ValueError as e:

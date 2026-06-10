@@ -460,9 +460,10 @@ class SpaceState:
         Only performs check if threshold is not None and BH1750 sensor is available.
         """
         self.log.info("Checking light sensor state for space state updates")
-        # Skip if threshold not configured        
-        if config.SPACE_OPEN_LIGHT_THRESHOLD_LX is None:
-            self.log.info("Light threshold not configured, skipping light check")
+        # Skip if threshold not configured / disabled
+        threshold = config.SPACE_OPEN_LIGHT_THRESHOLD_LX
+        if threshold is None or threshold == 0:
+            self.log.info("Light threshold not configured/disabled, skipping light check")
             self.space_light_state = None
             self.space_light_value = None
             return
