@@ -87,17 +87,19 @@ async function checkSensorAvailability() {
     // Check if we have cached data and if it's still valid
     const cachedSensorsAvailable = localStorage.getItem('sensors-available');
     const cachedSCD30Available = localStorage.getItem('scd30-available');
+    const cachedBH1750Available = localStorage.getItem('bh1750-available');
     const cacheTimestamp = localStorage.getItem('sensors-cache-timestamp');
     
-    if (cachedSensorsAvailable !== null && cachedSCD30Available !== null && cacheTimestamp !== null) {
+    if (cachedSensorsAvailable !== null && cachedSCD30Available !== null && cachedBH1750Available !== null && cacheTimestamp !== null) {
         const cacheAge = now - parseInt(cacheTimestamp);
         
         if (cacheAge < CACHE_DURATION) {
             // Cache is still valid, use cached results
             const sensorsAvailable = cachedSensorsAvailable === 'true';
             const scd30Available = cachedSCD30Available === 'true';
-            updateSensorNavVisibility(sensorsAvailable, scd30Available);
-            console.log(`Using cached sensor availability: sensors=${sensorsAvailable}, scd30=${scd30Available} (cache age: ${Math.round(cacheAge / 1000)}s)`);
+            const bh1750Available = cachedBH1750Available === 'true';
+            updateSensorNavVisibility(sensorsAvailable, scd30Available, bh1750Available);
+            console.log(`Using cached sensor availability: sensors=${sensorsAvailable}, scd30=${scd30Available}, bh1750=${bh1750Available} (cache age: ${Math.round(cacheAge / 1000)}s)`);
             return;
         } else {
             console.log('Sensor cache expired, refreshing...');
@@ -113,36 +115,40 @@ async function checkSensorAvailability() {
             // Check if any sensors are available
             let sensorsAvailable = false;
             let scd30Available = false;
+            let bh1750Available = false;
             
             if (Array.isArray(modules)) {
                 sensorsAvailable = modules.length > 0;
                 scd30Available = modules.includes('SCD30');
+                bh1750Available = modules.includes('BH1750');
             } else if (typeof modules === 'object' && modules !== null) {
                 const moduleKeys = Object.keys(modules);
                 sensorsAvailable = moduleKeys.length > 0;
                 scd30Available = modules.hasOwnProperty('SCD30');
+                bh1750Available = modules.hasOwnProperty('BH1750');
             }
             
             // Cache the results with timestamp
             localStorage.setItem('sensors-available', sensorsAvailable.toString());
             localStorage.setItem('scd30-available', scd30Available.toString());
+            localStorage.setItem('bh1750-available', bh1750Available.toString());
             localStorage.setItem('sensors-cache-timestamp', now.toString());
             
-            console.log(`Sensor availability updated: sensors=${sensorsAvailable}, scd30=${scd30Available}`);
-            updateSensorNavVisibility(sensorsAvailable, scd30Available);
+            console.log(`Sensor availability updated: sensors=${sensorsAvailable}, scd30=${scd30Available}, bh1750=${bh1750Available}`);
+            updateSensorNavVisibility(sensorsAvailable, scd30Available, bh1750Available);
         } else {
             console.warn('Could not fetch sensor modules list, keeping sensor nav items visible');
             // Default to visible if we can't check, but don't cache this failure
-            updateSensorNavVisibility(true, true);
+            updateSensorNavVisibility(true, true, true);
         }
     } catch (error) {
         console.warn('Error checking sensor availability:', error);
         // Default to visible if there's an error, but don't cache this failure
-        updateSensorNavVisibility(true, true);
+        updateSensorNavVisibility(true, true, true);
     }
 }
 
-function updateSensorNavVisibility(sensorsAvailable, scd30Available) {
+function updateSensorNavVisibility(sensorsAvailable, scd30Available, bh1750Available) {
     // Update the main Sensors dropdown visibility
     const sensorsDropdown = document.querySelector('#nav-sensors');
     if (sensorsDropdown) {
@@ -167,12 +173,27 @@ function updateSensorNavVisibility(sensorsAvailable, scd30Available) {
             }
         }
     }
+    
+    // Update the BH1750 link visibility within the sensors dropdown
+    const bh1750NavLink = document.getElementById('bh1750-nav-link');
+    if (bh1750NavLink) {
+        const parentLi = bh1750NavLink.closest('li');
+        if (parentLi) {
+            if (bh1750Available) {
+                parentLi.style.display = 'block';
+            } else {
+                parentLi.style.display = 'none';
+                console.log('BH1750 module not detected, hiding BH1750 nav option');
+            }
+        }
+    }
 }
 
 // Utility function to manually clear sensor cache (useful for debugging)
 function clearSensorCache() {
     localStorage.removeItem('sensors-available');
     localStorage.removeItem('scd30-available');
+    localStorage.removeItem('bh1750-available');
     localStorage.removeItem('sensors-cache-timestamp');
     console.log('Sensor cache cleared');
 }
@@ -205,6 +226,17 @@ function highlightActivePage() {
     const scd30Link = document.getElementById('scd30-nav-link');
     if (scd30Link && (currentPath === '/sensors/scd30' || currentPath === '/sensors/scd30.html')) {
         scd30Link.classList.add('active');
+        // Also highlight the parent sensors link
+        const sensorsLink = document.querySelector('[data-page="sensors"]');
+        if (sensorsLink) {
+            sensorsLink.classList.add('active');
+        }
+    }
+    
+    // Special handling for BH1750 dropdown link
+    const bh1750Link = document.getElementById('bh1750-nav-link');
+    if (bh1750Link && (currentPath === '/sensors/bh1750' || currentPath === '/sensors/bh1750.html')) {
+        bh1750Link.classList.add('active');
         // Also highlight the parent sensors link
         const sensorsLink = document.querySelector('[data-page="sensors"]');
         if (sensorsLink) {

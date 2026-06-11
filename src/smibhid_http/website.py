@@ -45,12 +45,14 @@ class WebApp:
         self.create_update_css()
         self.create_sensors_css()
         self.create_scd30_css()
+        self.create_bh1750_css()
         self.create_configuration_css()
         self.create_common_js()
         self.create_index_js()
         self.create_sensors_js()
         self.create_update_js()
         self.create_scd30_js()
+        self.create_bh1750_js()
         self.create_system_js()
         self.create_configuration_js()
         self.create_header_include()
@@ -60,6 +62,7 @@ class WebApp:
         self.create_update()
         self.create_sensors()
         self.create_scd30()
+        self.create_bh1750()
         self.create_system()
         self.create_configuration()
         self.create_test_sensors()
@@ -79,67 +82,77 @@ class WebApp:
     def create_style_css(self):
         @self.app.route('/css/style.css')
         async def index(request, response):
-            await response.send_file('/smibhid_http/www/css/style.css', content_type='text/css')
+            await response.send_file('/smibhid_http/www/css/style.css', content_type='text/css', max_age=0)
 
     def create_api_css(self):
         @self.app.route('/css/api.css')
         async def index(request, response):
-            await response.send_file('/smibhid_http/www/css/api.css', content_type='text/css')
+            await response.send_file('/smibhid_http/www/css/api.css', content_type='text/css', max_age=0)
 
     def create_update_css(self):
         @self.app.route('/css/update.css')
         async def index(request, response):
-            await response.send_file('/smibhid_http/www/css/update.css', content_type='text/css')
+            await response.send_file('/smibhid_http/www/css/update.css', content_type='text/css', max_age=0)
 
     def create_sensors_css(self):
         @self.app.route('/css/sensors.css')
         async def index(request, response):
-            await response.send_file('/smibhid_http/www/css/sensors.css', content_type='text/css')
+            await response.send_file('/smibhid_http/www/css/sensors.css', content_type='text/css', max_age=0)
 
     def create_scd30_css(self):
         @self.app.route('/css/scd30.css')
         async def index(request, response):
-            await response.send_file('/smibhid_http/www/css/scd30.css', content_type='text/css')
+            await response.send_file('/smibhid_http/www/css/scd30.css', content_type='text/css', max_age=0)
+
+    def create_bh1750_css(self):
+        @self.app.route('/css/bh1750.css')
+        async def index(request, response):
+            await response.send_file('/smibhid_http/www/css/bh1750.css', content_type='text/css', max_age=0)
 
     def create_configuration_css(self):
         @self.app.route('/css/configuration.css')
         async def index(request, response):
-            await response.send_file('/smibhid_http/www/css/configuration.css', content_type='text/css')
+            await response.send_file('/smibhid_http/www/css/configuration.css', content_type='text/css', max_age=0)
 
     def create_common_js(self):
         @self.app.route('/js/common.js')
         async def index(request, response):
-            await response.send_file('/smibhid_http/www/js/common.js', content_type='application/javascript')
+            await response.send_file('/smibhid_http/www/js/common.js', content_type='application/javascript', max_age=0)
 
     def create_index_js(self):
         @self.app.route('/js/index.js')
         async def index(request, response):
-            await response.send_file('/smibhid_http/www/js/index.js', content_type='application/javascript')
+            await response.send_file('/smibhid_http/www/js/index.js', content_type='application/javascript', max_age=0)
 
     def create_sensors_js(self):
         @self.app.route('/js/sensors.js')
         async def index(request, response):
-            await response.send_file('/smibhid_http/www/js/sensors.js', content_type='application/javascript')
+            await response.send_file('/smibhid_http/www/js/sensors.js', content_type='application/javascript', max_age=0)
 
     def create_update_js(self):
         @self.app.route('/js/update.js')
         async def index(request, response):
-            await response.send_file('/smibhid_http/www/js/update.js', content_type='application/javascript')
+            await response.send_file('/smibhid_http/www/js/update.js', content_type='application/javascript', max_age=0)
 
     def create_scd30_js(self):
         @self.app.route('/js/scd30.js')
         async def index(request, response):
-            await response.send_file('/smibhid_http/www/js/scd30.js', content_type='application/javascript')
+            await response.send_file('/smibhid_http/www/js/scd30.js', content_type='application/javascript', max_age=0)
+
+    def create_bh1750_js(self):
+        @self.app.route('/js/bh1750.js')
+        async def index(request, response):
+            await response.send_file('/smibhid_http/www/js/bh1750.js', content_type='application/javascript', max_age=0)
 
     def create_system_js(self):
         @self.app.route('/js/system.js')
         async def index(request, response):
-            await response.send_file('/smibhid_http/www/js/system.js', content_type='application/javascript')
+            await response.send_file('/smibhid_http/www/js/system.js', content_type='application/javascript', max_age=0)
 
     def create_configuration_js(self):
         @self.app.route('/js/configuration.js')
         async def index(request, response):
-            await response.send_file('/smibhid_http/www/js/configuration.js', content_type='application/javascript')
+            await response.send_file('/smibhid_http/www/js/configuration.js', content_type='application/javascript', max_age=0)
     
     def create_header_include(self):
         @self.app.route('/includes/header.html')
@@ -186,6 +199,11 @@ class WebApp:
         @self.app.route('/sensors/scd30')
         async def index(request, response):
             await response.send_file('/smibhid_http/www/sensors/scd30.html')
+
+    def create_bh1750(self) -> None:
+        @self.app.route('/sensors/bh1750')
+        async def index(request, response):
+            await response.send_file('/smibhid_http/www/sensors/bh1750.html')
 
     def create_system(self) -> None:
         @self.app.route('/system')
@@ -241,6 +259,8 @@ class WebApp:
         self.app.add_resource(SpaceLightValue, '/api/space/light/value', space_state = self.hid.space_state, logger = self.log)
         self.app.add_resource(SpaceLightThreshold, '/api/space/light/threshold', space_state = self.hid.space_state, logger = self.log)
         self.app.add_resource(SpaceLightThreshold, '/api/space/light/threshold/<value>', space_state = self.hid.space_state, logger = self.log)
+
+        self.app.add_resource(SpaceRelayState, '/api/space/relay/state', space_state = self.hid.space_state, logger = self.log)
 
         self.app.add_resource(Logging, '/api/logs/read', logger = self.log, File = self.logging_file)
 
@@ -530,7 +550,12 @@ class SpaceLightThreshold():
         logger.info(f"Return value: {html}")
         return html
 
-    def put(self, data, value: str, space_state: SpaceState, logger: uLogger) -> str:
+    def put(self, data, value: str = None, space_state: SpaceState = None, logger: uLogger = None) -> str:
+        # value is required for PUT - reject if missing
+        if value is None:
+            logger.error("PUT requires threshold value in URL path")
+            return dumps({"error": "PUT requires threshold value in URL path (use /api/space/light/threshold/<value>)"})
+        
         logger.info(f"API request - PUT /api/space/light/threshold/{value}")
         try:
             # Allow setting to None by passing 'none' or '0'
@@ -541,8 +566,13 @@ class SpaceLightThreshold():
                 threshold = float(value)
                 if threshold < 0:
                     raise ValueError("Threshold must be non-negative")
-                config.SPACE_OPEN_LIGHT_THRESHOLD_LX = threshold
-                logger.info(f"Light threshold set to: {threshold} lux")
+                # Also treat 0.0 as disabled to match documentation
+                if threshold == 0:
+                    config.SPACE_OPEN_LIGHT_THRESHOLD_LX = None
+                    logger.info("Light threshold disabled (set to None via 0.0)")
+                else:
+                    config.SPACE_OPEN_LIGHT_THRESHOLD_LX = threshold
+                    logger.info(f"Light threshold set to: {threshold} lux")
             
             html = dumps({"success": True, "light_threshold_lux": config.SPACE_OPEN_LIGHT_THRESHOLD_LX})
         except ValueError as e:
@@ -552,6 +582,18 @@ class SpaceLightThreshold():
             logger.error(f"Failed to set light threshold: {e}")
             html = dumps({"error": f"Failed to set light threshold: {e}"})
 
+        logger.info(f"Return value: {html}")
+        return html
+
+class SpaceRelayState():
+    def get(self, data, space_state: SpaceState, logger: uLogger) -> str:
+        logger.info("API request - GET /api/space/relay/state")
+        try:
+            relay_state = space_state.get_relay_state()
+            html = dumps({"relay_state": relay_state})
+        except Exception as e:
+            logger.error(f"Failed to get relay state: {e}")
+            html = dumps({"error": f"Failed to get relay state: {e}"})
         logger.info(f"Return value: {html}")
         return html
 

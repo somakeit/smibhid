@@ -6,8 +6,8 @@
         <title>SMIBHID - Environmental Sensors</title>
         <link rel="stylesheet" href="../css/style.css">
         <link rel="stylesheet" href="../css/sensors.css">
-        <script src="../js/common.js?v=1.0.0"></script>
-        <script src="../js/sensors.js?v=1.0.0"></script>
+        <script src="../js/common.js"></script>
+        <script src="../js/sensors.js"></script>
     </head>
     
     <body data-subtitle="Environmental Sensors Management" data-footer-context="Environmental Sensors">
@@ -85,6 +85,26 @@
                         </div>
                     </div>
 
+                    <!-- BH1750 Sensor Panel -->
+                    <div class="admin-panel sensor-panel" id="bh1750-panel" style="display: none;">
+                        <div class="panel-header">
+                            <div class="panel-icon">💡</div>
+                            <h3>BH1750 Sensor</h3>
+                        </div>
+                        <p>Digital ambient light sensor for accurate lux measurements and space occupancy detection.</p>
+                        <div class="sensor-details">
+                            <ul>
+                                <li><strong>Range:</strong> 1-65535 lux</li>
+                                <li><strong>Resolution:</strong> 1 lux (high-res mode)</li>
+                                <li><strong>Response:</strong> 120ms update time</li>
+                            </ul>
+                        </div>
+                        <div class="sensor-actions">
+                            <a href="#" class="panel-button" onclick="event.preventDefault(); viewSensorData('BH1750', event)">View Readings</a>
+                            <a href="/sensors/bh1750" class="panel-button secondary">Manage BH1750</a>
+                        </div>
+                    </div>
+
                     <!-- Alarm Status Panel -->
                     <div class="admin-panel" id="alarm-panel">
                         <div class="panel-header">
@@ -155,6 +175,17 @@
                             <div class="data-card" id="sgp30-eco2-card">
                                 <h4>eCO2</h4>
                                 <div class="data-value" id="sgp30-eco2-value">-- ppm</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- BH1750 Sensor Group -->
+                    <div class="sensor-group" id="bh1750-readings" style="display: none;">
+                        <h3>BH1750 Sensor</h3>
+                        <div class="data-grid">
+                            <div class="data-card" id="bh1750-light-card">
+                                <h4>Light Level</h4>
+                                <div class="data-value" id="bh1750-light-value">-- lux</div>
                             </div>
                         </div>
                     </div>

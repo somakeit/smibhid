@@ -37,6 +37,37 @@
     margin-top: 1.5rem;
 }
 
+/* Unavailable sensor panel styling */
+.sensor-unavailable {
+    opacity: 0.5;
+    position: relative;
+}
+
+.sensor-unavailable::after {
+    content: 'Not Available';
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    background: #dc3545;
+    color: white;
+    padding: 0.25rem 0.75rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.panel-button.disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+    background: linear-gradient(135deg, #95a5a6, #7f8c8d) !important;
+}
+
+.panel-button.disabled:hover {
+    transform: none !important;
+    box-shadow: none !important;
+}
+
 .panel-button.secondary {
     background: linear-gradient(135deg, #7f8c8d, #5d6d7e);
 }
