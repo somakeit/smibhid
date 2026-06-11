@@ -45,10 +45,13 @@ class SpaceState:
         """
         self.log = uLogger("SpaceState")
         self.hid = hid
+        self.module_config = module_config
         self.display = module_config.get_display()
         self.wifi = module_config.get_wifi()
         self.ui_log = module_config.get_ui_log()
         self.slack_api = Wrapper(self.wifi)
+        # Sensors will be loaded in startup() to avoid circular dependency
+        self.sensors = None
         self.space_open_button_event = Event()
         self.space_closed_button_event = Event()
         self.open_button = Button(
@@ -65,6 +68,8 @@ class SpaceState:
         self.space_open_led.off()
         self.space_closed_led.off()
         self.space_state = None
+        self.space_light_state = None
+        self.space_light_value = None
         self.checking_space_state = False
         self.checking_space_state_timeout_s = 30
         self.space_state_poll_task: Optional[Task] = None
@@ -146,7 +151,16 @@ class SpaceState:
         """
         Start the space state module. This includes starting the button
         watchers, the space state poller, and setting the initial space state.
+        Also loads the sensors reference now that it's been registered in module_config.
         """
+        # Try to get sensors reference now that initialization is complete
+        try:
+            self.sensors = self.module_config.get_sensors()
+            self.log.info("Sensors module loaded for light level detection")
+        except Exception as e:
+            self.sensors = None
+            self.log.warn(f"Sensors module not available for light level detection: {e}")
+        
         self.log.info(f"Starting {self.open_button.get_name()} button watcher")
         create_task(self.open_button.wait_for_press())
         self.log.info(f"Starting {self.closed_button.get_name()} button watcher")
@@ -162,15 +176,35 @@ class SpaceState:
 
         self.start_space_state_poller()
 
-    def set_space_open_relay_state(self, state: bool) -> None:
+    def _calculate_and_set_relay_output(self) -> None:
         """
-        Set the space state relay to the given state.
+        Calculate the appropriate relay state based on space_state and space_light_state,
+        applying OR logic if SPACE_OPEN_RELAY_OR_WITH_LIGHT_SENSOR is enabled.
+        Then set the relay output accordingly.
         """
-        if config.SPACE_OPEN_RELAY is not None:
-            if state:
-                self.space_state_relay.value(config.SPACE_OPEN_RELAY_ACTIVE_HIGH)
-            else:
-                self.space_state_relay.value(not config.SPACE_OPEN_RELAY_ACTIVE_HIGH)
+        if config.SPACE_OPEN_RELAY is None:
+            return
+        
+        # Start with the button-driven space state
+        relay_state = self.space_state if self.space_state is not None else False
+        
+        # If OR with light sensor is enabled, combine states
+        if config.SPACE_OPEN_RELAY_OR_WITH_LIGHT_SENSOR and self.space_light_state is not None:
+            relay_state = relay_state or self.space_light_state
+            self.log.info(
+                f"Relay calculation: space_state={self.space_state}, "
+                f"light_state={self.space_light_state}, "
+                f"OR_enabled={config.SPACE_OPEN_RELAY_OR_WITH_LIGHT_SENSOR}, "
+                f"final_relay_state={relay_state}"
+            )
+        else:
+            self.log.info(f"Relay calculation: space_state={self.space_state}, relay_state={relay_state}")
+        
+        # Set the physical relay
+        if relay_state:
+            self.space_state_relay.value(config.SPACE_OPEN_RELAY_ACTIVE_HIGH)
+        else:
+            self.space_state_relay.value(not config.SPACE_OPEN_RELAY_ACTIVE_HIGH)
 
     def set_output_space_open(self, enforce: bool = False) -> None:
         """
@@ -179,7 +213,7 @@ class SpaceState:
         self.space_state = True
         self.space_open_led.on()
         self.space_closed_led.off()
-        self.set_space_open_relay_state(True)
+        self._calculate_and_set_relay_output()
         self.display.update_state("Open")
         self.hid.ui_state_instance.transition_to(OpenState(self.hid, self), enforce)
         self.log.info("Space state is open.")
@@ -191,7 +225,7 @@ class SpaceState:
         self.space_state = False
         self.space_open_led.off()
         self.space_closed_led.on()
-        self.set_space_open_relay_state(False)
+        self._calculate_and_set_relay_output()
         self.display.update_state("Closed")
         self.hid.ui_state_instance.transition_to(ClosedState(self.hid, self), enforce)
         self.log.info("Space state is closed.")
@@ -203,7 +237,7 @@ class SpaceState:
         self.space_state = None
         self.space_open_led.off()
         self.space_closed_led.off()
-        self.set_space_open_relay_state(False)
+        self._calculate_and_set_relay_output()
         self.display.update_state("None")
         self.hid.ui_state_instance.transition_to(NoneState(self.hid, self))
         self.log.info("Space state is none.")
@@ -275,6 +309,7 @@ class SpaceState:
         """
         Checks space state from server and sets SMIDHID output to reflect
         current space state, including errors if space state not available.
+        Also checks light sensor (if configured) and updates relay accordingly.
         """
         self.log.info("Checking space state")
         self.display.set_busy_output()
@@ -282,6 +317,9 @@ class SpaceState:
             return
         else:
             try:
+                # Check light level first (if configured)
+                self._check_and_update_light_state()
+                
                 self.log.info("Checking space status from server")
                 new_space_state = await wait_for(
                     self.slack_api.async_get_space_state(),
@@ -380,6 +418,96 @@ class SpaceState:
         Get the current space state.
         """
         return self.space_state
+
+    def get_space_light_state(self) -> bool | None:
+        """
+        Get the current space light state based on light sensor readings.
+        Returns True if light level is above threshold (space is "open"),
+        False if below threshold (space is "closed"), or None if not configured.
+        """
+        return self.space_light_state
+
+    def get_space_light_value(self) -> float | None:
+        """
+        Get the current light level reading in lux from the BH1750 sensor.
+        Returns the light level in lux, or None if not available/configured.
+        """
+        return self.space_light_value
+
+    def _check_and_update_light_state(self) -> None:
+        """
+        Check the BH1750 light sensor (if configured) and update space_light_state
+        and space_light_value based on the SPACE_OPEN_LIGHT_THRESHOLD_LX threshold.
+        Only performs check if threshold is not None and BH1750 sensor is available.
+        """
+        self.log.info("Checking light sensor state for space state updates")
+        # Skip if threshold not configured        
+        if config.SPACE_OPEN_LIGHT_THRESHOLD_LX is None:
+            self.log.info("Light threshold not configured, skipping light check")
+            self.space_light_state = None
+            self.space_light_value = None
+            return
+        
+        # Skip if sensors not available
+        if self.sensors is None:
+            self.log.info("Sensors module not available")
+            self.space_light_state = None
+            self.space_light_value = None
+            return
+        
+        # Check if BH1750 is configured
+        try:
+            if 'BH1750' not in self.sensors.configured_modules:
+                self.log.info("BH1750 sensor not configured")
+                self.space_light_state = None
+                self.space_light_value = None
+                return
+            
+            # Get light level reading
+            bh1750_module = self.sensors.configured_modules['BH1750']
+            reading = bh1750_module.get_reading()
+            
+            if 'light' in reading and reading['light'] is not None:
+                light_level = reading['light']
+                old_light_state = self.space_light_state
+                
+                # Store the actual light value
+                self.space_light_value = light_level
+                
+                # Update light state based on threshold
+                self.space_light_state = light_level >= config.SPACE_OPEN_LIGHT_THRESHOLD_LX
+                
+                if old_light_state != self.space_light_state:
+                    self.log.info(
+                        f"Light state changed: {old_light_state} -> {self.space_light_state} "
+                        f"(light={light_level:.2f}lx, threshold={config.SPACE_OPEN_LIGHT_THRESHOLD_LX}lx)"
+                    )
+                    # Push light state change to SMIB
+                    try:
+                        create_task(
+                            self.slack_api.async_space_light_update(
+                                self.space_light_state,
+                                self.space_light_value,
+                                config.SPACE_OPEN_LIGHT_THRESHOLD_LX
+                            )
+                        )
+                        self.log.info("Light state update pushed to SMIB")
+                    except Exception as e:
+                        self.log.error(f"Failed to push light state update to SMIB: {e}")
+                else:
+                    self.log.info(
+                        f"Light level: {light_level:.2f}lx, state: {self.space_light_state} "
+                        f"(threshold={config.SPACE_OPEN_LIGHT_THRESHOLD_LX}lx)"
+                    )
+            else:
+                self.log.warn("BH1750 reading invalid or missing 'light' key")
+                self.space_light_state = None
+                self.space_light_value = None
+                
+        except Exception as e:
+            self.log.error(f"Error reading light sensor: {e}")
+            self.space_light_state = None
+            self.space_light_value = None
 
 class SpaceStateUIState(UIState):
     """

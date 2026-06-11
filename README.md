@@ -21,12 +21,16 @@ Press the space_open or space_closed buttons to call the smib server endpoint ap
 - Error information shown on connected displays where configured in modules using ErrorHandler class
 - UI Logger captures timestamps of button presses and uploads to SMIB for logging and review of usage patterns
 - Space open relay pin optionally sets a GPIO to high or low when the space is open
+  - Supports light threshold control: relay can be activated based on ambient light level from BH1750 sensor
+  - OR logic available: relay activates when space is open OR light level exceeds threshold
+  - Light state changes are automatically pushed to SMIB server for monitoring and automation
 - Config file checker against config template - useful for upgrades missing config of new features
 - Over the air firmware updates - Web based management and display output on status
 - Web server for admin functions (Check info log messages or DHCP server for IP and default port is 80)
   - Home dashboard page with list of available functions
   - Sensors page listing connected sensors, status of CO2 alarm with snooze control and sub page for SCD30 configuration and calibration
   - API documentation page that details API endpoints available and their usage
+    - Includes space light state endpoints for querying light level, state, and configuring thresholds
   - Firmware Update page for performing over the air firmware updates and remote reset to apply them
   - Configuration management page for viewing and updating certain configuration parameters
     - Get and set space state poll period
@@ -36,9 +40,10 @@ Press the space_open or space_closed buttons to call the smib server endpoint ap
 - Pinger watchdog - Optionally ping an IP address and toggle a GPIO pin on ping failure. Useful for network device monitoring and reset.
 - Extensible sensor module framework for async polling of I2C sensors and presentation of sensors and readings on the web API and recording to log file
   - Supported sensors
+    - BH1750 (Ambient light level in lux)
     - SGP30 (Equivalent CO2 and VOC)
-    - BME280
-    - SCD30
+    - BME280 (Temperature, humidity, pressure)
+    - SCD30 (CO2, temperature, humidity)
   - CO2 alarm where SCD30 module present
     - Alarm buzzer and LED to show when CO2 PPM is over alarm threshold
     - Buzzer can be snoozed by physical button or web UI
@@ -53,6 +58,17 @@ Once the sensors are configured they will poll at a regular interval. The readin
 The sensor data is pushed to SMIB at each poll and caches data that has yet to be successfully pushed and resends all (with timestamps) once connectivity is restored (subject to file size limits and/or memory failure if limits set too high).
 
 The API allows querying of the sensors in realtime and SMIB has a slack command to query the sensors and report that realtime data back to the slack channel via the "/howfresh" command. The /howfresh command now queries the cached data on SMIB pushed by SMIBHID and reports the age of that data.
+
+#### Light Level Detection (BH1750)
+The BH1750 digital ambient light sensor measures light levels in lux and can be used for automated space state control via the relay output. When configured with a light threshold (SPACE_OPEN_LIGHT_THRESHOLD_LX), the device monitors ambient light and determines a "space light state" (open/closed based on whether light exceeds the threshold).
+
+This light-based state can be used with OR logic to control the space open relay pin - useful for automatically opening the space during daylight hours even if manual space state is closed. Light state changes are automatically pushed to the SMIB server for logging and automation triggers.
+
+The web API provides endpoints to:
+- Query current light state (true/false/null)
+- Query current light level reading in lux
+- Get and set the light threshold value
+- Disable light detection by setting threshold to null or 0
 
 The SCD30 CO2 sensor needs calibration from time to time and this can be achieved by posting the current CO2 level as measured by a reference sensor to the calibration API endpoint or by using the sensors web management page. Full instructions are available by following links from the main admin web page at http://<smibhid IP>:80
 
@@ -85,6 +101,7 @@ Below is a list of hardware and links for my specific build:
 - [SGP30 I2C sensor](https://thepihut.com/products/sgp30-air-quality-sensor-breakout) (Recommend SCD30 despite the price, this board is wildly inaccurate in my testing)
 - [BME280 sensor](https://thepihut.com/products/bme280-breakout-temperature-pressure-humidity-sensor)
 - [SCD30 sensor](https://thepihut.com/products/adafruit-scd-30-ndir-co2-temperature-and-humidity-sensor)
+- [BH1750 sensor](https://www.ebay.co.uk/itm/195473750831)
 - [Buzzer](https://shop.pimoroni.com/products/mini-active-buzzer?variant=40257468694611)
 
 ## Deployment
@@ -96,6 +113,8 @@ This project should work on a Pico W on recent firmware, but we have moved devel
 - See the log level section below for logging config
 - Ensure the pins for the space open/closed LEDs and buttons are correctly specified for your wiring
 - Configure the space open relay pin if required or else set to None, also choose if space open sets pin high or low
+  - Optionally configure SPACE_OPEN_LIGHT_THRESHOLD_LX to enable light-based relay control (set to None to disable)
+  - Set SPACE_OPEN_RELAY_OR_WITH_LIGHT_SENSOR to True to activate relay when space is open OR light exceeds threshold
 - Populate Wifi SSID and password
 - Configure the pinger watchdog and associated pin (example relay with transistor for coil current provided in circuit diagram)
 - Configure the webserver hostname/IP and port as per your smib.webserver configuration

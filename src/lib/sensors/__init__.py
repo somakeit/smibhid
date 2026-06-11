@@ -5,6 +5,7 @@ from lib.ulogging import uLogger
 from lib.sensors.SGP30 import SGP30
 from lib.sensors.BME280 import BME280
 from lib.sensors.SCD30 import SCD30
+from lib.sensors.BH1750 import BH1750
 from lib.sensors.sensor_module import SensorModule
 from lib.sensors.file_logging import FileLogger
 from lib.sensors.alarm import Alarm

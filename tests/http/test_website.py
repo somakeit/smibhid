@@ -155,3 +155,106 @@ def test_hostname_endpoint_is_registered(webapp):
     # The handler should be Hostname.get or a bound method of Hostname
     assert hasattr(get_handler, '__self__'), "GET handler is not a bound method"
     assert isinstance(get_handler.__self__, Hostname), "GET handler is not from Hostname class"
+
+def test_space_light_state_endpoint_is_registered(webapp):
+    """
+    Test that the space light state endpoint is registered correctly.
+    """
+    from smibhid_http.website import SpaceLightState
+
+    app = webapp
+    tinyweb_app = app.app
+
+    url = b'/api/space/light/state'
+    assert url in tinyweb_app.explicit_url_map, "Space light state endpoint not registered"
+
+    handler, params = tinyweb_app.explicit_url_map[url]
+    assert callable(handler), "Handler for /api/space/light/state is not callable"
+    assert b'GET' in params['_callmap'], "GET method not registered for /api/space/light/state"
+    get_handler, kwargs = params['_callmap'][b'GET']
+    assert hasattr(get_handler, '__self__'), "GET handler is not a bound method"
+    assert isinstance(get_handler.__self__, SpaceLightState), "GET handler is not from SpaceLightState class"
+
+def test_space_light_value_endpoint_is_registered(webapp):
+    """
+    Test that the space light value endpoint is registered correctly.
+    """
+    from smibhid_http.website import SpaceLightValue
+
+    app = webapp
+    tinyweb_app = app.app
+
+    url = b'/api/space/light/value'
+    assert url in tinyweb_app.explicit_url_map, "Space light value endpoint not registered"
+
+    handler, params = tinyweb_app.explicit_url_map[url]
+    assert callable(handler), "Handler for /api/space/light/value is not callable"
+    assert b'GET' in params['_callmap'], "GET method not registered for /api/space/light/value"
+    get_handler, kwargs = params['_callmap'][b'GET']
+    assert hasattr(get_handler, '__self__'), "GET handler is not a bound method"
+    assert isinstance(get_handler.__self__, SpaceLightValue), "GET handler is not from SpaceLightValue class"
+
+def test_space_light_threshold_endpoint_is_registered(webapp):
+    """
+    Test that the space light threshold endpoint is registered correctly.
+    """
+    from smibhid_http.website import SpaceLightThreshold
+
+    app = webapp
+    tinyweb_app = app.app
+
+    url = b'/api/space/light/threshold'
+    assert url in tinyweb_app.explicit_url_map, "Space light threshold endpoint not registered"
+
+    handler, params = tinyweb_app.explicit_url_map[url]
+    assert callable(handler), "Handler for /api/space/light/threshold is not callable"
+    assert b'GET' in params['_callmap'], "GET method not registered for /api/space/light/threshold"
+    assert b'PUT' in params['_callmap'], "PUT method not registered for /api/space/light/threshold"
+
+def test_space_light_state_endpoint_returns_json(hid_log):
+    """
+    Test that the space light state endpoint returns JSON with expected keys.
+    """
+    from smibhid_http.website import SpaceLightState
+    from json import loads
+    hid, log = hid_log
+    space_light_state = SpaceLightState()
+    response = space_light_state.get("", hid.space_state, log)
+    
+    # Parse the JSON response
+    response_data = loads(response)
+    
+    # Assert that the response contains the expected key
+    assert "light_state" in response_data, "Response should contain 'light_state' key"
+
+def test_space_light_value_endpoint_returns_json(hid_log):
+    """
+    Test that the space light value endpoint returns JSON with expected keys.
+    """
+    from smibhid_http.website import SpaceLightValue
+    from json import loads
+    hid, log = hid_log
+    space_light_value = SpaceLightValue()
+    response = space_light_value.get("", hid.space_state, log)
+    
+    # Parse the JSON response
+    response_data = loads(response)
+    
+    # Assert that the response contains the expected key
+    assert "light_value_lux" in response_data, "Response should contain 'light_value_lux' key"
+
+def test_space_light_threshold_endpoint_returns_json(hid_log):
+    """
+    Test that the space light threshold endpoint returns JSON with expected keys.
+    """
+    from smibhid_http.website import SpaceLightThreshold
+    from json import loads
+    hid, log = hid_log
+    space_light_threshold = SpaceLightThreshold()
+    response = space_light_threshold.get("", hid.space_state, log)
+    
+    # Parse the JSON response
+    response_data = loads(response)
+    
+    # Assert that the response contains the expected key
+    assert "light_threshold_lux" in response_data, "Response should contain 'light_threshold_lux' key"

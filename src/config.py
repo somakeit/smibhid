@@ -13,7 +13,14 @@ SPACE_OPEN_LED = 15
 SPACE_CLOSED_LED = 16
 # Set to None if no relay/transistor is connected
 SPACE_OPEN_RELAY = None
+
+# Relay active high/low config. Set to True if the relay is activated by setting the pin HIGH, False if activated by setting the pin LOW. Only applicable if SPACE_OPEN_RELAY is set to a valid GPIO pin number.
 SPACE_OPEN_RELAY_ACTIVE_HIGH = False
+# If true, the space open relay will be activated when the space is opened either by button press or light sensor threshold, if configured. If false, the relay will be driven solely by the button presses and not affected by the light sensor threshold even if configured.
+SPACE_OPEN_RELAY_OR_WITH_LIGHT_SENSOR = False
+
+# Light level threshold for space open/closed light state changes, set to None to disable light level state changes
+SPACE_OPEN_LIGHT_THRESHOLD_LX = None
 
 ## WIFI
 WIFI_SSID = ""
@@ -51,7 +58,7 @@ SCL_PIN = 9
 I2C_ID = 0
 I2C_FREQ = 400000
 
-## Sensors - Populate driver list with connected sensor modules from this supported list: ["SGP30", "BME280", "SCD30"]
+## Sensors - Populate driver list with connected sensor modules from this supported list: ["SGP30", "BME280", "SCD30", "BH1750"]
 SENSOR_MODULES = []
 
 # Default CO2 calibration value for SCD30 (global average is currently 427)
@@ -121,12 +128,12 @@ CLOCK_FREQUENCY = 250000000
 #
 CONFIG_SECTIONS = {
     "Logging": ["LOG_LEVEL", "LOG_HANDLERS", "LOG_FILE_MAX_SIZE"],
-    "IO": ["SPACE_OPEN_BUTTON", "SPACE_CLOSED_BUTTON", "SPACE_OPEN_LED", "SPACE_CLOSED_LED", "SPACE_OPEN_RELAY", "SPACE_OPEN_RELAY_ACTIVE_HIGH"],
+    "IO": ["SPACE_OPEN_BUTTON", "SPACE_CLOSED_BUTTON", "SPACE_OPEN_LED", "SPACE_CLOSED_LED", "SPACE_OPEN_RELAY", "SPACE_OPEN_RELAY_ACTIVE_HIGH", "SPACE_OPEN_RELAY_OR_WITH_LIGHT_SENSOR"],
     "WIFI": ["WIFI_SSID", "WIFI_PASSWORD", "WIFI_COUNTRY", "WIFI_CONNECT_TIMEOUT_SECONDS", "WIFI_CONNECT_RETRIES", "WIFI_RETRY_BACKOFF_SECONDS", "CUSTOM_HOSTNAME"],
     "NTP": ["NTP_SYNC_INTERVAL_SECONDS"],
     "Pinger": ["PINGER_WATCHDOG_IP", "PINGER_WATCHDOG_INTERVAL_SECONDS", "PINGER_WATCHDOG_RETRY_COUNT", "PINGER_WATCHDOG_RELAY_PIN", "PINGER_WATCHDOG_RELAY_ACTIVE_HIGH", "PINGER_WATCHDOG_TOGGLE_DURATION_MS"],
     "Web": ["WEBSERVER_HOST", "WEBSERVER_PORT"],
-    "Space": ["SPACE_STATE_POLL_PERIOD_S", "ADD_HOURS_INPUT_TIMEOUT"],
+    "Space": ["SPACE_STATE_POLL_PERIOD_S", "ADD_HOURS_INPUT_TIMEOUT", "SPACE_OPEN_LIGHT_THRESHOLD_LX"],
     "I2C": ["SDA_PIN", "SCL_PIN", "I2C_ID", "I2C_FREQ"],
     "Sensors": ["SENSOR_MODULES", "DEFAULT_CO2_CALIBRATION_VALUE"],
     "CO2_Alarm": ["CO2_ALARM_THRESHOLD_PPM", "CO2_ALARM_RESET_THRESHOLD_PPM", "CO2_ALARM_SNOOZE_DURATION_S", "CO2_ALARM_SILENCE_WINDOW_START_HOUR", "CO2_ALARM_SILENCE_WINDOW_END_HOUR", "CO2_ALARM_LED_PIN", "CO2_ALARM_BUZZER_PIN", "CO2_ALARM_SNOOZE_BUTTON_PIN"],

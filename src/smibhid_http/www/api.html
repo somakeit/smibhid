@@ -216,6 +216,38 @@
                             <td>Set a new space state poll period {value} in seconds.</td>
                         </tr>
                         <tr>
+                            <td><a href="/api/space/light/state">/api/space/light/state</a></td>
+                            <td>GET</td>
+                            <td>
+                                
+                            </td>
+                            <td>Get the current light-based state. Returns JSON: {"light_state": true/false/null}, where true indicates light level is above threshold (space "open"), false indicates below threshold (space "closed"), or null if not configured/unavailable.</td>
+                        </tr>
+                        <tr>
+                            <td><a href="/api/space/light/value">/api/space/light/value</a></td>
+                            <td>GET</td>
+                            <td>
+                                
+                            </td>
+                            <td>Get the light level value that was used when the space light state was last calculated. Returns JSON: {"light_value_lux": number/null}, where the value is in lux or null if sensor not configured/unavailable. For latest live sensor readings, use /api/sensors/readings/latest instead.</td>
+                        </tr>
+                        <tr>
+                            <td><a href="/api/space/light/threshold">/api/space/light/threshold</a></td>
+                            <td>GET</td>
+                            <td>
+                                
+                            </td>
+                            <td>Get the current light threshold value. Returns JSON: {"light_threshold_lux": number/null}, where the value is in lux or null if disabled.</td>
+                        </tr>
+                        <tr>
+                            <td>/api/space/light/threshold/{value}</td>
+                            <td>PUT</td>
+                            <td>
+                                Insert threshold value in lux in {value} parameter. Use "none" or "0" to disable light detection.
+                            </td>
+                            <td>Set a new light threshold value in lux. Light levels above this threshold indicate space is "open". Set to none/0 to disable.</td>
+                        </tr>
+                        <tr>
                             <td><a href="/api/logs/read">/api/logs/read</a></td>
                             <td>GET</td>
                             <td>
