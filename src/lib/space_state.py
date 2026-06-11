@@ -320,6 +320,12 @@ class SpaceState:
                 # Check light level first (if configured)
                 self._check_and_update_light_state()
                 
+                # If space_state is None (startup/unknown), recalculate relay immediately
+                # so light sensor can control relay without waiting for SMIB response
+                if self.space_state is None and config.SPACE_OPEN_RELAY is not None:
+                    self.log.info("Space state is None, updating relay based on current light state")
+                    self._calculate_and_set_relay_output()
+                
                 self.log.info("Checking space status from server")
                 new_space_state = await wait_for(
                     self.slack_api.async_get_space_state(),
@@ -335,6 +341,9 @@ class SpaceState:
             except Exception as e:
                 self.log.error(f"Error encountered updating space state: {e}")
                 self._set_space_state_check_to_error()
+                # Even if SMIB is unreachable, ensure relay reflects current light state
+                # This is critical when space_state is None but light state is valid
+                self._calculate_and_set_relay_output()
                 raise
 
             finally:
@@ -502,6 +511,8 @@ class SpaceState:
                         f"Light state changed: {old_light_state} -> {self.space_light_state} "
                         f"(light={light_level:.2f}lx, threshold={config.SPACE_OPEN_LIGHT_THRESHOLD_LX}lx)"
                     )
+                    # Recalculate and update relay output with new light state
+                    self._calculate_and_set_relay_output()
                     # Push light state change to SMIB
                     try:
                         create_task(
@@ -521,13 +532,21 @@ class SpaceState:
                     )
             else:
                 self.log.warn("BH1750 reading invalid or missing 'light' key")
+                old_light_state = self.space_light_state
                 self.space_light_state = None
                 self.space_light_value = None
+                # Update relay if light state changed from a valid state to None
+                if old_light_state is not None:
+                    self._calculate_and_set_relay_output()
                 
         except Exception as e:
             self.log.error(f"Error reading light sensor: {e}")
+            old_light_state = self.space_light_state
             self.space_light_state = None
             self.space_light_value = None
+            # Update relay if light state changed from a valid state to None
+            if old_light_state is not None:
+                self._calculate_and_set_relay_output()
 
 class SpaceStateUIState(UIState):
     """
