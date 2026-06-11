@@ -320,9 +320,11 @@ class SpaceState:
                 # Check light level first (if configured)
                 self._check_and_update_light_state()
                 
-                # If space_state is None (startup/unknown), recalculate relay immediately
-                # so light sensor can control relay without waiting for SMIB response
-                if self.space_state is None and config.SPACE_OPEN_RELAY is not None:
+                # If space_state is None (startup/unknown) and light sensor can control relay,
+                # recalculate relay immediately so light sensor can control relay without waiting for SMIB response
+                if (self.space_state is None and 
+                    config.SPACE_OPEN_RELAY is not None and 
+                    config.SPACE_OPEN_RELAY_OR_WITH_LIGHT_SENSOR):
                     self.log.info("Space state is None, updating relay based on current light state")
                     self._calculate_and_set_relay_output()
                 
