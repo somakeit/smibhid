@@ -6,6 +6,7 @@ from lib.sensors.SGP30 import SGP30
 from lib.sensors.BME280 import BME280
 from lib.sensors.SCD30 import SCD30
 from lib.sensors.BH1750 import BH1750
+from lib.sensors.PMSA003I import PMSA003I
 from lib.sensors.sensor_module import SensorModule
 from lib.sensors.file_logging import FileLogger
 from lib.sensors.alarm import Alarm
@@ -39,6 +40,7 @@ class Sensors:
     def load_modules(self, modules: list[str]) -> None:
         """
         Load a list of sensor modules by name passed as a list of strings.
+        Only successfully initialized modules are added to available_modules.
         """
         for module in modules:
             try:
@@ -46,14 +48,21 @@ class Sensors:
                 module_class = globals().get(module)
                 if module_class is None:
                     raise ValueError(f"Sensor module '{module}' not imported.")
-                self.available_modules[module] = module_class(self.i2c)
+                
+                # Initialize module - will raise exception if hardware not present
+                module_instance = module_class(self.i2c)
+                
+                # Only add if initialization succeeded
+                self.available_modules[module] = module_instance
                 self.log.info(f"Loaded {module} sensor module")
 
             except RuntimeError as e:
                 self.log.error(f"Failed to load {module} sensor module: {e}")
+                # Don't add to available_modules
 
             except Exception as e:
                 self.log.error(f"Failed to load {module} sensor module: {e}")
+                # Don't add to available_modules
     
     def _configure_modules(self) -> None:
         """
@@ -140,25 +149,16 @@ class Sensors:
         Return a dictionary with the readings_list encapsulated in a 'readings' key and a 'unit' key
         containing the corresponding reading units.
         """
-        self.log.info("Creating payload for sensor readings")
         units = {}
-        modules = self.get_modules()
-        self.log.info(f"Configured modules: {modules}")
-        for module in modules:
+        for module in self.get_modules():
             units[module] = {}
-            sensors = self.get_sensors(module)
-            for sensor in sensors:
-                self.log.info(f"Adding sensor {sensor['name']} with unit {sensor['unit']}")
+            for sensor in self.get_sensors(module):
                 units[module][sensor["name"]] = sensor["unit"]
 
-        payload = {
+        return {
             "units": units,
-            "readings": readings_list            
+            "readings": readings_list
         }
-
-        self.log.info(f"Created payload for sensor readings: {payload}")
-        
-        return payload
     
     async def async_push_all_readings(self, readings_list: list) -> None:
         """
@@ -253,7 +253,6 @@ class Sensors:
         """
         module_object = self.configured_modules[module]
         sensors = module_object.get_sensors()
-        self.log.info(f"Available sensors for {module}: {sensors}")
         return sensors
 
     def clean_readings(self, readings: dict) -> dict:
@@ -266,9 +265,6 @@ class Sensors:
         Returns:
             Cleaned readings dictionary with None values and empty modules removed
         """
-        self.log.info("Cleaning sensor readings of None values")
-        self.log.info(f"Raw sensor readings: {readings}")
-        
         cleaned_readings = {}
         for reading in readings:
             cleaned_module_data = {}
@@ -282,8 +278,7 @@ class Sensors:
                 cleaned_readings[reading] = cleaned_module_data
             else:
                 self.log.warn(f"Module {reading} has no valid readings, removing entire module from reading data")
-        
-        self.log.info(f"Cleaned sensor readings: {cleaned_readings}")
+
         return cleaned_readings
 
     def get_readings(self, module: str = "") -> dict:
