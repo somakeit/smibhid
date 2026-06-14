@@ -28,7 +28,7 @@ Press the space_open or space_closed buttons to call the smib server endpoint ap
 - Over the air firmware updates - Web based management and display output on status
 - Web server for admin functions (Check info log messages or DHCP server for IP and default port is 80)
   - Home dashboard page with list of available functions
-  - Sensors page listing connected sensors, status of CO2 alarm with snooze control and sub page for SCD30 configuration and calibration
+  - Sensors page listing connected sensors, status of CO2 alarm with snooze control, and sub pages for SCD30 configuration and calibration, BH1750 light threshold management, and PMSA003I fan duty cycle and data configuration
   - API documentation page that details API endpoints available and their usage
     - Includes space light state endpoints for querying light level, state, and configuring thresholds
   - Firmware Update page for performing over the air firmware updates and remote reset to apply them
@@ -44,6 +44,7 @@ Press the space_open or space_closed buttons to call the smib server endpoint ap
     - SGP30 (Equivalent CO2 and VOC)
     - BME280 (Temperature, humidity, pressure)
     - SCD30 (CO2, temperature, humidity)
+    - PMSA003I (PM1.0, PM2.5, PM10 particulate matter concentrations and particle counts across six size bins)
   - CO2 alarm where SCD30 module present
     - Alarm buzzer and LED to show when CO2 PPM is over alarm threshold
     - Buzzer can be snoozed by physical button or web UI
@@ -69,6 +70,17 @@ The web API provides endpoints to:
 - Query current light level reading in lux
 - Get and set the light threshold value
 - Disable light detection by setting threshold to null or 0
+
+#### Particulate Matter Monitoring (PMSA003I)
+The PMSA003I laser particle sensor measures PM1.0, PM2.5, and PM10 concentrations in μg/m³ for both atmospheric and standard (CF=1) conditions, plus particle counts across six size bins (0.3, 0.5, 1.0, 2.5, 5.0, and 10 μm). To reduce fan wear the sensor uses a configurable duty cycle: the fan runs for a short period to take a reading and then sleeps for the remainder of the poll period.
+
+Key configuration options in config.py:
+- `PMSA003I_FAN_RUN_SECONDS` — how long the fan runs per cycle (minimum 10s per datasheet response time)
+- `PMSA003I_WARM_UP_SECONDS` — initial stabilisation delay before the first reading
+- `PMSA003I_POLL_PERIOD_SECONDS` — time between readings; must be greater than fan run time
+- `PMSA003I_INCLUDE_STANDARD_VALUES` — set to True to also return CF=1 standard PM values alongside atmospheric values
+
+Fan run time and poll period can also be adjusted at runtime via the PMSA003I sensor management page in the web UI, though changes are not persisted across restarts.
 
 The SCD30 CO2 sensor needs calibration from time to time and this can be achieved by posting the current CO2 level as measured by a reference sensor to the calibration API endpoint or by using the sensors web management page. Full instructions are available by following links from the main admin web page at http://<smibhid IP>:80
 
@@ -102,6 +114,7 @@ Below is a list of hardware and links for my specific build:
 - [BME280 sensor](https://thepihut.com/products/bme280-breakout-temperature-pressure-humidity-sensor)
 - [SCD30 sensor](https://thepihut.com/products/adafruit-scd-30-ndir-co2-temperature-and-humidity-sensor)
 - [BH1750 sensor](https://www.ebay.co.uk/itm/195473750831)
+- [PMSA003I particulate matter sensor](https://thepihut.com/products/adafruit-pmsa003i-air-quality-breakout)
 - [Buzzer](https://shop.pimoroni.com/products/mini-active-buzzer?variant=40257468694611)
 
 ## Deployment
