@@ -296,41 +296,40 @@ class PMSA003I(SensorModule):
         await sleep(self._warm_up_seconds)
         
         # Set up timing - first reading happens immediately after warm-up
-        poll_period_ms = self._poll_period_seconds * 1000
         next_wake_ticks = ticks_ms()  # Take first reading now
-        
+
         while self._is_running:
             try:
                 # Poll every second until wake time reached
                 while self._is_running:
                     current_ticks = ticks_ms()
                     time_until_wake_ms = ticks_diff(next_wake_ticks, current_ticks)
-                    
+
                     if time_until_wake_ms <= 0:
                         # Time to wake and take reading
                         break
-                    
+
                     # Sleep for 1 second or remaining time, whichever is less
                     sleep_seconds = min(1, time_until_wake_ms / 1000)
                     await sleep(sleep_seconds)
-                
+
                 if not self._is_running:
                     break
-                
+
                 # Check if sensor has failed too many times
                 if self._consecutive_failures >= self._max_consecutive_failures:
                     self.log.error(f"PMSA003I disabled after {self._consecutive_failures} consecutive failures")
                     self._is_running = False
                     break
-                
+
                 # Wake sensor and wait for stabilization
                 # Simple approach avoids I2C bus issues from complex heartbeat polling
                 try:
                     self.log.info("PMSA003I attempting wake and read cycle")
-                    
+
                     # Wait for stabilization period (sensor auto-wakes on any I2C read)
                     await sleep(self._fan_run_seconds)
-                    
+
                     # Take reading after stabilization
                     try:
                         data = self.read_data()
@@ -343,30 +342,32 @@ class PMSA003I(SensorModule):
                         self.log.error(f"PMSA003I read failed ({self._consecutive_failures}/{self._max_consecutive_failures}): {e}")
                         # Wait longer before retry to let I2C bus recover
                         await sleep(10)
-                    
+
                 except Exception as e:
                     self._consecutive_failures += 1
                     self.log.error(f"PMSA003I polling error ({self._consecutive_failures}/{self._max_consecutive_failures}): {e}")
                     # Wait before retry to prevent rapid error loops and allow I2C recovery
                     await sleep(10)
-                
+
                 # Sensor will auto-sleep after ~6 seconds of I2C inactivity
                 # No explicit sleep command needed
-                
+
+                # Re-read poll period each cycle so runtime config changes take effect immediately.
                 # Calculate next wake time from previous wake time (not current time)
-                # This corrects for any overrun in reading/processing
+                # to correct for any overrun in reading/processing.
+                poll_period_ms = self._poll_period_seconds * 1000
                 next_wake_ticks = next_wake_ticks + poll_period_ms
-                
+
                 # If we've fallen behind significantly, resync to current time
                 current_ticks = ticks_ms()
                 if ticks_diff(current_ticks, next_wake_ticks) > poll_period_ms:
                     self.log.error("PMSA003I polling fell behind, resyncing to current time")
                     next_wake_ticks = current_ticks + poll_period_ms
-                
+
             except Exception as e:
                 self.log.error(f"Error in PMSA003I polling loop: {e}")
                 # Resync timing after error
-                next_wake_ticks = ticks_ms() + poll_period_ms
+                next_wake_ticks = ticks_ms() + self._poll_period_seconds * 1000
                 # Yield to event loop before retry
                 await sleep(1)
 

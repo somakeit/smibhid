@@ -117,8 +117,8 @@ async function applyDutyCycle() {
     const pollPeriod = parseInt(document.getElementById('pollPeriodSeconds').value);
     const resultDiv = document.getElementById('dutyCycleResult');
 
-    if (!fanRun || fanRun < 5) {
-        showResult(resultDiv, 'error', 'Fan run time must be at least 5 seconds');
+    if (!fanRun || fanRun < 10) {
+        showResult(resultDiv, 'error', 'Fan run time must be at least 10 seconds (datasheet response time)');
         return;
     }
     if (!pollPeriod || pollPeriod < 15) {

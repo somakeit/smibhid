@@ -684,8 +684,8 @@ class PMSA003IConfig():
 
             if function == "fan_run_seconds":
                 fan_run = int(value)
-                if fan_run < 5:
-                    raise ValueError("fan_run_seconds must be at least 5")
+                if fan_run < 10:
+                    raise ValueError("fan_run_seconds must be at least 10 (datasheet response time)")
                 if fan_run >= pmsa003i._poll_period_seconds:
                     raise ValueError("fan_run_seconds must be less than poll_period_seconds")
                 pmsa003i.set_fan_duty_cycle(fan_run)
