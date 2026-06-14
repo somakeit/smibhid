@@ -105,6 +105,26 @@
                         </div>
                     </div>
 
+                    <!-- PMSA003I Sensor Panel -->
+                    <div class="admin-panel sensor-panel" id="pmsa003i-panel" style="display: none;">
+                        <div class="panel-header">
+                            <div class="panel-icon">🌫️</div>
+                            <h3>PMSA003I Sensor</h3>
+                        </div>
+                        <p>Laser particle sensor measuring PM1.0, PM2.5, and PM10 concentrations with fan duty cycling.</p>
+                        <div class="sensor-details">
+                            <ul>
+                                <li><strong>PM2.5:</strong> 0–500 μg/m³ range</li>
+                                <li><strong>PM10:</strong> 0–1000 μg/m³ range</li>
+                                <li><strong>Particle sizes:</strong> 6 size bins (0.3–10 μm)</li>
+                            </ul>
+                        </div>
+                        <div class="sensor-actions">
+                            <a href="#" class="panel-button" onclick="event.preventDefault(); viewSensorData('PMSA003I', event)">View Readings</a>
+                            <a href="/sensors/pmsa003i" class="panel-button secondary">Manage PMSA003I</a>
+                        </div>
+                    </div>
+
                     <!-- Alarm Status Panel -->
                     <div class="admin-panel" id="alarm-panel">
                         <div class="panel-header">
@@ -189,7 +209,26 @@
                             </div>
                         </div>
                     </div>
-                    
+
+                    <!-- PMSA003I Sensor Group -->
+                    <div class="sensor-group" id="pmsa003i-readings" style="display: none;">
+                        <h3>PMSA003I Sensor</h3>
+                        <div class="data-grid">
+                            <div class="data-card" id="pmsa003i-pm10-card">
+                                <h4>PM1.0</h4>
+                                <div class="data-value" id="pmsa003i-pm10-value">-- μg/m³</div>
+                            </div>
+                            <div class="data-card" id="pmsa003i-pm25-card">
+                                <h4>PM2.5</h4>
+                                <div class="data-value" id="pmsa003i-pm25-value">-- μg/m³</div>
+                            </div>
+                            <div class="data-card" id="pmsa003i-pm100-card">
+                                <h4>PM10</h4>
+                                <div class="data-value" id="pmsa003i-pm100-value">-- μg/m³</div>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="live-data-controls">
                         <button class="panel-button" onclick="toggleLiveData()">Stop Live Updates</button>
                     </div>
