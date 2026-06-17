@@ -46,6 +46,7 @@ class WebApp:
         self.create_sensors_css()
         self.create_scd30_css()
         self.create_bh1750_css()
+        self.create_pmsa003i_css()
         self.create_configuration_css()
         self.create_common_js()
         self.create_index_js()
@@ -53,6 +54,7 @@ class WebApp:
         self.create_update_js()
         self.create_scd30_js()
         self.create_bh1750_js()
+        self.create_pmsa003i_js()
         self.create_system_js()
         self.create_configuration_js()
         self.create_header_include()
@@ -63,6 +65,7 @@ class WebApp:
         self.create_sensors()
         self.create_scd30()
         self.create_bh1750()
+        self.create_pmsa003i()
         self.create_system()
         self.create_configuration()
         self.create_test_sensors()
@@ -109,6 +112,11 @@ class WebApp:
         async def index(request, response):
             await response.send_file('/smibhid_http/www/css/bh1750.css', content_type='text/css', max_age=0)
 
+    def create_pmsa003i_css(self):
+        @self.app.route('/css/pmsa003i.css')
+        async def index(request, response):
+            await response.send_file('/smibhid_http/www/css/pmsa003i.css', content_type='text/css', max_age=0)
+
     def create_configuration_css(self):
         @self.app.route('/css/configuration.css')
         async def index(request, response):
@@ -143,6 +151,11 @@ class WebApp:
         @self.app.route('/js/bh1750.js')
         async def index(request, response):
             await response.send_file('/smibhid_http/www/js/bh1750.js', content_type='application/javascript', max_age=0)
+
+    def create_pmsa003i_js(self):
+        @self.app.route('/js/pmsa003i.js')
+        async def index(request, response):
+            await response.send_file('/smibhid_http/www/js/pmsa003i.js', content_type='application/javascript', max_age=0)
 
     def create_system_js(self):
         @self.app.route('/js/system.js')
@@ -205,6 +218,11 @@ class WebApp:
         async def index(request, response):
             await response.send_file('/smibhid_http/www/sensors/bh1750.html')
 
+    def create_pmsa003i(self) -> None:
+        @self.app.route('/sensors/pmsa003i')
+        async def index(request, response):
+            await response.send_file('/smibhid_http/www/sensors/pmsa003i.html')
+
     def create_system(self) -> None:
         @self.app.route('/system')
         async def index(request, response):
@@ -240,6 +258,11 @@ class WebApp:
         self.app.add_resource(SCD30, '/api/sensors/modules/SCD30/auto_measure', function = "auto_measure", sensors = self.sensors, logger = self.log)
         self.app.add_resource(SCD30, '/api/sensors/modules/SCD30/auto_measure/<value>', function = "auto_measure", sensors = self.sensors, logger = self.log)
         self.app.add_resource(SCD30, '/api/sensors/modules/SCD30/calibration/<value>', function = "calibration", sensors = self.sensors, logger = self.log)
+
+        self.app.add_resource(PMSA003IConfig, '/api/sensors/modules/PMSA003I/config', sensors = self.sensors, logger = self.log)
+        self.app.add_resource(PMSA003IConfig, '/api/sensors/modules/PMSA003I/fan_run_seconds/<value>', function = "fan_run_seconds", sensors = self.sensors, logger = self.log)
+        self.app.add_resource(PMSA003IConfig, '/api/sensors/modules/PMSA003I/poll_period_seconds/<value>', function = "poll_period_seconds", sensors = self.sensors, logger = self.log)
+        self.app.add_resource(PMSA003IConfig, '/api/sensors/modules/PMSA003I/include_standard_values/<value>', function = "include_standard_values", sensors = self.sensors, logger = self.log)
 
         self.app.add_resource(Alarm, '/api/sensors/alarm/status', value = 'status', sensors = self.sensors, logger = self.log)
         self.app.add_resource(Alarm, '/api/sensors/alarm/statuses', value = 'statuses', sensors = self.sensors, logger = self.log)
@@ -632,6 +655,78 @@ class SMIBHIDConfiguration():
 
         logger.info(f"Return value: {html}")
         return html
+
+class PMSA003IConfig():
+
+    def get(self, data, sensors: 'Sensors', logger: uLogger) -> str:
+        logger.info("API request - GET sensors/PMSA003I/config")
+        try:
+            pmsa003i = sensors.configured_modules["PMSA003I"]
+            html = dumps({
+                "fan_run_seconds": pmsa003i._fan_run_seconds,
+                "poll_period_seconds": pmsa003i._poll_period_seconds,
+                "include_standard_values": pmsa003i._include_standard_values,
+                "i2c_address": hex(pmsa003i._address)
+            })
+        except KeyError:
+            logger.error("PMSA003I sensor not found in configured modules")
+            html = dumps({"error": "PMSA003I sensor not found"})
+        except Exception as e:
+            logger.error(f"Failed to get PMSA003I config: {e}")
+            html = dumps({"error": f"Failed to get PMSA003I config: {e}"})
+        logger.info(f"Return value: {html}")
+        return html
+
+    def put(self, data, value: str, function: str, sensors: 'Sensors', logger: uLogger) -> str:
+        logger.info(f"API request - PUT sensors/PMSA003I/{function}/{value}")
+        try:
+            pmsa003i = sensors.configured_modules["PMSA003I"]
+
+            if function == "fan_run_seconds":
+                fan_run = int(value)
+                if fan_run < 10:
+                    raise ValueError("fan_run_seconds must be at least 10 (datasheet response time)")
+                if fan_run >= pmsa003i._poll_period_seconds:
+                    raise ValueError("fan_run_seconds must be less than poll_period_seconds")
+                pmsa003i.set_fan_duty_cycle(fan_run)
+                html = dumps({"success": True, "fan_run_seconds": pmsa003i._fan_run_seconds})
+
+            elif function == "poll_period_seconds":
+                poll_period = int(value)
+                if poll_period < 15:
+                    raise ValueError("poll_period_seconds must be at least 15")
+                if pmsa003i._fan_run_seconds >= poll_period:
+                    raise ValueError("poll_period_seconds must be greater than fan_run_seconds")
+                pmsa003i._poll_period_seconds = poll_period
+                pmsa003i._fan_sleep_seconds = poll_period - pmsa003i._fan_run_seconds
+                html = dumps({"success": True, "poll_period_seconds": pmsa003i._poll_period_seconds})
+
+            elif function == "include_standard_values":
+                if value.lower() in ("true", "1", "yes"):
+                    pmsa003i._include_standard_values = True
+                elif value.lower() in ("false", "0", "no"):
+                    pmsa003i._include_standard_values = False
+                else:
+                    raise ValueError(f"Invalid boolean value: {value}")
+                html = dumps({"success": True, "include_standard_values": pmsa003i._include_standard_values})
+
+            else:
+                logger.error(f"Unknown PMSA003I config function: {function}")
+                html = dumps({"error": f"Unknown config parameter: {function}"})
+
+        except KeyError:
+            logger.error("PMSA003I sensor not found in configured modules")
+            html = dumps({"error": "PMSA003I sensor not found"})
+        except ValueError as e:
+            logger.error(f"Invalid value for PMSA003I config: {e}")
+            html = dumps({"error": f"Invalid value: {e}"})
+        except Exception as e:
+            logger.error(f"Failed to update PMSA003I config: {e}")
+            html = dumps({"error": f"Failed to update PMSA003I config: {e}"})
+
+        logger.info(f"Return value: {html}")
+        return html
+
 
 class Logging():
     def get(self, data, logger: uLogger, File: File) -> str:

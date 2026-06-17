@@ -27,8 +27,8 @@ async function loadAvailableSensors() {
             statusText.textContent = `Sensors successfully polled - ${sensors.length} sensor(s) detected: ${sensors.join(', ')}`;
             
             // Get all sensor panels
-            const allSensorPanels = ['bme280', 'sgp30', 'scd30', 'bh1750'];
-            
+            const allSensorPanels = ['bme280', 'sgp30', 'scd30', 'bh1750', 'pmsa003i'];
+
             allSensorPanels.forEach(sensorName => {
                 const panel = document.getElementById(`${sensorName}-panel`);
                 if (panel) {
@@ -86,7 +86,7 @@ async function loadAvailableSensors() {
             statusText.textContent = 'Sensors successfully polled - No sensors detected';
             
             // Grey out all sensor panels if no sensors detected
-            const allSensorPanels = ['bme280', 'sgp30', 'scd30', 'bh1750'];
+            const allSensorPanels = ['bme280', 'sgp30', 'scd30', 'bh1750', 'pmsa003i'];
             allSensorPanels.forEach(sensorName => {
                 const panel = document.getElementById(`${sensorName}-panel`);
                 if (panel) {
@@ -123,7 +123,7 @@ async function loadAvailableSensors() {
         statusText.textContent = 'Sensors unsuccessfully polled - Error loading sensor information';
         
         // Show all sensor panels as unavailable on error
-        const allSensorPanels = ['bme280', 'sgp30', 'scd30', 'bh1750'];
+        const allSensorPanels = ['bme280', 'sgp30', 'scd30', 'bh1750', 'pmsa003i'];
         allSensorPanels.forEach(sensorName => {
             const panel = document.getElementById(`${sensorName}-panel`);
             if (panel) {
@@ -363,6 +363,19 @@ function updateDataCards(data) {
     if (data.BH1750 && activeSensorGroups.has('BH1750')) {
         if (data.BH1750.light !== undefined) {
             document.getElementById('bh1750-light-value').textContent = `${data.BH1750.light.toFixed(2)} lux`;
+        }
+    }
+
+    // Update PMSA003I readings
+    if (data.PMSA003I && activeSensorGroups.has('PMSA003I')) {
+        if (data.PMSA003I.pm10_env !== undefined && data.PMSA003I.pm10_env !== null) {
+            document.getElementById('pmsa003i-pm10-value').textContent = `${data.PMSA003I.pm10_env} μg/m³`;
+        }
+        if (data.PMSA003I.pm25_env !== undefined && data.PMSA003I.pm25_env !== null) {
+            document.getElementById('pmsa003i-pm25-value').textContent = `${data.PMSA003I.pm25_env} μg/m³`;
+        }
+        if (data.PMSA003I.pm100_env !== undefined && data.PMSA003I.pm100_env !== null) {
+            document.getElementById('pmsa003i-pm100-value').textContent = `${data.PMSA003I.pm100_env} μg/m³`;
         }
     }
 }

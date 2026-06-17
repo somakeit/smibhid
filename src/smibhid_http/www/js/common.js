@@ -88,18 +88,20 @@ async function checkSensorAvailability() {
     const cachedSensorsAvailable = localStorage.getItem('sensors-available');
     const cachedSCD30Available = localStorage.getItem('scd30-available');
     const cachedBH1750Available = localStorage.getItem('bh1750-available');
+    const cachedPMSA003IAvailable = localStorage.getItem('pmsa003i-available');
     const cacheTimestamp = localStorage.getItem('sensors-cache-timestamp');
-    
-    if (cachedSensorsAvailable !== null && cachedSCD30Available !== null && cachedBH1750Available !== null && cacheTimestamp !== null) {
+
+    if (cachedSensorsAvailable !== null && cachedSCD30Available !== null && cachedBH1750Available !== null && cachedPMSA003IAvailable !== null && cacheTimestamp !== null) {
         const cacheAge = now - parseInt(cacheTimestamp);
-        
+
         if (cacheAge < CACHE_DURATION) {
             // Cache is still valid, use cached results
             const sensorsAvailable = cachedSensorsAvailable === 'true';
             const scd30Available = cachedSCD30Available === 'true';
             const bh1750Available = cachedBH1750Available === 'true';
-            updateSensorNavVisibility(sensorsAvailable, scd30Available, bh1750Available);
-            console.log(`Using cached sensor availability: sensors=${sensorsAvailable}, scd30=${scd30Available}, bh1750=${bh1750Available} (cache age: ${Math.round(cacheAge / 1000)}s)`);
+            const pmsa003iAvailable = cachedPMSA003IAvailable === 'true';
+            updateSensorNavVisibility(sensorsAvailable, scd30Available, bh1750Available, pmsa003iAvailable);
+            console.log(`Using cached sensor availability: sensors=${sensorsAvailable}, scd30=${scd30Available}, bh1750=${bh1750Available}, pmsa003i=${pmsa003iAvailable} (cache age: ${Math.round(cacheAge / 1000)}s)`);
             return;
         } else {
             console.log('Sensor cache expired, refreshing...');
@@ -116,39 +118,43 @@ async function checkSensorAvailability() {
             let sensorsAvailable = false;
             let scd30Available = false;
             let bh1750Available = false;
-            
+            let pmsa003iAvailable = false;
+
             if (Array.isArray(modules)) {
                 sensorsAvailable = modules.length > 0;
                 scd30Available = modules.includes('SCD30');
                 bh1750Available = modules.includes('BH1750');
+                pmsa003iAvailable = modules.includes('PMSA003I');
             } else if (typeof modules === 'object' && modules !== null) {
                 const moduleKeys = Object.keys(modules);
                 sensorsAvailable = moduleKeys.length > 0;
                 scd30Available = modules.hasOwnProperty('SCD30');
                 bh1750Available = modules.hasOwnProperty('BH1750');
+                pmsa003iAvailable = modules.hasOwnProperty('PMSA003I');
             }
-            
+
             // Cache the results with timestamp
             localStorage.setItem('sensors-available', sensorsAvailable.toString());
             localStorage.setItem('scd30-available', scd30Available.toString());
             localStorage.setItem('bh1750-available', bh1750Available.toString());
+            localStorage.setItem('pmsa003i-available', pmsa003iAvailable.toString());
             localStorage.setItem('sensors-cache-timestamp', now.toString());
-            
-            console.log(`Sensor availability updated: sensors=${sensorsAvailable}, scd30=${scd30Available}, bh1750=${bh1750Available}`);
-            updateSensorNavVisibility(sensorsAvailable, scd30Available, bh1750Available);
+
+            console.log(`Sensor availability updated: sensors=${sensorsAvailable}, scd30=${scd30Available}, bh1750=${bh1750Available}, pmsa003i=${pmsa003iAvailable}`);
+            updateSensorNavVisibility(sensorsAvailable, scd30Available, bh1750Available, pmsa003iAvailable);
         } else {
             console.warn('Could not fetch sensor modules list, keeping sensor nav items visible');
             // Default to visible if we can't check, but don't cache this failure
-            updateSensorNavVisibility(true, true, true);
+            updateSensorNavVisibility(true, true, true, true);
         }
     } catch (error) {
         console.warn('Error checking sensor availability:', error);
         // Default to visible if there's an error, but don't cache this failure
-        updateSensorNavVisibility(true, true, true);
+        updateSensorNavVisibility(true, true, true, true);
     }
 }
 
-function updateSensorNavVisibility(sensorsAvailable, scd30Available, bh1750Available) {
+function updateSensorNavVisibility(sensorsAvailable, scd30Available, bh1750Available, pmsa003iAvailable) {
     // Update the main Sensors dropdown visibility
     const sensorsDropdown = document.querySelector('#nav-sensors');
     if (sensorsDropdown) {
@@ -159,7 +165,7 @@ function updateSensorNavVisibility(sensorsAvailable, scd30Available, bh1750Avail
             console.log('No sensor modules detected, hiding entire Sensors nav section');
         }
     }
-    
+
     // Update the SCD30 link visibility within the sensors dropdown
     const scd30NavLink = document.getElementById('scd30-nav-link');
     if (scd30NavLink) {
@@ -173,7 +179,7 @@ function updateSensorNavVisibility(sensorsAvailable, scd30Available, bh1750Avail
             }
         }
     }
-    
+
     // Update the BH1750 link visibility within the sensors dropdown
     const bh1750NavLink = document.getElementById('bh1750-nav-link');
     if (bh1750NavLink) {
@@ -187,6 +193,20 @@ function updateSensorNavVisibility(sensorsAvailable, scd30Available, bh1750Avail
             }
         }
     }
+
+    // Update the PMSA003I link visibility within the sensors dropdown
+    const pmsa003iNavLink = document.getElementById('pmsa003i-nav-link');
+    if (pmsa003iNavLink) {
+        const parentLi = pmsa003iNavLink.closest('li');
+        if (parentLi) {
+            if (pmsa003iAvailable) {
+                parentLi.style.display = 'block';
+            } else {
+                parentLi.style.display = 'none';
+                console.log('PMSA003I module not detected, hiding PMSA003I nav option');
+            }
+        }
+    }
 }
 
 // Utility function to manually clear sensor cache (useful for debugging)
@@ -194,6 +214,7 @@ function clearSensorCache() {
     localStorage.removeItem('sensors-available');
     localStorage.removeItem('scd30-available');
     localStorage.removeItem('bh1750-available');
+    localStorage.removeItem('pmsa003i-available');
     localStorage.removeItem('sensors-cache-timestamp');
     console.log('Sensor cache cleared');
 }
@@ -237,6 +258,17 @@ function highlightActivePage() {
     const bh1750Link = document.getElementById('bh1750-nav-link');
     if (bh1750Link && (currentPath === '/sensors/bh1750' || currentPath === '/sensors/bh1750.html')) {
         bh1750Link.classList.add('active');
+        // Also highlight the parent sensors link
+        const sensorsLink = document.querySelector('[data-page="sensors"]');
+        if (sensorsLink) {
+            sensorsLink.classList.add('active');
+        }
+    }
+
+    // Special handling for PMSA003I dropdown link
+    const pmsa003iLink = document.getElementById('pmsa003i-nav-link');
+    if (pmsa003iLink && (currentPath === '/sensors/pmsa003i' || currentPath === '/sensors/pmsa003i.html')) {
+        pmsa003iLink.classList.add('active');
         // Also highlight the parent sensors link
         const sensorsLink = document.querySelector('[data-page="sensors"]');
         if (sensorsLink) {

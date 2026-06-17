@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>SMIBHID - PMSA003I Sensor Control</title>
+        <link rel="stylesheet" href="../css/style.css">
+        <link rel="stylesheet" href="../css/pmsa003i.css">
+        <script src="../js/common.js"></script>
+        <script src="../js/pmsa003i.js"></script>
+    </head>
+
+    <body data-subtitle="PMSA003I Particulate Matter Sensor Control" data-footer-context="PMSA003I Sensor Control">
+        <div class="container">
+            <div id="header-placeholder"></div>
+
+            <!-- Main content area -->
+            <main class="main-content">
+                <!-- Welcome section -->
+                <section class="welcome-section">
+                    <h2>PMSA003I Particulate Matter Sensor Management</h2>
+                    <p class="description">
+                        Monitor and configure your PMSA003I laser particle sensor. The sensor measures PM1.0, PM2.5,
+                        and PM10 concentrations plus particle counts across six size bins. Fan duty cycling reduces
+                        wear while maintaining accurate readings at configurable intervals.
+                    </p>
+                    <div class="sensor-info">
+                        <div class="info-item">
+                            <span class="info-icon">🎯</span>
+                            <span><strong>Range:</strong> 0–500 μg/m³ (PM2.5), 0–1000 μg/m³ (PM10)</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-icon">📊</span>
+                            <span><strong>Particle sizes:</strong> 0.3, 0.5, 1.0, 2.5, 5.0, 10 μm bins</span>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Control Panels Grid -->
+                <div class="control-grid">
+                    <!-- Current Readings Panel -->
+                    <div class="control-panel readings-panel">
+                        <div class="panel-header">
+                            <div class="panel-icon">📈</div>
+                            <h3>Current Readings</h3>
+                        </div>
+                        <p>Latest readings from the PMSA003I sensor. Readings update on each fan duty cycle.</p>
+
+                        <p class="section-label">PM Concentrations (atmospheric, μg/m³)</p>
+                        <div class="readings-grid">
+                            <div class="reading-card">
+                                <h4>PM1.0</h4>
+                                <div class="reading-value" id="pm10-env-reading">--</div>
+                            </div>
+                            <div class="reading-card">
+                                <h4>PM2.5</h4>
+                                <div class="reading-value" id="pm25-env-reading">--</div>
+                            </div>
+                            <div class="reading-card">
+                                <h4>PM10</h4>
+                                <div class="reading-value" id="pm100-env-reading">--</div>
+                            </div>
+                        </div>
+
+                        <div id="standard-readings-section" style="display: none;">
+                            <p class="section-label">PM Concentrations (standard CF=1, μg/m³)</p>
+                            <div class="readings-grid">
+                                <div class="reading-card">
+                                    <h4>PM1.0 Std</h4>
+                                    <div class="reading-value" id="pm10-std-reading">--</div>
+                                </div>
+                                <div class="reading-card">
+                                    <h4>PM2.5 Std</h4>
+                                    <div class="reading-value" id="pm25-std-reading">--</div>
+                                </div>
+                                <div class="reading-card">
+                                    <h4>PM10 Std</h4>
+                                    <div class="reading-value" id="pm100-std-reading">--</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <p class="section-label">Particle Counts (per 0.1L of air)</p>
+                        <div class="particle-grid">
+                            <div class="particle-card">
+                                <h4>&gt;0.3 μm</h4>
+                                <div class="particle-value" id="particles-03um-reading">--</div>
+                            </div>
+                            <div class="particle-card">
+                                <h4>&gt;0.5 μm</h4>
+                                <div class="particle-value" id="particles-05um-reading">--</div>
+                            </div>
+                            <div class="particle-card">
+                                <h4>&gt;1.0 μm</h4>
+                                <div class="particle-value" id="particles-10um-reading">--</div>
+                            </div>
+                            <div class="particle-card">
+                                <h4>&gt;2.5 μm</h4>
+                                <div class="particle-value" id="particles-25um-reading">--</div>
+                            </div>
+                            <div class="particle-card">
+                                <h4>&gt;5.0 μm</h4>
+                                <div class="particle-value" id="particles-50um-reading">--</div>
+                            </div>
+                            <div class="particle-card">
+                                <h4>&gt;10 μm</h4>
+                                <div class="particle-value" id="particles-100um-reading">--</div>
+                            </div>
+                        </div>
+
+                        <button class="panel-button secondary" onclick="refreshReadings()">
+                            🔄 Refresh Readings
+                        </button>
+                    </div>
+
+                    <!-- Fan Duty Cycle Configuration Panel -->
+                    <div class="control-panel">
+                        <div class="panel-header">
+                            <div class="panel-icon">🌀</div>
+                            <h3>Fan Duty Cycle</h3>
+                        </div>
+                        <p>Configure how often the sensor takes readings and how long the fan runs per cycle. Longer sleep periods reduce fan wear.</p>
+
+                        <div class="config-notice">
+                            <span class="notice-icon">💡</span>
+                            <div>
+                                <strong>Configuration Notes:</strong>
+                                <ul>
+                                    <li>Fan run time must be less than poll period</li>
+                                    <li>Fan run time ≥ 10s recommended (datasheet response time)</li>
+                                    <li>Changes take effect on the next duty cycle</li>
+                                    <li>Settings are not persisted across restarts</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div class="status-section">
+                            <div id="duty-cycle-status" class="status-indicator">
+                                <span class="status-dot loading"></span>
+                                <span id="duty-cycle-status-text">Loading configuration...</span>
+                            </div>
+                        </div>
+
+                        <form id="dutyCycleForm" class="control-form">
+                            <div class="form-group">
+                                <label for="fanRunSeconds">Fan Run Time (seconds):</label>
+                                <input type="number" id="fanRunSeconds" name="fan_run_seconds" min="10" max="3600"
+                                       placeholder="10" class="form-input">
+                                <small class="form-help">Minimum 10s (datasheet response time); sensor stabilises within this window</small>
+                            </div>
+                            <div class="form-group">
+                                <label for="pollPeriodSeconds">Poll Period (seconds):</label>
+                                <input type="number" id="pollPeriodSeconds" name="poll_period_seconds" min="15" max="3600"
+                                       placeholder="60" class="form-input">
+                                <small class="form-help">Must be greater than fan run time</small>
+                            </div>
+                            <button type="button" onclick="applyDutyCycle()" class="panel-button apply-btn">
+                                Apply Duty Cycle
+                            </button>
+                        </form>
+
+                        <div id="dutyCycleResult" class="result-message"></div>
+                    </div>
+
+                    <!-- Data Configuration Panel -->
+                    <div class="control-panel">
+                        <div class="panel-header">
+                            <div class="panel-icon">⚙️</div>
+                            <h3>Data Configuration</h3>
+                        </div>
+                        <p>Control which PM values the sensor reports. Standard (CF=1) values use factory calibration; atmospheric values are corrected for ambient conditions.</p>
+
+                        <div class="status-section">
+                            <div id="data-config-status" class="status-indicator">
+                                <span class="status-dot loading"></span>
+                                <span id="data-config-status-text">Loading configuration...</span>
+                            </div>
+                        </div>
+
+                        <div class="toggle-row" style="margin-top: 1.5rem;">
+                            <div>
+                                <div class="toggle-label">Include Standard Values (CF=1)</div>
+                                <div class="toggle-description">Return PM1.0/PM2.5/PM10 standard alongside atmospheric values</div>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="includeStandardValues" onchange="applyStandardValues(this.checked)">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+
+                        <div class="info-note" style="margin-top: 1.5rem;">
+                            <span class="info-icon">ℹ️</span>
+                            <span>Atmospheric values are suitable for most monitoring use cases. Standard (CF=1) values are useful for cross-sensor comparison or calibration work.</span>
+                        </div>
+
+                        <div id="dataConfigResult" class="result-message"></div>
+                    </div>
+                </div>
+
+                <!-- Navigation -->
+                <div class="navigation-section">
+                    <a href="/sensors" class="nav-link">← Back to Sensors</a>
+                    <a href="/" class="nav-link">Dashboard</a>
+                    <a href="/api" class="nav-link">API Documentation →</a>
+                </div>
+            </main>
+
+            <div id="footer-placeholder"></div>
+        </div>
+    </body>
+</html>

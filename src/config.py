@@ -56,10 +56,26 @@ ADD_HOURS_INPUT_TIMEOUT = 3
 SDA_PIN = 8
 SCL_PIN = 9
 I2C_ID = 0
-I2C_FREQ = 400000
+I2C_FREQ = 100000
 
-## Sensors - Populate driver list with connected sensor modules from this supported list: ["SGP30", "BME280", "SCD30", "BH1750"]
+## Sensors - Populate driver list with connected sensor modules from this supported list: ["SGP30", "BME280", "SCD30", "BH1750", "PMSA003I"]
 SENSOR_MODULES = []
+
+## PMSA003I Particulate Matter Sensor Configuration
+# Fan duty cycle to reduce wear - fan runs for X seconds per poll period
+# Sleep time is calculated as (poll_period - run_seconds)
+# Sensor takes ONE reading at the end of the fan run period after stabilization
+PMSA003I_FAN_RUN_SECONDS = 10
+# Initial warm-up time before first reading (allows fan to stabilize)
+PMSA003I_WARM_UP_SECONDS = 30
+# Poll period - how often to take a reading (default aligns with SMIBHID sensor polling)
+PMSA003I_POLL_PERIOD_SECONDS = 60
+# I2C address for PMSA003I sensor
+PMSA003I_I2C_ADDRESS = 0x12
+# Include standard particle values (CF=1) in addition to atmospheric environment values
+# False (default) = return only atmospheric/env values (recommended for most use cases)
+# True = return both standard and env values (more data, useful for comparison/analysis)
+PMSA003I_INCLUDE_STANDARD_VALUES = False
 
 # Default CO2 calibration value for SCD30 (global average is currently 427)
 DEFAULT_CO2_CALIBRATION_VALUE = 427
@@ -136,6 +152,7 @@ CONFIG_SECTIONS = {
     "Space": ["SPACE_STATE_POLL_PERIOD_S", "ADD_HOURS_INPUT_TIMEOUT", "SPACE_OPEN_LIGHT_THRESHOLD_LX"],
     "I2C": ["SDA_PIN", "SCL_PIN", "I2C_ID", "I2C_FREQ"],
     "Sensors": ["SENSOR_MODULES", "DEFAULT_CO2_CALIBRATION_VALUE"],
+    "PMSA003I": ["PMSA003I_FAN_RUN_SECONDS", "PMSA003I_WARM_UP_SECONDS", "PMSA003I_POLL_PERIOD_SECONDS", "PMSA003I_I2C_ADDRESS", "PMSA003I_INCLUDE_STANDARD_VALUES"],
     "CO2_Alarm": ["CO2_ALARM_THRESHOLD_PPM", "CO2_ALARM_RESET_THRESHOLD_PPM", "CO2_ALARM_SNOOZE_DURATION_S", "CO2_ALARM_SILENCE_WINDOW_START_HOUR", "CO2_ALARM_SILENCE_WINDOW_END_HOUR", "CO2_ALARM_LED_PIN", "CO2_ALARM_BUZZER_PIN", "CO2_ALARM_SNOOZE_BUTTON_PIN"],
     "Sensor_Logging": ["SENSOR_LOGGING_ENABLED", "SENSOR_LOG_CACHE_ENABLED", "SENSOR_LOG_FILE_MAX_SIZE"],
     "Displays": ["DISPLAY_DRIVERS", "SCROLL_SPEED"],
