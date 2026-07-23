@@ -302,8 +302,8 @@ class WebApp:
         self.app.add_resource(SpaceLightThreshold, '/api/space/light/threshold/<value>', space_state = self.hid.space_state, logger = self.log)
 
         self.app.add_resource(SpaceRelayState, '/api/space/relay/state', space_state = self.hid.space_state, logger = self.log)
-        self.app.add_resource(RelayOnTime, '/api/relay/ontime', space_state = self.hid.space_state, logger = self.log)
-        self.app.add_resource(RelayOnTimeReset, '/api/relay/ontime/reset', space_state = self.hid.space_state, logger = self.log)
+        self.app.add_resource(RelayOnTime, '/api/space/relay/ontime', space_state = self.hid.space_state, logger = self.log)
+        self.app.add_resource(RelayOnTimeReset, '/api/space/relay/ontime/reset', space_state = self.hid.space_state, logger = self.log)
 
         self.app.add_resource(Logging, '/api/logs/read', logger = self.log, File = self.logging_file)
 
@@ -642,7 +642,7 @@ class SpaceRelayState():
 
 class RelayOnTime():
     def get(self, data, space_state: SpaceState, logger: uLogger) -> str:
-        logger.info("API request - GET /api/relay/ontime")
+        logger.info("API request - GET /api/space/relay/ontime")
         try:
             relay_history = space_state.get_relay_history()
             total_active_seconds = relay_history.get_total_active_seconds() if relay_history is not None else None
@@ -655,7 +655,7 @@ class RelayOnTime():
 
 class RelayOnTimeReset():
     def post(self, data, space_state: SpaceState, logger: uLogger) -> str:
-        logger.info("API request - POST /api/relay/ontime/reset")
+        logger.info("API request - POST /api/space/relay/ontime/reset")
         try:
             relay_history = space_state.get_relay_history()
             previous_total_active_seconds = relay_history.reset() if relay_history is not None else None

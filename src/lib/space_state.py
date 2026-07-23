@@ -67,7 +67,7 @@ class SpaceState:
         if config.SPACE_OPEN_RELAY is not None:
             self.space_state_relay = Pin(config.SPACE_OPEN_RELAY, Pin.OUT)
             self.space_state_relay.value(0)
-            self.relay_history = RelayHistory(self.wifi)
+            self.relay_history = RelayHistory(self.slack_api)
             self.relay_history.check_and_recover_on_boot()
         self.space_open_led.off()
         self.space_closed_led.off()

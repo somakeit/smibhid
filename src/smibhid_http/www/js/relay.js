@@ -39,7 +39,7 @@ async function refreshRelayData() {
     }
 
     try {
-        const ontimeResponse = await fetch('/api/relay/ontime');
+        const ontimeResponse = await fetch('/api/space/relay/ontime');
         const ontimeData = await ontimeResponse.json();
 
         if (ontimeData && ontimeData.total_active_seconds !== undefined) {
@@ -83,7 +83,7 @@ async function performOnTimeReset() {
             resetButton.disabled = true;
         }
 
-        const response = await fetch('/api/relay/ontime/reset', { method: 'POST' });
+        const response = await fetch('/api/space/relay/ontime/reset', { method: 'POST' });
         const result = await response.json();
 
         if (response.ok && result.success) {

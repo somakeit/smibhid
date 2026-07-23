@@ -7,7 +7,6 @@ from lib.ulogging import uLogger
 from lib.utils import DateTimeUtils
 from lib.error_handling import ErrorHandler
 from lib.slack_api import Wrapper
-from lib.networking import WirelessNetwork
 from os import listdir, mkdir
 from time import time
 from json import dumps, loads
@@ -24,8 +23,10 @@ class RelayHistory:
     Also owns pushing relay state changes and resets to SMIB.
     """
 
-    def __init__(self, wifi: WirelessNetwork, data_root: str = "/") -> None:
+    def __init__(self, slack_api: Wrapper, data_root: str = "/") -> None:
         """
+        slack_api should be the caller's existing Wrapper instance so relay
+        pushes share it rather than opening a second, redundant one.
         data_root defaults to the filesystem root, giving the on-device
         state file path /data/relay/state.json. Only override in tests, to
         point state persistence at a temporary directory instead of the
@@ -33,7 +34,7 @@ class RelayHistory:
         """
         self.log = uLogger("RelayHistory")
         self.datetime_utils = DateTimeUtils()
-        self.slack_api = Wrapper(wifi)
+        self.slack_api = slack_api
         self.enabled = config.RELAY_HISTORY_ENABLED
         self.STATE_FILE = data_root + "data/relay/state.json"
         self.configure_error_handling()
@@ -48,6 +49,7 @@ class RelayHistory:
         self.errors = {
             "PUSH": "Failed to push relay state update to SMIB.",
             "HEARTBEAT": "Relay history heartbeat failed.",
+            "WRITE": "Failed to write relay state file.",
         }
 
         for error_key, error_message in self.errors.items():
@@ -74,7 +76,7 @@ class RelayHistory:
             self.log.info(f"No existing relay state file to read: {e}")
             return None
 
-    def _write_state(self, active: bool, timestamp: float, total_active_seconds: float) -> None:
+    def _write_state(self, active: bool, timestamp: float, total_active_seconds: float) -> bool:
         state = {
             "active": active,
             "timestamp": timestamp,
@@ -84,8 +86,14 @@ class RelayHistory:
         try:
             with open(self.STATE_FILE, "w") as f:
                 f.write(dumps(state))
+            if self.error_handler.is_error_enabled("WRITE"):
+                self.error_handler.disable_error("WRITE")
+            return True
         except Exception as e:
             self.log.error(f"Failed to write relay state file: {e}")
+            if not self.error_handler.is_error_enabled("WRITE"):
+                self.error_handler.enable_error("WRITE")
+            return False
 
     def check_and_recover_on_boot(self) -> None:
         """
@@ -116,7 +124,13 @@ class RelayHistory:
         """
         Record a relay state transition, folding elapsed active time since
         the last recorded state into the running total before overwriting
-        the current state. Pushes the new state to SMIB.
+        the current state. Always pushes the new state to SMIB, even if the
+        local write failed - the relay changing state is a real-world event
+        driven by space/light state outside smibhid's control, so SMIB must
+        be told regardless of whether smibhid managed to persist it locally.
+        Any resulting discrepancy between smibhid's and SMIB's totals is
+        diagnosable as smibhid-side, and SMIB's own total remains the
+        trusted figure surfaced to users.
         """
         if not self.enabled:
             return
@@ -203,6 +217,9 @@ class RelayHistory:
         state and timestamp. Notifies SMIB of the reset. Returns the total
         that was reset, in seconds, or None if relay history tracking is
         not enabled.
+        Raises RuntimeError if the reset state could not be persisted, so
+        the reset is not reported as successful (and SMIB is not notified)
+        when smibhid's own total would in fact revert on next read.
         """
         if not self.enabled:
             return None
@@ -212,7 +229,8 @@ class RelayHistory:
         previous_total = self._accumulate(state, now)
         active = state.get("active", False) if state is not None else False
 
-        self._write_state(active, now, 0)
+        if not self._write_state(active, now, 0):
+            raise RuntimeError("Failed to persist relay history reset - reset not applied")
 
         try:
             create_task(self.slack_api.async_relay_reset(previous_total))

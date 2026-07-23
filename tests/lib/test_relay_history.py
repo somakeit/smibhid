@@ -8,17 +8,18 @@ def data_root(tmp_path):
 
 
 @pytest.fixture()
-def wifi():
+def slack_api():
     from lib.networking import WirelessNetwork
-    return WirelessNetwork()
+    from lib.slack_api import Wrapper
+    return Wrapper(WirelessNetwork())
 
 
 @pytest.fixture()
-def relay_history(data_root, wifi):
+def relay_history(data_root, slack_api):
     import config
     config.RELAY_HISTORY_ENABLED = True
     from lib.relay_history import RelayHistory
-    return RelayHistory(wifi, data_root)
+    return RelayHistory(slack_api, data_root)
 
 
 def test_init_creates_state_file_structure(data_root, relay_history):
@@ -30,14 +31,14 @@ def test_init_creates_state_file_structure(data_root, relay_history):
     assert path.isdir(data_root + "data/relay")
 
 
-def test_disabled_history_is_a_no_op(data_root, wifi):
+def test_disabled_history_is_a_no_op(data_root, slack_api):
     """
     Test that a disabled RelayHistory does not create files or track state.
     """
     import config
     config.RELAY_HISTORY_ENABLED = False
     from lib.relay_history import RelayHistory
-    history = RelayHistory(wifi, data_root)
+    history = RelayHistory(slack_api, data_root)
 
     from os import path
     assert not path.isdir(data_root + "data")
@@ -188,7 +189,7 @@ def test_check_and_recover_on_boot_credits_only_up_to_last_timestamp(relay_histo
     assert relay_history.get_total_active_seconds() == 20
 
 
-def test_check_and_recover_on_boot_with_no_existing_state_file(data_root, wifi):
+def test_check_and_recover_on_boot_with_no_existing_state_file(data_root, slack_api):
     """
     Test that boot recovery on a brand new device (no prior state file) initialises
     a zeroed, inactive state without error.
@@ -196,10 +197,42 @@ def test_check_and_recover_on_boot_with_no_existing_state_file(data_root, wifi):
     import config
     config.RELAY_HISTORY_ENABLED = True
     from lib.relay_history import RelayHistory
-    history = RelayHistory(wifi, data_root)
+    history = RelayHistory(slack_api, data_root)
 
     history.check_and_recover_on_boot()
 
     state = history.get_current_state()
     assert state["active"] is False
     assert state["total_active_seconds"] == 0
+
+
+def test_reset_raises_and_skips_smib_push_if_state_write_fails(relay_history):
+    """
+    Test that reset() raises rather than reporting success or notifying SMIB
+    if the state file write fails, so a persistence failure can't look like a
+    successful reset to callers while smibhid's own total silently reverts.
+    """
+    relay_history.STATE_FILE = relay_history.STATE_FILE.replace("state.json", "missing_dir/state.json")
+
+    with pytest.raises(RuntimeError):
+        relay_history.reset()
+
+    assert relay_history.error_handler.is_error_enabled("WRITE")
+
+
+def test_record_transition_still_pushes_to_smib_if_state_write_fails(relay_history):
+    """
+    Test that record_transition() still attempts to push to SMIB even if the
+    local state file write fails. Relay transitions are driven by real-world
+    space/light state changes outside smibhid's control, so SMIB must be
+    told regardless of whether smibhid persisted it locally - any resulting
+    discrepancy is diagnosable as smibhid-side, with SMIB's own total
+    remaining the trusted figure. The push itself still fails here because
+    there's no running asyncio event loop, which is what enables PUSH.
+    """
+    relay_history.STATE_FILE = relay_history.STATE_FILE.replace("state.json", "missing_dir/state.json")
+
+    relay_history.record_transition(True)
+
+    assert relay_history.error_handler.is_error_enabled("WRITE")
+    assert relay_history.error_handler.is_error_enabled("PUSH")

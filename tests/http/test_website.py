@@ -220,12 +220,12 @@ def test_relay_ontime_endpoint_is_registered(webapp):
     app = webapp
     tinyweb_app = app.app
 
-    url = b'/api/relay/ontime'
+    url = b'/api/space/relay/ontime'
     assert url in tinyweb_app.explicit_url_map, "Relay on time endpoint not registered"
 
     handler, params = tinyweb_app.explicit_url_map[url]
-    assert callable(handler), "Handler for /api/relay/ontime is not callable"
-    assert b'GET' in params['_callmap'], "GET method not registered for /api/relay/ontime"
+    assert callable(handler), "Handler for /api/space/relay/ontime is not callable"
+    assert b'GET' in params['_callmap'], "GET method not registered for /api/space/relay/ontime"
     get_handler, kwargs = params['_callmap'][b'GET']
     assert hasattr(get_handler, '__self__'), "GET handler is not a bound method"
     assert isinstance(get_handler.__self__, RelayOnTime), "GET handler is not from RelayOnTime class"
@@ -239,12 +239,12 @@ def test_relay_ontime_reset_endpoint_is_registered(webapp):
     app = webapp
     tinyweb_app = app.app
 
-    url = b'/api/relay/ontime/reset'
+    url = b'/api/space/relay/ontime/reset'
     assert url in tinyweb_app.explicit_url_map, "Relay on time reset endpoint not registered"
 
     handler, params = tinyweb_app.explicit_url_map[url]
-    assert callable(handler), "Handler for /api/relay/ontime/reset is not callable"
-    assert b'POST' in params['_callmap'], "POST method not registered for /api/relay/ontime/reset"
+    assert callable(handler), "Handler for /api/space/relay/ontime/reset is not callable"
+    assert b'POST' in params['_callmap'], "POST method not registered for /api/space/relay/ontime/reset"
     post_handler, kwargs = params['_callmap'][b'POST']
     assert hasattr(post_handler, '__self__'), "POST handler is not a bound method"
     assert isinstance(post_handler.__self__, RelayOnTimeReset), "POST handler is not from RelayOnTimeReset class"
