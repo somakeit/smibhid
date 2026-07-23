@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>SMIBHID - Relay</title>
+        <link rel="stylesheet" href="css/style.css">
+        <link rel="stylesheet" href="css/relay.css">
+        <script src="js/common.js"></script>
+        <script src="js/relay.js"></script>
+    </head>
+
+    <body data-subtitle="Relay Monitoring" data-footer-context="Relay">
+        <div class="container">
+            <div id="header-placeholder"></div>
+
+            <!-- Main content area -->
+            <main class="main-content">
+                <!-- Welcome section -->
+                <section class="welcome-section">
+                    <h2>Relay Monitoring</h2>
+                    <p class="description">
+                        The space relay can drive a consumable load, such as fan filters, based on space and light
+                        state. This page shows the current relay state and total accumulated on time, and allows
+                        the on time counter to be reset.
+                    </p>
+                </section>
+
+                <!-- Control Panels Grid -->
+                <div class="control-grid">
+                    <!-- Current State Panel -->
+                    <div class="control-panel">
+                        <div class="panel-header">
+                            <div class="panel-icon">🔌</div>
+                            <h3>Current Relay State</h3>
+                        </div>
+                        <p>Live relay output state, combining button-driven space state and light sensor state where configured.</p>
+
+                        <div class="state-info">
+                            <div class="state-card" id="relay-state-card">
+                                <h4>Relay State</h4>
+                                <div class="state-value" id="relay-state-value">--</div>
+                            </div>
+                        </div>
+
+                        <button class="panel-button secondary" onclick="refreshRelayData()">
+                            🔄 Refresh
+                        </button>
+                    </div>
+
+                    <!-- On Time Panel -->
+                    <div class="control-panel">
+                        <div class="panel-header">
+                            <div class="panel-icon">⏱️</div>
+                            <h3>Total On Time</h3>
+                        </div>
+                        <p>Cumulative time the relay has been active. This value is also reported to SMIB whenever the relay changes state.</p>
+
+                        <div class="readings-grid">
+                            <div class="reading-card">
+                                <h4>On Time</h4>
+                                <div class="reading-value" id="ontime-reading">--</div>
+                            </div>
+                        </div>
+
+                        <div class="reset-controls">
+                            <div class="warning-message">
+                                ⚠️ Warning: This will reset the on time counter to zero. SMIB will be notified of the reset value for reconciliation.
+                            </div>
+                            <button class="panel-button reset-button" onclick="showResetConfirmation()">Reset On Time Counter</button>
+                        </div>
+
+                        <div id="resetResult" class="result-message"></div>
+                    </div>
+                </div>
+
+                <!-- Reset Confirmation Modal -->
+                <div id="reset-modal" class="modal" style="display: none;">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h3>Confirm On Time Reset</h3>
+                        </div>
+                        <div class="modal-body">
+                            <p>Are you sure you want to reset the relay on time counter to zero?</p>
+                            <p>This does not affect the physical relay or current space/light state, only the accumulated on time total.</p>
+                        </div>
+                        <div class="modal-footer">
+                            <button class="modal-button cancel" onclick="hideResetConfirmation()">Cancel</button>
+                            <button class="modal-button confirm" onclick="performOnTimeReset()">Reset Counter</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Navigation -->
+                <div class="navigation-section">
+                    <a href="/" class="nav-link">← Dashboard</a>
+                    <a href="/configuration" class="nav-link">Relay Configuration →</a>
+                    <a href="/api" class="nav-link">API Documentation →</a>
+                </div>
+            </main>
+
+            <div id="footer-placeholder"></div>
+        </div>
+    </body>
+</html>

@@ -1,9 +1,11 @@
 from lib.ulogging import uLogger
 import lib.uaiohttpclient as httpclient
 from lib.networking import WirelessNetwork
+from lib.utils import DateTimeUtils
 from config import WEBSERVER_HOST, WEBSERVER_PORT
 import gc
 from json import loads, dumps
+from time import time
 
 class Wrapper:
     """
@@ -12,6 +14,7 @@ class Wrapper:
     def __init__(self, network: WirelessNetwork) -> None:
         self.log = uLogger("Slack API")
         self.wifi = network
+        self.datetime_utils = DateTimeUtils()
         self.event_api_base_url = "http://" + WEBSERVER_HOST + ":" + WEBSERVER_PORT + "/api/"
 
     async def async_space_open(self, hours: int = 0) -> None:
@@ -41,6 +44,34 @@ class Wrapper:
         }
         json_payload = dumps(payload)
         await self.async_slack_api_request("PUT", "space/light/state", json_payload)
+
+    async def async_relay_state_update(self, active: bool, total_active_seconds: float) -> None:
+        """Push a relay state transition to SMIB.
+
+        Args:
+            active: True if the relay is now active, False if now inactive
+            total_active_seconds: SMIBHID's current running total relay active time
+        """
+        payload = {
+            "active": active,
+            "timestamp": self.datetime_utils.timestamp_to_iso8601(time()),
+            "total_active_seconds": total_active_seconds
+        }
+        json_payload = dumps(payload)
+        await self.async_slack_api_request("POST", "space/relay/state", json_payload)
+
+    async def async_relay_reset(self, previous_total_active_seconds: float) -> None:
+        """Notify SMIB that the local relay on-time counter has been reset.
+
+        Args:
+            previous_total_active_seconds: The running total that was reset to zero
+        """
+        payload = {
+            "timestamp": self.datetime_utils.timestamp_to_iso8601(time()),
+            "previous_total_active_seconds": previous_total_active_seconds
+        }
+        json_payload = dumps(payload)
+        await self.async_slack_api_request("POST", "space/relay/reset", json_payload)
 
     async def async_get_space_state(self) -> bool | None:
         """Call space_state and return boolean: True = Open, False = closed."""

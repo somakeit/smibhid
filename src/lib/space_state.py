@@ -17,6 +17,7 @@ from lib.button import Button
 from lib.constants import CLOSED, OPEN
 from lib.error_handling import ErrorHandler
 from lib.module_config import ModuleConfig
+from lib.relay_history import RelayHistory
 from lib.slack_api import Wrapper
 from lib.ulogging import uLogger
 from lib.utils import StatusLED
@@ -62,9 +63,12 @@ class SpaceState:
         )
         self.space_open_led = StatusLED(config.SPACE_OPEN_LED)
         self.space_closed_led = StatusLED(config.SPACE_CLOSED_LED)
+        self._last_relay_state: Optional[bool] = None
         if config.SPACE_OPEN_RELAY is not None:
             self.space_state_relay = Pin(config.SPACE_OPEN_RELAY, Pin.OUT)
             self.space_state_relay.value(0)
+            self.relay_history = RelayHistory(self.wifi)
+            self.relay_history.check_and_recover_on_boot()
         self.space_open_led.off()
         self.space_closed_led.off()
         self.space_state = None
@@ -174,6 +178,10 @@ class SpaceState:
         )
         create_task(self.async_space_close_button_watcher())
 
+        if config.SPACE_OPEN_RELAY is not None and self.relay_history.enabled:
+            self.log.info("Starting relay history heartbeat watcher")
+            create_task(self.async_relay_history_heartbeat_watcher())
+
         self.start_space_state_poller()
 
     def _calculate_and_set_relay_output(self) -> None:
@@ -184,10 +192,10 @@ class SpaceState:
         """
         if config.SPACE_OPEN_RELAY is None:
             return
-        
+
         # Start with the button-driven space state
         relay_state = self.space_state if self.space_state is not None else False
-        
+
         # If OR with light sensor is enabled, combine states
         if config.SPACE_OPEN_RELAY_OR_WITH_LIGHT_SENSOR and self.space_light_state is not None:
             relay_state = relay_state or self.space_light_state
@@ -199,12 +207,19 @@ class SpaceState:
             )
         else:
             self.log.info(f"Relay calculation: space_state={self.space_state}, relay_state={relay_state}")
-        
+
+        old_relay_state = self._last_relay_state
+
         # Set the physical relay
         if relay_state:
             self.space_state_relay.value(config.SPACE_OPEN_RELAY_ACTIVE_HIGH)
         else:
             self.space_state_relay.value(not config.SPACE_OPEN_RELAY_ACTIVE_HIGH)
+
+        if old_relay_state != relay_state:
+            self._last_relay_state = relay_state
+            self.log.info(f"Relay state changed: {old_relay_state} -> {relay_state}")
+            self.relay_history.record_transition(relay_state)
 
     def set_output_space_open(self, enforce: bool = False) -> None:
         """
@@ -395,6 +410,16 @@ class SpaceState:
             self.ui_log.log_button_press(self.closed_button)
             await self.hid.ui_state_instance.async_on_space_closed_button()
 
+    async def async_relay_history_heartbeat_watcher(self) -> None:
+        """
+        Coroutine to periodically refresh the persisted relay state file so
+        that a future boot can detect how long the device has been off for.
+        Local file only, does not push to SMIB.
+        """
+        while True:
+            await sleep(3600)
+            self.relay_history.heartbeat()
+
     async def async_space_state_watcher(self, delay_start_s: int = 0) -> None:
         """
         Coroutine to frequently poll the space state from the slack server and
@@ -463,6 +488,16 @@ class SpaceState:
             relay_state = relay_state or self.space_light_state
         
         return relay_state
+
+    def get_relay_history(self) -> Optional[RelayHistory]:
+        """
+        Get the RelayHistory instance for this space state, or None if no
+        relay is configured.
+        """
+        if config.SPACE_OPEN_RELAY is None:
+            return None
+
+        return self.relay_history
 
     def _check_and_update_light_state(self) -> None:
         """

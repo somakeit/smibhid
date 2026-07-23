@@ -235,6 +235,7 @@ function highlightActivePage() {
         if (currentPath === linkPath ||
             (currentPath === '/' && linkPath === '/') ||
             (currentPath.startsWith('/sensors') && linkPath === '/sensors') ||
+            (currentPath === '/relay' && linkPath === '/relay') ||
             (currentPath === '/api' && linkPath === '/api') ||
             (currentPath === '/update' && linkPath === '/update') ||
             (currentPath === '/configuration' && linkPath === '/configuration') ||

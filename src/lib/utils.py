@@ -1,4 +1,4 @@
-from time import sleep, mktime
+from time import sleep, mktime, gmtime
 from machine import Pin, RTC
 import uasyncio
 from lib.ulogging import uLogger
@@ -75,7 +75,18 @@ class DateTimeUtils:
         """
         dt = RTC().datetime()
         return "{0:04d}-{1:02d}-{2:02d}T{4:02d}:{5:02d}:{6:02d}Z".format(*dt)
-    
+
+    def timestamp_to_iso8601(self, timestamp: float) -> str:
+        """
+        Convert a Unix timestamp (UTC) to an ISO 8601 formatted string.
+        """
+        try:
+            year, month, day, hour, minute, second, *_ = gmtime(timestamp)
+        except Exception as e:
+            self.logger.error(f"Failed to convert timestamp to ISO 8601: {e}")
+            return "0000-00-00T00:00:00Z"
+        return f"{year:04d}-{month:02d}-{day:02d}T{hour:02d}:{minute:02d}:{second:02d}Z"
+
     def timestamp(self, dt: str) -> float:
         """
         Convert a datetime string in ISO 8601 format to a Unix timestamp.
