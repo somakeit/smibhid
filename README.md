@@ -1,6 +1,6 @@
 # SMIBHID
 ## Overview
-SMIBHID is the So Make It Bot Human Interface Device and definitely not a mispronunciation of any insults from a popular 90s documentary detailing the activities of the Jupiter Mining Core.
+SMIBHID is the So Make It Bot Human Interface Device and definitely not a mispronunciation of any insults from a popular 90s documentary detailing the activities of the Jupiter Mining Corporation.
 
 This device runs on a Raspberry Pi Pico 2 W and provides physical input and output to humans for the SMIB project; Buttons, LEDs, that sort of thing.
 
