@@ -35,7 +35,7 @@ class RelayHistory:
         self.log = uLogger("RelayHistory")
         self.datetime_utils = DateTimeUtils()
         self.slack_api = slack_api
-        self.enabled = config.RELAY_HISTORY_ENABLED
+        self.enabled = config.SPACE_OPEN_RELAY_HISTORY_ENABLED
         self.STATE_FILE = data_root + "data/relay/state.json"
         self.configure_error_handling()
         if self.enabled:

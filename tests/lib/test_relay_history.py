@@ -17,7 +17,7 @@ def slack_api():
 @pytest.fixture()
 def relay_history(data_root, slack_api):
     import config
-    config.RELAY_HISTORY_ENABLED = True
+    config.SPACE_OPEN_RELAY_HISTORY_ENABLED = True
     from lib.relay_history import RelayHistory
     return RelayHistory(slack_api, data_root)
 
@@ -36,7 +36,7 @@ def test_disabled_history_is_a_no_op(data_root, slack_api):
     Test that a disabled RelayHistory does not create files or track state.
     """
     import config
-    config.RELAY_HISTORY_ENABLED = False
+    config.SPACE_OPEN_RELAY_HISTORY_ENABLED = False
     from lib.relay_history import RelayHistory
     history = RelayHistory(slack_api, data_root)
 
@@ -195,7 +195,7 @@ def test_check_and_recover_on_boot_with_no_existing_state_file(data_root, slack_
     a zeroed, inactive state without error.
     """
     import config
-    config.RELAY_HISTORY_ENABLED = True
+    config.SPACE_OPEN_RELAY_HISTORY_ENABLED = True
     from lib.relay_history import RelayHistory
     history = RelayHistory(slack_api, data_root)
 
