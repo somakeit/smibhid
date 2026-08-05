@@ -1,7 +1,13 @@
 // Relay Monitoring Page JavaScript
 
+// On time is calculated live from the last recorded transition, so poll
+// periodically to reflect it, rather than only fetching once on load.
+const RELAY_DATA_POLL_INTERVAL = 5000; // 5 seconds
+let relayDataInterval;
+
 document.addEventListener('DOMContentLoaded', function() {
     refreshRelayData();
+    relayDataInterval = setInterval(refreshRelayData, RELAY_DATA_POLL_INTERVAL);
 });
 
 function formatSeconds(totalSeconds) {

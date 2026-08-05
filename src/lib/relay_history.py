@@ -194,7 +194,12 @@ class RelayHistory:
         the last recorded state if that state was active. A gap larger than
         MAX_PLAUSIBLE_GAP_SECONDS is not credited, on the assumption that it
         reflects unrecorded downtime or a not-yet-synced clock rather than
-        genuine continuous active time.
+        genuine continuous active time. When that happens, the stale
+        timestamp is immediately overwritten with `now` - otherwise a
+        purely read-only caller (get_total_active_seconds, polled live by
+        the web UI) would keep rediscovering the same, ever-growing gap on
+        every call until the next heartbeat or transition happened to
+        write fresh state, up to an hour away, making on time look frozen.
         """
         if state is None:
             return 0
@@ -211,6 +216,7 @@ class RelayHistory:
                 self.log.error(f"Ignoring implausible {elapsed:.0f}s gap since last recorded state - assuming relay was off for it")
                 if not self.error_handler.is_error_enabled("CLOCK_GAP"):
                     self.error_handler.enable_error("CLOCK_GAP")
+                self._write_state(state.get("active", False), now, total_active_seconds)
 
         return total_active_seconds
 

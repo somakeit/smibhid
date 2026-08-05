@@ -183,6 +183,28 @@ def test_get_total_active_seconds_ignores_implausibly_large_gap(relay_history, m
     assert relay_history.error_handler.is_error_enabled("CLOCK_GAP")
 
 
+def test_get_total_active_seconds_self_heals_after_implausible_gap(relay_history, monkeypatch):
+    """
+    Test that a read-only poll which trips the implausible-gap guard fixes
+    the stale timestamp itself, so the very next poll resumes live
+    accumulation instead of repeatedly rediscovering the same growing gap
+    until the next heartbeat or transition (up to an hour away on-device).
+    """
+    import lib.relay_history as relay_history_module
+
+    fake_time = [1000.0]
+    monkeypatch.setattr(relay_history_module, "time", lambda: fake_time[0])
+
+    relay_history.record_transition(True)
+
+    fake_time[0] += relay_history.MAX_PLAUSIBLE_GAP_SECONDS + 1
+    assert relay_history.get_total_active_seconds() == 0
+
+    fake_time[0] += 10
+    assert relay_history.get_total_active_seconds() == 10
+    assert not relay_history.error_handler.is_error_enabled("CLOCK_GAP")
+
+
 def test_heartbeat_ignores_implausibly_large_gap(relay_history, monkeypatch):
     """
     Same scenario as above, but exercised through heartbeat() specifically,
