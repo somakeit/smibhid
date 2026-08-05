@@ -23,6 +23,17 @@ class RelayHistory:
     Also owns pushing relay state changes and resets to SMIB.
     """
 
+    # Heartbeat runs hourly (see async_relay_history_heartbeat_watcher), so
+    # a gap since the last recorded timestamp should never exceed that by
+    # much. A gap bigger than this is not trustworthy elapsed active time -
+    # either the device was powered off without a chance to record it, or
+    # the RP2040's RTC (no battery backup - it resets to a fixed default on
+    # every power-on until synced from NTP) hadn't been synced yet when one
+    # of the two timestamps was recorded. Either way, the excess is not
+    # credited and the relay is assumed to have been off for it, the same
+    # assumption already made on a detected boot recovery.
+    MAX_PLAUSIBLE_GAP_SECONDS = 2 * 3600
+
     def __init__(self, slack_api: Wrapper, data_root: str = "/") -> None:
         """
         slack_api should be the caller's existing Wrapper instance so relay
@@ -50,6 +61,7 @@ class RelayHistory:
             "PUSH": "Failed to push relay state update to SMIB.",
             "HEARTBEAT": "Relay history heartbeat failed.",
             "WRITE": "Failed to write relay state file.",
+            "CLOCK_GAP": "Relay history detected an implausible time gap - on time was not recorded for the affected period.",
         }
 
         for error_key, error_message in self.errors.items():
@@ -179,7 +191,10 @@ class RelayHistory:
     def _accumulate(self, state: dict | None, now: float) -> float:
         """
         Return the running total_active_seconds, adding elapsed time since
-        the last recorded state if that state was active.
+        the last recorded state if that state was active. A gap larger than
+        MAX_PLAUSIBLE_GAP_SECONDS is not credited, on the assumption that it
+        reflects unrecorded downtime or a not-yet-synced clock rather than
+        genuine continuous active time.
         """
         if state is None:
             return 0
@@ -187,7 +202,15 @@ class RelayHistory:
         total_active_seconds = state.get("total_active_seconds", 0)
         if state.get("active"):
             last_timestamp = state.get("timestamp", now)
-            total_active_seconds += max(0, now - last_timestamp)
+            elapsed = max(0, now - last_timestamp)
+            if elapsed <= self.MAX_PLAUSIBLE_GAP_SECONDS:
+                total_active_seconds += elapsed
+                if self.error_handler.is_error_enabled("CLOCK_GAP"):
+                    self.error_handler.disable_error("CLOCK_GAP")
+            else:
+                self.log.error(f"Ignoring implausible {elapsed:.0f}s gap since last recorded state - assuming relay was off for it")
+                if not self.error_handler.is_error_enabled("CLOCK_GAP"):
+                    self.error_handler.enable_error("CLOCK_GAP")
 
         return total_active_seconds
 

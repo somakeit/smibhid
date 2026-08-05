@@ -162,6 +162,55 @@ def test_heartbeat_clears_heartbeat_error_on_success(relay_history):
     assert not relay_history.error_handler.is_error_enabled("HEARTBEAT")
 
 
+def test_get_total_active_seconds_ignores_implausibly_large_gap(relay_history, monkeypatch):
+    """
+    Test that no phantom on-time is credited when the gap since the last
+    recorded timestamp is far bigger than a heartbeat cycle could explain -
+    e.g. an RTC that jumped forward on NTP sync, or downtime that wasn't
+    recorded. That gap is not real elapsed active time, so it must not be
+    added to the total.
+    """
+    import lib.relay_history as relay_history_module
+
+    fake_time = [1000.0]
+    monkeypatch.setattr(relay_history_module, "time", lambda: fake_time[0])
+
+    relay_history.record_transition(True)
+
+    fake_time[0] += relay_history.MAX_PLAUSIBLE_GAP_SECONDS + 1
+
+    assert relay_history.get_total_active_seconds() == 0
+    assert relay_history.error_handler.is_error_enabled("CLOCK_GAP")
+
+
+def test_heartbeat_ignores_implausibly_large_gap(relay_history, monkeypatch):
+    """
+    Same scenario as above, but exercised through heartbeat() specifically,
+    since it accumulates elapsed time on the same code path and runs
+    unattended on an hourly timer on the device.
+    """
+    import lib.relay_history as relay_history_module
+
+    fake_time = [1000.0]
+    monkeypatch.setattr(relay_history_module, "time", lambda: fake_time[0])
+
+    relay_history.record_transition(True)
+
+    fake_time[0] += relay_history.MAX_PLAUSIBLE_GAP_SECONDS + 1
+    relay_history.heartbeat()
+
+    state = relay_history.get_current_state()
+    assert state["active"] is True
+    assert state["total_active_seconds"] == 0
+    assert relay_history.error_handler.is_error_enabled("CLOCK_GAP")
+
+    # The timestamp was healed to a real "now" by the heartbeat write above,
+    # so the next plausible-gap heartbeat should clear the flag again.
+    fake_time[0] += 60
+    relay_history.heartbeat()
+    assert not relay_history.error_handler.is_error_enabled("CLOCK_GAP")
+
+
 def test_check_and_recover_on_boot_credits_only_up_to_last_timestamp(relay_history, monkeypatch):
     """
     Test that on boot, if the relay was left active, on time is only credited
