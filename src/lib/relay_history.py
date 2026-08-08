@@ -10,7 +10,6 @@ from lib.slack_api import Wrapper
 from os import listdir, mkdir
 from time import time
 from json import dumps, loads
-from asyncio import create_task
 import config
 
 class RelayHistory:
@@ -153,15 +152,12 @@ class RelayHistory:
 
         self._write_state(active, now, total_active_seconds)
 
-        try:
-            create_task(self.slack_api.async_relay_state_update(active, total_active_seconds))
-            self.log.info("Relay state update pushed to SMIB")
-            if self.error_handler.is_error_enabled("PUSH"):
-                self.error_handler.disable_error("PUSH")
-        except Exception as e:
-            self.log.error(f"Failed to push relay state update to SMIB: {e}")
-            if not self.error_handler.is_error_enabled("PUSH"):
-                self.error_handler.enable_error("PUSH")
+        self.slack_api.fire_and_forget_async_task(
+            self.slack_api.async_relay_state_update(active, total_active_seconds),
+            self.error_handler,
+            "PUSH",
+            "Relay state update pushed to SMIB"
+        )
 
     def heartbeat(self) -> None:
         """
@@ -261,14 +257,11 @@ class RelayHistory:
         if not self._write_state(active, now, 0):
             raise RuntimeError("Failed to persist relay history reset - reset not applied")
 
-        try:
-            create_task(self.slack_api.async_relay_reset(previous_total))
-            self.log.info("Relay reset notification pushed to SMIB")
-            if self.error_handler.is_error_enabled("PUSH"):
-                self.error_handler.disable_error("PUSH")
-        except Exception as e:
-            self.log.error(f"Failed to push relay reset notification to SMIB: {e}")
-            if not self.error_handler.is_error_enabled("PUSH"):
-                self.error_handler.enable_error("PUSH")
+        self.slack_api.fire_and_forget_async_task(
+            self.slack_api.async_relay_reset(previous_total),
+            self.error_handler,
+            "PUSH",
+            "Relay reset notification pushed to SMIB"
+        )
 
         return previous_total

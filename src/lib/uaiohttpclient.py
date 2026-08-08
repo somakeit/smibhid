@@ -2,19 +2,33 @@ import asyncio
 
 
 class ClientResponse:
-    def __init__(self, reader):
+    def __init__(self, reader, writer):
         self.content = reader
+        self.writer = writer
 
     async def read(self, sz=-1):
         return await self.content.read(sz)
+
+    async def aclose(self):
+        # Closing the writer also closes the underlying socket shared with
+        # the reader; without this the socket is only reclaimed via GC or
+        # the remote end's FIN, which on the Pico W's lwIP stack (a small,
+        # fixed number of TCP PCBs) leads to socket exhaustion if requests
+        # are made repeatedly, e.g. hourly heartbeats or frequent relay
+        # transitions.
+        try:
+            await self.writer.aclose()
+        except Exception:
+            pass
 
     def __repr__(self):
         return "<ClientResponse %d %s>" % (self.status, self.headers)
 
 
 class ChunkedClientResponse(ClientResponse):
-    def __init__(self, reader):
+    def __init__(self, reader, writer):
         self.content = reader
+        self.writer = writer
         self.chunk_size = 0
 
     async def read(self, sz=4 * 1024 * 1024):
@@ -72,13 +86,13 @@ async def request_raw(method, url, headers=None, json_data: str = ""):
         json_data
     )
     await writer.awrite(query.encode("latin-1"))
-    return reader
+    return reader, writer
 
 
 async def request(method, url, headers=None, json_data: str = ""):
     redir_cnt = 0
     while redir_cnt < 2:
-        reader = await request_raw(method, url, headers, json_data)
+        reader, writer = await request_raw(method, url, headers, json_data)
         headers = []
         sline = await reader.readline()
         sline = sline.split(None, 2)
@@ -97,14 +111,14 @@ async def request(method, url, headers=None, json_data: str = ""):
 
         if 301 <= status <= 303:
             redir_cnt += 1
-            await reader.aclose()
+            await writer.aclose()
             continue
         break
 
     if chunked:
-        resp = ChunkedClientResponse(reader)
+        resp = ChunkedClientResponse(reader, writer)
     else:
-        resp = ClientResponse(reader)
+        resp = ClientResponse(reader, writer)
     resp.status = status
     resp.headers = headers
     return resp

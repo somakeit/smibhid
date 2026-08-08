@@ -2,10 +2,12 @@ from lib.ulogging import uLogger
 import lib.uaiohttpclient as httpclient
 from lib.networking import WirelessNetwork
 from lib.utils import DateTimeUtils
+from lib.error_handling import ErrorHandler
 from config import WEBSERVER_HOST, WEBSERVER_PORT
 import gc
 from json import loads, dumps
 from time import time
+from asyncio import create_task
 
 class Wrapper:
     """
@@ -16,6 +18,29 @@ class Wrapper:
         self.wifi = network
         self.datetime_utils = DateTimeUtils()
         self.event_api_base_url = "http://" + WEBSERVER_HOST + ":" + WEBSERVER_PORT + "/api/"
+
+    def fire_and_forget_async_task(self, coro, error_handler: ErrorHandler | None = None, error_key: str | None = None, success_message: str = "Push to SMIB succeeded") -> None:
+        """
+        Schedule a coroutine as a task without awaiting it, catching any
+        exception it raises and optionally reflecting it via an ErrorHandler key.
+        """
+        try:
+            create_task(self._async_fire_and_forget_task(coro, error_handler, error_key, success_message))
+        except Exception as e:
+            self.log.error(f"Failed to schedule fire and forget task: {e}")
+            if error_handler is not None and error_key is not None and not error_handler.is_error_enabled(error_key):
+                error_handler.enable_error(error_key)
+
+    async def _async_fire_and_forget_task(self, coro, error_handler: ErrorHandler | None, error_key: str | None, success_message: str) -> None:
+        try:
+            await coro
+            self.log.info(success_message)
+            if error_handler is not None and error_key is not None and error_handler.is_error_enabled(error_key):
+                error_handler.disable_error(error_key)
+        except Exception as e:
+            self.log.error(f"Fire and forget task failed: {e}")
+            if error_handler is not None and error_key is not None and not error_handler.is_error_enabled(error_key):
+                error_handler.enable_error(error_key)
 
     async def async_space_open(self, hours: int = 0) -> None:
         """Call space_open, with optional hours open for parameter."""
@@ -121,6 +146,7 @@ class Wrapper:
 
         self.log.info(f"Calling URL: {url}, with method: {method}")
 
+        request = None
         try:
             await self.wifi.check_network_access()
             hostname = self.wifi.get_hostname()
@@ -147,4 +173,6 @@ class Wrapper:
             self.log.error(f"Failed to call slack API: {url}. Exception: {e}")
             raise
         finally:
+            if request is not None:
+                await request.aclose()
             gc.collect()

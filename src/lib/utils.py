@@ -3,6 +3,19 @@ from machine import Pin, RTC
 import uasyncio
 from lib.ulogging import uLogger
 
+class ListWriter:
+    """
+    Minimal file-like object accepting sys.print_exception()'s write()
+    calls, so a traceback can be captured as a string for passing to the
+    logger.
+    """
+    def __init__(self) -> None:
+        self.chunks = []
+
+    def write(self, data: str) -> int:
+        self.chunks.append(data)
+        return len(data)
+
 class StatusLED:
     """
     Instantiate an LED on a GPIO pin or leave pin unset for onboard LED.

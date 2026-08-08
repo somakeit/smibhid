@@ -551,17 +551,14 @@ class SpaceState:
                     # Recalculate and update relay output with new light state
                     self._calculate_and_set_relay_output()
                     # Push light state change to SMIB
-                    try:
-                        create_task(
-                            self.slack_api.async_space_light_update(
-                                self.space_light_state,
-                                self.space_light_value,
-                                config.SPACE_OPEN_LIGHT_THRESHOLD_LX
-                            )
-                        )
-                        self.log.info("Light state update pushed to SMIB")
-                    except Exception as e:
-                        self.log.error(f"Failed to push light state update to SMIB: {e}")
+                    self.slack_api.fire_and_forget_async_task(
+                        self.slack_api.async_space_light_update(
+                            self.space_light_state,
+                            self.space_light_value,
+                            config.SPACE_OPEN_LIGHT_THRESHOLD_LX
+                        ),
+                        success_message="Light state update pushed to SMIB"
+                    )
                 else:
                     self.log.info(
                         f"Light level: {light_level:.2f}lx, state: {self.space_light_state} "
