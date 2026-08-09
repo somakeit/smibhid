@@ -210,10 +210,13 @@ class RelayHistory:
         if previous_total is None:
             return None
 
-        if not self._write_state(time(), 0):
+        now = time()
+        if not self._write_state(now, 0):
             raise RuntimeError("Failed to persist relay history reset - reset not applied")
 
         self._total_active_seconds = 0
+        if active:
+            self._last_checkpoint_timestamp = now
 
         self.slack_api.fire_and_forget_async_task(
             self.slack_api.async_relay_reset(previous_total),

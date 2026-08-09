@@ -222,6 +222,21 @@ def test_reset_zeroes_total_and_returns_previous_value(relay_history, fake_time)
     assert relay_history.get_total_active_seconds(True) == 0
 
 
+def test_reset_while_active_does_not_recredit_time_already_reset(relay_history, fake_time):
+    """
+    Test that resetting while the relay is active advances the checkpoint,
+    so time already folded into the zeroed total isn't re-credited on the
+    next read - only time elapsed since the reset itself should count.
+    """
+    relay_history.record_transition(False, True)
+    fake_time[0] += 45
+
+    relay_history.reset(True)
+
+    fake_time[0] += 10
+    assert relay_history.get_total_active_seconds(True) == 10
+
+
 def test_reset_writes_state_exactly_once(relay_history, fake_time):
     """
     Test that reset() persists exactly one write.
