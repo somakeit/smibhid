@@ -32,6 +32,7 @@ class RelayHistory:
         self.STATE_FILE = data_root + "data/relay/state.json"
         self._total_active_seconds: float | None = None
         self._last_checkpoint_timestamp: float | None = None
+        self.log.info(f"Init relay history with data root {data_root}, state file {self.STATE_FILE}, enabled: {self.enabled}")
         self.configure_error_handling()
         if self.enabled and not self._init_file_structure(data_root):
             self.log.error("Failed to create relay state storage folder - disabling relay history tracking")
@@ -54,20 +55,25 @@ class RelayHistory:
             self.error_handler.register_error(error_key, error_message)
 
     def _init_file_structure(self, data_root: str) -> bool:
+        self.log.info(f"Creating relay state storage folder structure under {data_root}")
         data_ok = check_and_create_folder(self.log, data_root, "data")
         relay_ok = check_and_create_folder(self.log, data_root + "data/", "relay")
+        self.log.info(f"Relay state storage folder structure created: {data_ok and relay_ok}")
         return data_ok and relay_ok
 
     def _restore_total_from_file(self) -> float:
         """
         Read total_active_seconds back from the backup file. Returns 0 if
         the file is missing or its value isn't a valid non-negative number.
+        Seeds a zeroed state file if there isn't one to read.
         """
+        self.log.info(f"Restoring relay total active seconds from {self.STATE_FILE}")
         try:
             with open(self.STATE_FILE, "r") as f:
                 state = loads(f.read())
         except Exception as e:
-            self.log.info(f"No existing relay state file to read: {e}")
+            self.log.info(f"No existing relay state file to read ({e}) - writing an initial zeroed state file")
+            self._write_state(time(), 0)
             return 0
 
         total_active_seconds = state.get("total_active_seconds", 0)
@@ -75,12 +81,14 @@ class RelayHistory:
             self.log.error(f"Relay state file has an implausible total_active_seconds ({total_active_seconds!r}) - treating as corrupt, starting from 0")
             return 0
 
+        self.log.info(f"Restored relay total active seconds from file: {total_active_seconds}")
         return total_active_seconds
 
     def _write_state(self, timestamp: float, total_active_seconds: float) -> bool:
         """
         Write timestamp and total_active_seconds to the backup file.
         """
+        self.log.info(f"Writing relay state file {self.STATE_FILE} with {timestamp=}, {total_active_seconds=}")
         state = {
             "timestamp": timestamp,
             "human_timestamp": self.datetime_utils.timestamp_to_iso8601(timestamp),
@@ -89,6 +97,7 @@ class RelayHistory:
         try:
             with open(self.STATE_FILE, "w") as f:
                 f.write(dumps(state))
+            self.log.info("Relay state file written")
             if self.error_handler.is_error_enabled("WRITE"):
                 self.error_handler.disable_error("WRITE")
             return True
@@ -104,6 +113,7 @@ class RelayHistory:
         and return 0 if no valid file value.
         """
         if not isinstance(self._total_active_seconds, (int, float)) or self._total_active_seconds < 0:
+            self.log.info(f"No usable relay total in memory ({self._total_active_seconds!r}) - restoring from file")
             self._total_active_seconds = self._restore_total_from_file()
         return self._total_active_seconds
 
@@ -114,7 +124,9 @@ class RelayHistory:
         Returns None if relay history tracking is not enabled.
         Raises RTCUnreliableError if the clock isn't yet reliable.
         """
+        self.log.info(f"Getting relay total active seconds with {previous_active=}")
         if not self.enabled:
+            self.log.info("Relay history tracking not enabled - no total available")
             return None
 
         now = time()
@@ -130,8 +142,10 @@ class RelayHistory:
 
         if previous_active and self._last_checkpoint_timestamp is not None:
             elapsed = max(0, now - self._last_checkpoint_timestamp)
+            self.log.info(f"Relay active since last checkpoint - crediting {elapsed} seconds")
             total_active_seconds += elapsed
 
+        self.log.info(f"Relay total active seconds: {total_active_seconds}")
         return total_active_seconds
 
     def _calculate_total(self, previous_active: bool) -> tuple[float, float] | None:
@@ -143,6 +157,7 @@ class RelayHistory:
         try:
             total_active_seconds = self.get_total_active_seconds(previous_active)
         except RTCUnreliableError:
+            self.log.info("Skipping relay total calculation - system clock not yet reliable")
             return None
 
         assert total_active_seconds is not None
@@ -154,14 +169,18 @@ class RelayHistory:
         back it up to file, and push it to SMIB.
         Returns True on success, False if the clock isn't yet reliable.
         """
+        self.log.info(f"Updating relay on time with {previous_active=}, {active=}")
         if not self.enabled:
+            self.log.info("Relay history tracking not enabled - skipping on time update")
             return True
 
         result = self._calculate_total(previous_active)
         if result is None:
+            self.log.info("Relay on time update abandoned - no reliable total available")
             return False
         timestamp, total_active_seconds = result
 
+        self.log.info(f"New relay checkpoint at {timestamp} with total active seconds {total_active_seconds}")
         self._total_active_seconds = total_active_seconds
         self._last_checkpoint_timestamp = timestamp
 
@@ -179,6 +198,7 @@ class RelayHistory:
         """
         Record a relay state transition from previous_active to active.
         """
+        self.log.info(f"Recording relay transition: {previous_active} -> {active}")
         self._update_on_time(previous_active, active)
 
     def heartbeat(self, active: bool) -> bool:
@@ -186,6 +206,7 @@ class RelayHistory:
         Refresh the total and backup file without a state transition.
         Returns True on success, False if the clock isn't yet reliable.
         """
+        self.log.info(f"Relay history heartbeat with relay {active=}")
         return self._update_on_time(active, active)
 
     def reset(self, active: bool) -> float | None:
@@ -196,14 +217,17 @@ class RelayHistory:
         Raises RTCUnreliableError if the clock isn't yet reliable.
         Raises RuntimeError if the reset could not be persisted.
         """
+        self.log.info(f"Resetting relay on time total with relay {active=}")
         previous_total = self.get_total_active_seconds(active)
         if previous_total is None:
+            self.log.info("Relay history tracking not enabled - nothing to reset")
             return None
 
         now = time()
         if not self._write_state(now, 0):
             raise RuntimeError("Failed to persist relay history reset - reset not applied")
 
+        self.log.info(f"Relay on time total of {previous_total} seconds reset to 0")
         self._total_active_seconds = 0
         if active:
             self._last_checkpoint_timestamp = now

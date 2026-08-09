@@ -84,11 +84,32 @@ def test_disabled_history_is_a_no_op(data_root, slack_api):
     assert history.reset(True) is None
 
 
-def test_get_total_active_seconds_with_no_state_file_is_zero(relay_history, fake_time):
+def test_get_total_active_seconds_with_no_prior_state_is_zero(relay_history, fake_time):
     """
     Test that a freshly initialised history with no prior state returns zero on time.
     """
     assert relay_history.get_total_active_seconds(False) == 0
+
+
+def test_missing_state_file_is_seeded_with_a_zeroed_write(relay_history, fake_time):
+    """
+    Test that finding no state file to read writes a zeroed one there and
+    then, rather than counting in memory until the first transition or
+    heartbeat, so the backup file exists and is inspectable from the
+    outset.
+    """
+    from os import path
+    assert not path.exists(relay_history.STATE_FILE)
+
+    relay_history.get_total_active_seconds(False)
+
+    from json import loads
+    with open(relay_history.STATE_FILE, "r") as f:
+        state = loads(f.read())
+
+    assert state["total_active_seconds"] == 0
+    assert state["timestamp"] == fake_time[0]
+    assert state["human_timestamp"]
 
 
 def test_get_total_active_seconds_before_rtc_sanity_floor_raises(relay_history, monkeypatch):
