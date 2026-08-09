@@ -54,11 +54,12 @@ def test_init_disables_history_if_folder_creation_fails(data_root, slack_api, mo
     import config
     config.SPACE_OPEN_RELAY_HISTORY_ENABLED = True
     import lib.relay_history as relay_history_module
+    import lib.utils as utils_module
 
     def failing_mkdir(*args, **kwargs):
         raise OSError("Read-only filesystem")
 
-    monkeypatch.setattr(relay_history_module, "mkdir", failing_mkdir)
+    monkeypatch.setattr(utils_module, "mkdir", failing_mkdir)
 
     history = relay_history_module.RelayHistory(slack_api, data_root)
 

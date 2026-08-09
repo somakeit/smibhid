@@ -23,6 +23,9 @@ class Wrapper:
         """
         Schedule a coroutine as a task without awaiting it, catching any
         exception it raises and optionally reflecting it via an ErrorHandler key.
+        Prefer this over a bare create_task() for any fire-and-forget
+        coroutine - HID's loop-wide exception handler only catches what
+        this doesn't (tasks that bypass it entirely), it does not replace it.
         """
         try:
             create_task(self._async_fire_and_forget_task(coro, error_handler, error_key, success_message))

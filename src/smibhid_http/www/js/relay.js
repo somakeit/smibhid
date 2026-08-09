@@ -23,11 +23,18 @@ async function refreshRelayData() {
     const relayStateValue = document.getElementById('relay-state-value');
     const ontimeReading = document.getElementById('ontime-reading');
 
-    try {
-        const relayStateResponse = await fetch('/api/space/relay/state');
-        const relayStateData = await relayStateResponse.json();
+    const [relayStateResult, ontimeResult] = await Promise.allSettled([
+        fetch('/api/space/relay/state').then(response => response.json()),
+        fetch('/api/space/relay/ontime').then(response => response.json())
+    ]);
 
-        if (relayStateData && relayStateData.relay_state !== undefined && relayStateData.relay_state !== null) {
+    if (relayStateResult.status === 'fulfilled') {
+        const relayStateData = relayStateResult.value;
+
+        if (relayStateData && relayStateData.error) {
+            relayStateValue.textContent = 'Error';
+            relayStateValue.style.color = '#dc3545';
+        } else if (relayStateData && relayStateData.relay_state !== undefined && relayStateData.relay_state !== null) {
             if (relayStateData.relay_state === true) {
                 relayStateValue.textContent = '✅ On';
                 relayStateValue.style.color = '#28a745';
@@ -39,22 +46,23 @@ async function refreshRelayData() {
             relayStateValue.textContent = '⚠️ Not Configured';
             relayStateValue.style.color = '#6c757d';
         }
-    } catch (error) {
-        console.error('Error loading relay state:', error);
+    } else {
+        console.error('Error loading relay state:', relayStateResult.reason);
         relayStateValue.textContent = 'Error';
     }
 
-    try {
-        const ontimeResponse = await fetch('/api/space/relay/ontime');
-        const ontimeData = await ontimeResponse.json();
+    if (ontimeResult.status === 'fulfilled') {
+        const ontimeData = ontimeResult.value;
 
-        if (ontimeData && ontimeData.total_active_seconds !== undefined) {
+        if (ontimeData && ontimeData.error) {
+            ontimeReading.textContent = 'Error';
+        } else if (ontimeData && ontimeData.total_active_seconds !== undefined) {
             ontimeReading.textContent = formatSeconds(ontimeData.total_active_seconds);
         } else {
             ontimeReading.textContent = 'N/A';
         }
-    } catch (error) {
-        console.error('Error loading relay on time:', error);
+    } else {
+        console.error('Error loading relay on time:', ontimeResult.reason);
         ontimeReading.textContent = 'Error';
     }
 }

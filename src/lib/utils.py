@@ -1,7 +1,26 @@
 from time import sleep, mktime, gmtime
 from machine import Pin, RTC
+from os import listdir, mkdir
 import uasyncio
 from lib.ulogging import uLogger
+
+def check_and_create_folder(logger: uLogger, path: str, folder: str) -> bool:
+    """
+    Check if folder exists under path, creating it if not. path may or
+    may not have a trailing slash.
+    """
+    logger.info(f"Checking for {folder} in {path}")
+    try:
+        if folder not in listdir(path[0:-1] if path.endswith("/") else path):
+            logger.info(f"{folder} does not exist in {path} - creating")
+            mkdir(path + folder)
+            logger.info(f"{path + folder} folder created")
+        else:
+            logger.info(f"{folder} exists in {path}")
+        return True
+    except Exception as e:
+        logger.error(f"Failed to check for {folder} in {path}: {e}")
+        return False
 
 class ListWriter:
     """

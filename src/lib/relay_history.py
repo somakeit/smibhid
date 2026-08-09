@@ -1,8 +1,7 @@
 from lib.ulogging import uLogger
-from lib.utils import DateTimeUtils
+from lib.utils import DateTimeUtils, check_and_create_folder
 from lib.error_handling import ErrorHandler
 from lib.slack_api import Wrapper
-from os import listdir, mkdir
 from time import time
 from json import dumps, loads
 import config
@@ -55,18 +54,9 @@ class RelayHistory:
             self.error_handler.register_error(error_key, error_message)
 
     def _init_file_structure(self, data_root: str) -> bool:
-        data_ok = self._check_and_create_folder(data_root, "data")
-        relay_ok = self._check_and_create_folder(data_root + "data/", "relay")
+        data_ok = check_and_create_folder(self.log, data_root, "data")
+        relay_ok = check_and_create_folder(self.log, data_root + "data/", "relay")
         return data_ok and relay_ok
-
-    def _check_and_create_folder(self, path: str, folder: str) -> bool:
-        try:
-            if folder not in listdir(path[0:-1] if path.endswith("/") else path):
-                mkdir(path + folder)
-            return True
-        except Exception as e:
-            self.log.error(f"Failed to check for {folder} in {path}: {e}")
-            return False
 
     def _restore_total_from_file(self) -> float:
         """
