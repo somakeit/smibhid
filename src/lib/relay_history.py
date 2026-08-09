@@ -1,8 +1,3 @@
-"""
-Tracks relay on/off time to a local file so total on time survives a reboot,
-and pushes relay state changes and resets to SMIB.
-"""
-
 from lib.ulogging import uLogger
 from lib.utils import DateTimeUtils
 from lib.error_handling import ErrorHandler
@@ -12,44 +7,37 @@ from time import time
 from json import dumps, loads
 import config
 
+# 2024-01-01T00:00:00Z. The RP2040's RTC has no battery backup and resets
+# to a fixed default on every power-on until NTP sync completes (expected
+# early, at network access on boot). A clock reading before this floor
+# means NTP hasn't corrected it yet, so any elapsed-time diff against it
+# would be meaningless - treated the same as the relay being off for
+# accounting purposes.
+RTC_SANITY_FLOOR_EPOCH_S = 1704067200
+
+class RTCUnreliableError(Exception):
+    """Raised when the system clock reads before RTC_SANITY_FLOOR_EPOCH_S."""
+    pass
+
 class RelayHistory:
     """
-    Persists relay active state and cumulative active seconds to a single
-    JSON file on the local filesystem, rewritten in place on every
-    transition and on a periodic heartbeat. This allows total on time to
-    be calculated without keeping an unbounded log, and allows a power
-    loss to be detected and accounted for on the next boot.
-    Also owns pushing relay state changes and resets to SMIB.
+    Tracks cumulative relay active seconds, backed up to a JSON file on
+    the local filesystem. Pushes relay state changes and resets to SMIB.
     """
 
-    # Heartbeat runs hourly (see async_relay_history_heartbeat_watcher), so
-    # a gap since the last recorded timestamp should never exceed that by
-    # much. A gap bigger than this is not trustworthy elapsed active time -
-    # either the device was powered off without a chance to record it, or
-    # the RP2040's RTC (no battery backup - it resets to a fixed default on
-    # every power-on until synced from NTP) hadn't been synced yet when one
-    # of the two timestamps was recorded. Either way, the excess is not
-    # credited and the relay is assumed to have been off for it, the same
-    # assumption already made on a detected boot recovery.
-    MAX_PLAUSIBLE_GAP_SECONDS = 2 * 3600
-
     def __init__(self, slack_api: Wrapper, data_root: str = "/") -> None:
-        """
-        slack_api should be the caller's existing Wrapper instance so relay
-        pushes share it rather than opening a second, redundant one.
-        data_root defaults to the filesystem root, giving the on-device
-        state file path /data/relay/state.json. Only override in tests, to
-        point state persistence at a temporary directory instead of the
-        real filesystem root.
-        """
         self.log = uLogger("RelayHistory")
         self.datetime_utils = DateTimeUtils()
         self.slack_api = slack_api
         self.enabled = config.SPACE_OPEN_RELAY_HISTORY_ENABLED
         self.STATE_FILE = data_root + "data/relay/state.json"
+        self._total_active_seconds: float | None = None
+        self._last_checkpoint_timestamp: float | None = None
         self.configure_error_handling()
-        if self.enabled:
-            self._init_file_structure(data_root)
+        if self.enabled and not self._init_file_structure(data_root):
+            self.log.error("Failed to create relay state storage folder - disabling relay history tracking")
+            self.error_handler.enable_error("INIT")
+            self.enabled = False
 
     def configure_error_handling(self) -> None:
         """
@@ -58,17 +46,18 @@ class RelayHistory:
         self.error_handler = ErrorHandler("RelayHistory")
         self.errors = {
             "PUSH": "Failed to push relay state update to SMIB.",
-            "HEARTBEAT": "Relay history heartbeat failed.",
             "WRITE": "Failed to write relay state file.",
-            "CLOCK_GAP": "Relay history detected an implausible time gap - on time was not recorded for the affected period.",
+            "INIT": "Failed to create relay state storage folder.",
+            "CLOCK": "System clock not yet reliable (pre-2024) - relay on time not being recorded.",
         }
 
         for error_key, error_message in self.errors.items():
             self.error_handler.register_error(error_key, error_message)
 
-    def _init_file_structure(self, data_root: str) -> None:
-        self._check_and_create_folder(data_root, "data")
-        self._check_and_create_folder(data_root + "data/", "relay")
+    def _init_file_structure(self, data_root: str) -> bool:
+        data_ok = self._check_and_create_folder(data_root, "data")
+        relay_ok = self._check_and_create_folder(data_root + "data/", "relay")
+        return data_ok and relay_ok
 
     def _check_and_create_folder(self, path: str, folder: str) -> bool:
         try:
@@ -79,17 +68,30 @@ class RelayHistory:
             self.log.error(f"Failed to check for {folder} in {path}: {e}")
             return False
 
-    def _read_state(self) -> dict | None:
+    def _restore_total_from_file(self) -> float:
+        """
+        Read total_active_seconds back from the backup file. Returns 0 if
+        the file is missing or its value isn't a valid non-negative number.
+        """
         try:
             with open(self.STATE_FILE, "r") as f:
-                return loads(f.read())
+                state = loads(f.read())
         except Exception as e:
             self.log.info(f"No existing relay state file to read: {e}")
-            return None
+            return 0
 
-    def _write_state(self, active: bool, timestamp: float, total_active_seconds: float) -> bool:
+        total_active_seconds = state.get("total_active_seconds", 0)
+        if not isinstance(total_active_seconds, (int, float)) or total_active_seconds < 0:
+            self.log.error(f"Relay state file has an implausible total_active_seconds ({total_active_seconds!r}) - treating as corrupt, starting from 0")
+            return 0
+
+        return total_active_seconds
+
+    def _write_state(self, timestamp: float, total_active_seconds: float) -> bool:
+        """
+        Write timestamp and total_active_seconds to the backup file.
+        """
         state = {
-            "active": active,
             "timestamp": timestamp,
             "human_timestamp": self.datetime_utils.timestamp_to_iso8601(timestamp),
             "total_active_seconds": total_active_seconds
@@ -106,51 +108,74 @@ class RelayHistory:
                 self.error_handler.enable_error("WRITE")
             return False
 
-    def check_and_recover_on_boot(self) -> None:
+    def _ensure_total_loaded(self) -> float:
         """
-        On startup, check the persisted state. If the relay was active when
-        the device last wrote state, only credit on time up to that last
-        recorded timestamp - any time between then and now is unknown, as
-        the device may have been unplugged with no chance to record a
-        clean shutdown, so it is treated as off.
+        If None in memory, restore total_active_seconds from the backup file
+        and return 0 if no valid file value.
         """
-        if not self.enabled:
-            return
+        if not isinstance(self._total_active_seconds, (int, float)) or self._total_active_seconds < 0:
+            self._total_active_seconds = self._restore_total_from_file()
+        return self._total_active_seconds
 
-        state = self._read_state()
-        now = time()
-
-        if state is None:
-            self._write_state(False, now, 0)
-            return
-
-        total_active_seconds = state.get("total_active_seconds", 0)
-
-        if state.get("active"):
-            self.log.info("Relay was active at last recorded state - crediting time up to last known timestamp only, treating device as off since then")
-
-        self._write_state(False, now, total_active_seconds)
-
-    def record_transition(self, active: bool) -> None:
+    def get_total_active_seconds(self, previous_active: bool) -> float | None:
         """
-        Record a relay state transition, folding elapsed active time since
-        the last recorded state into the running total before overwriting
-        the current state. Always pushes the new state to SMIB, even if the
-        local write failed - the relay changing state is a real-world event
-        driven by space/light state outside smibhid's control, so SMIB must
-        be told regardless of whether smibhid managed to persist it locally.
-        Any resulting discrepancy between smibhid's and SMIB's totals is
-        diagnosable as smibhid-side, and SMIB's own total remains the
-        trusted figure surfaced to users.
+        Return total active seconds, crediting elapsed time since the
+        last checkpoint if previous_active is True.
+        Returns None if relay history tracking is not enabled.
+        Raises RTCUnreliableError if the clock isn't yet reliable.
         """
         if not self.enabled:
-            return
+            return None
 
         now = time()
-        state = self._read_state()
-        total_active_seconds = self._accumulate(state, now)
+        if now < RTC_SANITY_FLOOR_EPOCH_S:
+            self.log.error(f"System clock not yet reliable ({now=}, pre-2024) - cannot calculate relay on time")
+            if not self.error_handler.is_error_enabled("CLOCK"):
+                self.error_handler.enable_error("CLOCK")
+            raise RTCUnreliableError(f"System clock reads {now}, before RTC sanity floor {RTC_SANITY_FLOOR_EPOCH_S}")
+        if self.error_handler.is_error_enabled("CLOCK"):
+            self.error_handler.disable_error("CLOCK")
 
-        self._write_state(active, now, total_active_seconds)
+        total_active_seconds = self._ensure_total_loaded()
+
+        if previous_active and self._last_checkpoint_timestamp is not None:
+            elapsed = max(0, now - self._last_checkpoint_timestamp)
+            total_active_seconds += elapsed
+
+        return total_active_seconds
+
+    def _calculate_total(self, previous_active: bool) -> tuple[float, float] | None:
+        """
+        Return (timestamp, total_active_seconds), or None if the clock
+        isn't yet reliable. Only called while self.enabled, so
+        total_active_seconds is always a float here.
+        """
+        try:
+            total_active_seconds = self.get_total_active_seconds(previous_active)
+        except RTCUnreliableError:
+            return None
+
+        assert total_active_seconds is not None
+        return time(), total_active_seconds
+
+    def _update_on_time(self, previous_active: bool, active: bool) -> bool:
+        """
+        Calculate the up-to-date total, persist it as the new checkpoint,
+        back it up to file, and push it to SMIB.
+        Returns True on success, False if the clock isn't yet reliable.
+        """
+        if not self.enabled:
+            return True
+
+        result = self._calculate_total(previous_active)
+        if result is None:
+            return False
+        timestamp, total_active_seconds = result
+
+        self._total_active_seconds = total_active_seconds
+        self._last_checkpoint_timestamp = timestamp
+
+        self._write_state(timestamp, total_active_seconds)
 
         self.slack_api.fire_and_forget_async_task(
             self.slack_api.async_relay_state_update(active, total_active_seconds),
@@ -158,104 +183,37 @@ class RelayHistory:
             "PUSH",
             "Relay state update pushed to SMIB"
         )
+        return True
 
-    def heartbeat(self) -> None:
+    def record_transition(self, previous_active: bool, active: bool) -> None:
         """
-        Periodic local-only refresh of the state file so a future boot can
-        tell how recently the device was last known to be running. Does
-        not push to SMIB.
+        Record a relay state transition from previous_active to active.
         """
-        if not self.enabled:
-            return
+        self._update_on_time(previous_active, active)
 
-        try:
-            now = time()
-            state = self._read_state()
-            if state is None:
-                self._write_state(False, now, 0)
-            else:
-                total_active_seconds = self._accumulate(state, now)
-                self._write_state(state.get("active", False), now, total_active_seconds)
-
-            if self.error_handler.is_error_enabled("HEARTBEAT"):
-                self.error_handler.disable_error("HEARTBEAT")
-        except Exception as e:
-            self.log.error(f"Relay history heartbeat failed: {e}")
-            if not self.error_handler.is_error_enabled("HEARTBEAT"):
-                self.error_handler.enable_error("HEARTBEAT")
-
-    def _accumulate(self, state: dict | None, now: float) -> float:
+    def heartbeat(self, active: bool) -> bool:
         """
-        Return the running total_active_seconds, adding elapsed time since
-        the last recorded state if that state was active. A gap larger than
-        MAX_PLAUSIBLE_GAP_SECONDS is not credited, on the assumption that it
-        reflects unrecorded downtime or a not-yet-synced clock rather than
-        genuine continuous active time. When that happens, the stale
-        timestamp is immediately overwritten with `now` - otherwise a
-        purely read-only caller (get_total_active_seconds, polled live by
-        the web UI) would keep rediscovering the same, ever-growing gap on
-        every call until the next heartbeat or transition happened to
-        write fresh state, up to an hour away, making on time look frozen.
+        Refresh the total and backup file without a state transition.
+        Returns True on success, False if the clock isn't yet reliable.
         """
-        if state is None:
-            return 0
+        return self._update_on_time(active, active)
 
-        total_active_seconds = state.get("total_active_seconds", 0)
-        if state.get("active"):
-            last_timestamp = state.get("timestamp", now)
-            elapsed = max(0, now - last_timestamp)
-            if elapsed <= self.MAX_PLAUSIBLE_GAP_SECONDS:
-                total_active_seconds += elapsed
-                if self.error_handler.is_error_enabled("CLOCK_GAP"):
-                    self.error_handler.disable_error("CLOCK_GAP")
-            else:
-                self.log.error(f"Ignoring implausible {elapsed:.0f}s gap since last recorded state - assuming relay was off for it")
-                if not self.error_handler.is_error_enabled("CLOCK_GAP"):
-                    self.error_handler.enable_error("CLOCK_GAP")
-                self._write_state(state.get("active", False), now, total_active_seconds)
-
-        return total_active_seconds
-
-    def get_total_active_seconds(self) -> float | None:
+    def reset(self, active: bool) -> float | None:
         """
-        Return the current total active seconds, including time elapsed
-        since the last recorded state if the relay is currently active.
-        Returns None if relay history tracking is not enabled.
+        Reset the cumulative total to zero and notify SMIB. Returns the
+        total that was reset, in seconds, or None if relay history
+        tracking is not enabled.
+        Raises RTCUnreliableError if the clock isn't yet reliable.
+        Raises RuntimeError if the reset could not be persisted.
         """
-        if not self.enabled:
+        previous_total = self.get_total_active_seconds(active)
+        if previous_total is None:
             return None
 
-        state = self._read_state()
-        if state is None:
-            return 0
-
-        return self._accumulate(state, time())
-
-    def get_current_state(self) -> dict | None:
-        if not self.enabled:
-            return None
-        return self._read_state()
-
-    def reset(self) -> float | None:
-        """
-        Reset the cumulative total to zero, preserving the current active
-        state and timestamp. Notifies SMIB of the reset. Returns the total
-        that was reset, in seconds, or None if relay history tracking is
-        not enabled.
-        Raises RuntimeError if the reset state could not be persisted, so
-        the reset is not reported as successful (and SMIB is not notified)
-        when smibhid's own total would in fact revert on next read.
-        """
-        if not self.enabled:
-            return None
-
-        state = self._read_state()
-        now = time()
-        previous_total = self._accumulate(state, now)
-        active = state.get("active", False) if state is not None else False
-
-        if not self._write_state(active, now, 0):
+        if not self._write_state(time(), 0):
             raise RuntimeError("Failed to persist relay history reset - reset not applied")
+
+        self._total_active_seconds = 0
 
         self.slack_api.fire_and_forget_async_task(
             self.slack_api.async_relay_reset(previous_total),

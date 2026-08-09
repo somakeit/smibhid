@@ -645,7 +645,7 @@ class RelayOnTime():
         logger.info("API request - GET /api/space/relay/ontime")
         try:
             relay_history = space_state.get_relay_history()
-            total_active_seconds = relay_history.get_total_active_seconds() if relay_history is not None else None
+            total_active_seconds = relay_history.get_total_active_seconds(bool(space_state.get_relay_state())) if relay_history is not None else None
             html = dumps({"total_active_seconds": total_active_seconds})
         except Exception as e:
             logger.error(f"Failed to get relay on time: {e}")
@@ -658,7 +658,7 @@ class RelayOnTimeReset():
         logger.info("API request - POST /api/space/relay/ontime/reset")
         try:
             relay_history = space_state.get_relay_history()
-            previous_total_active_seconds = relay_history.reset() if relay_history is not None else None
+            previous_total_active_seconds = relay_history.reset(bool(space_state.get_relay_state())) if relay_history is not None else None
             html = dumps({"success": True, "previous_total_active_seconds": previous_total_active_seconds})
         except Exception as e:
             logger.error(f"Failed to reset relay on time: {e}")

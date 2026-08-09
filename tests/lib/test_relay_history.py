@@ -22,6 +22,20 @@ def relay_history(data_root, slack_api):
     return RelayHistory(slack_api, data_root)
 
 
+@pytest.fixture()
+def fake_time(monkeypatch):
+    """
+    Patch time() with a mutable clock seeded well after the RTC sanity
+    floor, since accumulation is driven by wall-clock diffs and any
+    reading before the floor is treated as unreliable and skipped.
+    """
+    import lib.relay_history as relay_history_module
+
+    current_time = [relay_history_module.RTC_SANITY_FLOOR_EPOCH_S + 1000]
+    monkeypatch.setattr(relay_history_module, "time", lambda: current_time[0])
+    return current_time
+
+
 def test_init_creates_state_file_structure(data_root, relay_history):
     """
     Test that the data/relay folder structure is created under the given root.
@@ -29,6 +43,27 @@ def test_init_creates_state_file_structure(data_root, relay_history):
     from os import path
     assert path.isdir(data_root + "data")
     assert path.isdir(data_root + "data/relay")
+
+
+def test_init_disables_history_if_folder_creation_fails(data_root, slack_api, monkeypatch):
+    """
+    Test that if the state folder can't be created (e.g. full/read-only
+    filesystem), RelayHistory disables itself at construction rather than
+    leaving enabled True and failing every subsequent write indefinitely.
+    """
+    import config
+    config.SPACE_OPEN_RELAY_HISTORY_ENABLED = True
+    import lib.relay_history as relay_history_module
+
+    def failing_mkdir(*args, **kwargs):
+        raise OSError("Read-only filesystem")
+
+    monkeypatch.setattr(relay_history_module, "mkdir", failing_mkdir)
+
+    history = relay_history_module.RelayHistory(slack_api, data_root)
+
+    assert history.enabled is False
+    assert history.error_handler.is_error_enabled("INIT")
 
 
 def test_disabled_history_is_a_no_op(data_root, slack_api):
@@ -43,241 +78,224 @@ def test_disabled_history_is_a_no_op(data_root, slack_api):
     from os import path
     assert not path.isdir(data_root + "data")
 
-    history.record_transition(True)
-    assert history.get_total_active_seconds() is None
-    assert history.reset() is None
+    history.record_transition(False, True)
+    assert history.get_total_active_seconds(True) is None
+    assert history.reset(True) is None
 
 
-def test_get_total_active_seconds_with_no_state_file_is_zero(relay_history):
+def test_get_total_active_seconds_with_no_state_file_is_zero(relay_history, fake_time):
     """
-    Test that a freshly initialised history with no transitions returns zero on time.
+    Test that a freshly initialised history with no prior state returns zero on time.
     """
-    assert relay_history.get_total_active_seconds() == 0
+    assert relay_history.get_total_active_seconds(False) == 0
 
 
-def test_record_transition_persists_state(relay_history):
+def test_get_total_active_seconds_before_rtc_sanity_floor_raises(relay_history, monkeypatch):
     """
-    Test that recording a transition persists the active flag to the state file.
+    Test that querying on time before the clock has been NTP-corrected
+    (reads before the 2024 sanity floor) raises RTCUnreliableError rather
+    than returning a meaningless figure, and surfaces the CLOCK error.
+    """
+    import lib.relay_history as relay_history_module
+    monkeypatch.setattr(relay_history_module, "time", lambda: 1000.0)
+
+    with pytest.raises(relay_history_module.RTCUnreliableError):
+        relay_history.get_total_active_seconds(False)
+    assert relay_history.error_handler.is_error_enabled("CLOCK")
+
+
+def test_record_transition_persists_state(relay_history, fake_time):
+    """
+    Test that recording a transition updates the total (here 0, since
+    off->on adds no elapsed time) without error.
     Note: with no asyncio event loop running (as in this synchronous test), the
     SMIB push inside record_transition fails to schedule and is caught, which
     is exercised separately in test_record_transition_enables_push_error_without_event_loop.
     """
-    relay_history.record_transition(True)
-    state = relay_history.get_current_state()
-    assert state is not None
-    assert state["active"] is True
+    relay_history.record_transition(False, True)
+    assert relay_history.get_total_active_seconds(True) == 0
 
 
-def test_record_transition_enables_push_error_without_event_loop(relay_history):
+def test_record_transition_enables_push_error_without_event_loop(relay_history, fake_time):
     """
     Test that attempting to push to SMIB with no running asyncio event loop
     (as is the case outside of the device's real async runtime) is caught and
     surfaces as an enabled PUSH error via the module's error handler, rather
     than raising out of record_transition.
     """
-    relay_history.record_transition(True)
+    relay_history.record_transition(False, True)
     assert relay_history.error_handler.is_error_enabled("PUSH")
 
 
-def test_total_active_seconds_accumulates_across_on_off_cycle(relay_history, monkeypatch):
+def test_on_to_off_transition_credits_elapsed_active_time(relay_history, fake_time):
     """
-    Test that going active then inactive accumulates the elapsed active duration
-    into total_active_seconds.
+    Test that going from on to off credits the elapsed time since the
+    last checkpoint into the total.
     """
-    import lib.relay_history as relay_history_module
-
-    fake_time = [1000.0]
-    monkeypatch.setattr(relay_history_module, "time", lambda: fake_time[0])
-
-    relay_history.record_transition(True)
+    relay_history.record_transition(False, True)
     fake_time[0] += 60
-    relay_history.record_transition(False)
+    relay_history.record_transition(True, False)
 
-    assert relay_history.get_total_active_seconds() == 60
+    assert relay_history.get_total_active_seconds(False) == 60
 
 
-def test_get_total_active_seconds_counts_in_progress_active_time(relay_history, monkeypatch):
+def test_off_to_off_heartbeat_does_not_accumulate_time(relay_history, fake_time):
     """
-    Test that on time is live-calculated while the relay is currently active,
-    without requiring another transition first.
+    Test that a heartbeat while off (previous_active == active == False)
+    never adds elapsed time, regardless of how long has passed.
+    """
+    fake_time[0] += 60
+    relay_history.heartbeat(False)
+
+    assert relay_history.get_total_active_seconds(False) == 0
+
+
+def test_heartbeat_returns_true_on_success(relay_history, fake_time):
+    """
+    Test that heartbeat() reports success when the clock is reliable.
+    """
+    assert relay_history.heartbeat(False) is True
+
+
+def test_heartbeat_returns_false_before_rtc_sanity_floor(relay_history, monkeypatch):
+    """
+    Test that heartbeat() reports failure while the clock is unreliable,
+    rather than raising, so a caller retrying on a timer can react without
+    needing to catch an exception.
     """
     import lib.relay_history as relay_history_module
+    monkeypatch.setattr(relay_history_module, "time", lambda: 1000.0)
 
-    fake_time = [1000.0]
-    monkeypatch.setattr(relay_history_module, "time", lambda: fake_time[0])
+    assert relay_history.heartbeat(False) is False
 
-    relay_history.record_transition(True)
+
+def test_on_to_on_heartbeat_accumulates_elapsed_time_and_advances_checkpoint(relay_history, fake_time):
+    """
+    Test that a heartbeat while on (previous_active == active == True)
+    credits elapsed time since the last checkpoint and advances the
+    checkpoint, so a second heartbeat only credits the time since the
+    first one, not from the original transition.
+    """
+    relay_history.record_transition(False, True)
+    fake_time[0] += 3600
+    relay_history.heartbeat(True)
+    fake_time[0] += 3600
+    relay_history.heartbeat(True)
+
+    assert relay_history.get_total_active_seconds(True) == 7200
+
+
+def test_get_total_active_seconds_live_calculates_without_side_effects(relay_history, fake_time):
+    """
+    Test that get_total_active_seconds returns a live, up-to-date figure
+    reflecting time elapsed since the last checkpoint even without a
+    heartbeat or transition having happened yet - so a caller like the
+    web UI never has to wait up to an hour for a fresh number - and that
+    calling it repeatedly does not itself advance the checkpoint or alter
+    the persisted total (a pure read).
+    """
+    relay_history.record_transition(False, True)
     fake_time[0] += 30
 
-    assert relay_history.get_total_active_seconds() == 30
+    assert relay_history.get_total_active_seconds(True) == 30
+
+    fake_time[0] += 15
+    assert relay_history.get_total_active_seconds(True) == 45
+
+    # A transition now should credit the full 45s, proving the reads
+    # above didn't advance the checkpoint themselves.
+    relay_history.record_transition(True, False)
+    assert relay_history.get_total_active_seconds(False) == 45
 
 
-def test_reset_zeroes_total_and_returns_previous_value(relay_history, monkeypatch):
+def test_reset_zeroes_total_and_returns_previous_value(relay_history, fake_time):
     """
-    Test that reset returns the total that was reset and zeroes the running total,
-    while preserving the current active state.
+    Test that reset returns the live-calculated total that was reset and
+    zeroes the running total.
     """
-    import lib.relay_history as relay_history_module
-
-    fake_time = [1000.0]
-    monkeypatch.setattr(relay_history_module, "time", lambda: fake_time[0])
-
-    relay_history.record_transition(True)
+    relay_history.record_transition(False, True)
     fake_time[0] += 45
 
-    previous_total = relay_history.reset()
+    previous_total = relay_history.reset(True)
 
     assert previous_total == 45
-    assert relay_history.get_total_active_seconds() == 0
-    state = relay_history.get_current_state()
-    assert state["active"] is True
+    assert relay_history.get_total_active_seconds(True) == 0
 
 
-def test_heartbeat_refreshes_timestamp_without_losing_accumulated_total(relay_history, monkeypatch):
+def test_reset_writes_state_exactly_once(relay_history, fake_time):
     """
-    Test that a heartbeat while active folds elapsed time into the total and
-    refreshes the recorded timestamp, without changing the active state.
+    Test that reset() persists exactly one write.
     """
-    import lib.relay_history as relay_history_module
+    relay_history.record_transition(False, True)
+    fake_time[0] += 45
 
-    fake_time = [1000.0]
-    monkeypatch.setattr(relay_history_module, "time", lambda: fake_time[0])
+    write_calls = []
+    original_write_state = relay_history._write_state
 
-    relay_history.record_transition(True)
-    fake_time[0] += 3600
-    relay_history.heartbeat()
+    def counting_write_state(*args, **kwargs):
+        write_calls.append(args)
+        return original_write_state(*args, **kwargs)
 
-    state = relay_history.get_current_state()
-    assert state["active"] is True
-    assert state["timestamp"] == 4600.0
-    assert relay_history.get_total_active_seconds() == 3600
+    relay_history._write_state = counting_write_state
+
+    relay_history.reset(True)
+
+    assert len(write_calls) == 1
 
 
-def test_heartbeat_clears_heartbeat_error_on_success(relay_history):
+def test_reset_before_rtc_sanity_floor_raises_and_does_not_write(relay_history, monkeypatch):
     """
-    Test that a successful heartbeat disables the HEARTBEAT error if it was enabled.
-    """
-    relay_history.error_handler.enable_error("HEARTBEAT")
-    relay_history.heartbeat()
-    assert not relay_history.error_handler.is_error_enabled("HEARTBEAT")
-
-
-def test_get_total_active_seconds_ignores_implausibly_large_gap(relay_history, monkeypatch):
-    """
-    Test that no phantom on-time is credited when the gap since the last
-    recorded timestamp is far bigger than a heartbeat cycle could explain -
-    e.g. an RTC that jumped forward on NTP sync, or downtime that wasn't
-    recorded. That gap is not real elapsed active time, so it must not be
-    added to the total.
+    Test that reset() refuses to act while the clock is unreliable,
+    rather than zeroing a total calculated from a meaningless diff.
     """
     import lib.relay_history as relay_history_module
+    monkeypatch.setattr(relay_history_module, "time", lambda: 1000.0)
 
-    fake_time = [1000.0]
-    monkeypatch.setattr(relay_history_module, "time", lambda: fake_time[0])
+    write_calls = []
+    original_write_state = relay_history._write_state
 
-    relay_history.record_transition(True)
+    def counting_write_state(*args, **kwargs):
+        write_calls.append(args)
+        return original_write_state(*args, **kwargs)
 
-    fake_time[0] += relay_history.MAX_PLAUSIBLE_GAP_SECONDS + 1
+    relay_history._write_state = counting_write_state
 
-    assert relay_history.get_total_active_seconds() == 0
-    assert relay_history.error_handler.is_error_enabled("CLOCK_GAP")
+    with pytest.raises(relay_history_module.RTCUnreliableError):
+        relay_history.reset(True)
+    assert len(write_calls) == 0
 
 
-def test_get_total_active_seconds_self_heals_after_implausible_gap(relay_history, monkeypatch):
+def test_restores_total_from_file_after_reconstruction(data_root, slack_api, fake_time):
     """
-    Test that a read-only poll which trips the implausible-gap guard fixes
-    the stale timestamp itself, so the very next poll resumes live
-    accumulation instead of repeatedly rediscovering the same growing gap
-    until the next heartbeat or transition (up to an hour away on-device).
-    """
-    import lib.relay_history as relay_history_module
-
-    fake_time = [1000.0]
-    monkeypatch.setattr(relay_history_module, "time", lambda: fake_time[0])
-
-    relay_history.record_transition(True)
-
-    fake_time[0] += relay_history.MAX_PLAUSIBLE_GAP_SECONDS + 1
-    assert relay_history.get_total_active_seconds() == 0
-
-    fake_time[0] += 10
-    assert relay_history.get_total_active_seconds() == 10
-    assert not relay_history.error_handler.is_error_enabled("CLOCK_GAP")
-
-
-def test_heartbeat_ignores_implausibly_large_gap(relay_history, monkeypatch):
-    """
-    Same scenario as above, but exercised through heartbeat() specifically,
-    since it accumulates elapsed time on the same code path and runs
-    unattended on an hourly timer on the device.
-    """
-    import lib.relay_history as relay_history_module
-
-    fake_time = [1000.0]
-    monkeypatch.setattr(relay_history_module, "time", lambda: fake_time[0])
-
-    relay_history.record_transition(True)
-
-    fake_time[0] += relay_history.MAX_PLAUSIBLE_GAP_SECONDS + 1
-    relay_history.heartbeat()
-
-    state = relay_history.get_current_state()
-    assert state["active"] is True
-    assert state["total_active_seconds"] == 0
-    assert relay_history.error_handler.is_error_enabled("CLOCK_GAP")
-
-    # The timestamp was healed to a real "now" by the heartbeat write above,
-    # so the next plausible-gap heartbeat should clear the flag again.
-    fake_time[0] += 60
-    relay_history.heartbeat()
-    assert not relay_history.error_handler.is_error_enabled("CLOCK_GAP")
-
-
-def test_check_and_recover_on_boot_credits_only_up_to_last_timestamp(relay_history, monkeypatch):
-    """
-    Test that on boot, if the relay was left active, on time is only credited
-    up to the last recorded timestamp - not through to the current boot time -
-    and the relay is marked inactive afterwards.
-    """
-    import lib.relay_history as relay_history_module
-
-    fake_time = [1000.0]
-    monkeypatch.setattr(relay_history_module, "time", lambda: fake_time[0])
-
-    relay_history.record_transition(True)
-    fake_time[0] += 20
-    relay_history.heartbeat()
-
-    # Simulate an unplug: a large gap passes with no further writes before reboot
-    fake_time[0] += 999999
-
-    relay_history.check_and_recover_on_boot()
-
-    state = relay_history.get_current_state()
-    assert state["active"] is False
-    # Only the 20 seconds between the transition and the heartbeat should be credited,
-    # not the 999999 second gap while presumed unplugged.
-    assert relay_history.get_total_active_seconds() == 20
-
-
-def test_check_and_recover_on_boot_with_no_existing_state_file(data_root, slack_api):
-    """
-    Test that boot recovery on a brand new device (no prior state file) initialises
-    a zeroed, inactive state without error.
+    Test that a new RelayHistory instance (simulating a reboot) restores
+    the total previously backed up to file.
     """
     import config
     config.SPACE_OPEN_RELAY_HISTORY_ENABLED = True
     from lib.relay_history import RelayHistory
-    history = RelayHistory(slack_api, data_root)
 
-    history.check_and_recover_on_boot()
+    first = RelayHistory(slack_api, data_root)
+    first.record_transition(False, True)
+    fake_time[0] += 20
+    first.record_transition(True, False)
 
-    state = history.get_current_state()
-    assert state["active"] is False
-    assert state["total_active_seconds"] == 0
+    second = RelayHistory(slack_api, data_root)
+    assert second.get_total_active_seconds(False) == 20
 
 
-def test_reset_raises_and_skips_smib_push_if_state_write_fails(relay_history):
+def test_restores_zero_if_state_file_is_corrupt(relay_history, fake_time):
+    """
+    Test that a corrupted state file (implausible total_active_seconds)
+    is not trusted - the total falls back to zero rather than
+    propagating a bad value forever.
+    """
+    with open(relay_history.STATE_FILE, "w") as f:
+        f.write('{"total_active_seconds": -5}')
+
+    assert relay_history.get_total_active_seconds(False) == 0
+
+
+def test_reset_raises_and_skips_smib_push_if_state_write_fails(relay_history, fake_time):
     """
     Test that reset() raises rather than reporting success or notifying SMIB
     if the state file write fails, so a persistence failure can't look like a
@@ -286,12 +304,12 @@ def test_reset_raises_and_skips_smib_push_if_state_write_fails(relay_history):
     relay_history.STATE_FILE = relay_history.STATE_FILE.replace("state.json", "missing_dir/state.json")
 
     with pytest.raises(RuntimeError):
-        relay_history.reset()
+        relay_history.reset(False)
 
     assert relay_history.error_handler.is_error_enabled("WRITE")
 
 
-def test_record_transition_still_pushes_to_smib_if_state_write_fails(relay_history):
+def test_record_transition_still_pushes_to_smib_if_state_write_fails(relay_history, fake_time):
     """
     Test that record_transition() still attempts to push to SMIB even if the
     local state file write fails. Relay transitions are driven by real-world
@@ -303,7 +321,7 @@ def test_record_transition_still_pushes_to_smib_if_state_write_fails(relay_histo
     """
     relay_history.STATE_FILE = relay_history.STATE_FILE.replace("state.json", "missing_dir/state.json")
 
-    relay_history.record_transition(True)
+    relay_history.record_transition(False, True)
 
     assert relay_history.error_handler.is_error_enabled("WRITE")
     assert relay_history.error_handler.is_error_enabled("PUSH")

@@ -63,12 +63,11 @@ class SpaceState:
         )
         self.space_open_led = StatusLED(config.SPACE_OPEN_LED)
         self.space_closed_led = StatusLED(config.SPACE_CLOSED_LED)
-        self._last_relay_state: Optional[bool] = None
+        self._last_relay_state: Optional[bool] = False
         if config.SPACE_OPEN_RELAY is not None:
             self.space_state_relay = Pin(config.SPACE_OPEN_RELAY, Pin.OUT)
             self.space_state_relay.value(0)
             self.relay_history = RelayHistory(self.slack_api)
-            self.relay_history.check_and_recover_on_boot()
         self.space_open_led.off()
         self.space_closed_led.off()
         self.space_state = None
@@ -219,7 +218,7 @@ class SpaceState:
         if old_relay_state != relay_state:
             self._last_relay_state = relay_state
             self.log.info(f"Relay state changed: {old_relay_state} -> {relay_state}")
-            self.relay_history.record_transition(relay_state)
+            self.relay_history.record_transition(bool(old_relay_state), relay_state)
 
     def set_output_space_open(self, enforce: bool = False) -> None:
         """
@@ -412,13 +411,13 @@ class SpaceState:
 
     async def async_relay_history_heartbeat_watcher(self) -> None:
         """
-        Coroutine to periodically refresh the persisted relay state file so
-        that a future boot can detect how long the device has been off for.
-        Local file only, does not push to SMIB.
+        Coroutine to periodically back up the relay on time total to file
+        and push it to SMIB, even without a state change.
+        Increases retry frequency on RTC error.
         """
         while True:
-            await sleep(3600)
-            self.relay_history.heartbeat()
+            success = self.relay_history.heartbeat(bool(self._last_relay_state))
+            await sleep(3600 if success else 60)
 
     async def async_space_state_watcher(self, delay_start_s: int = 0) -> None:
         """
