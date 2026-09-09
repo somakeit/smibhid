@@ -9,6 +9,7 @@ from lib.sensors.BH1750 import BH1750
 from lib.sensors.PMSA003I import PMSA003I
 from lib.sensors.sensor_module import SensorModule
 from lib.sensors.file_logging import FileLogger
+from lib.sensors.internal_metrics import InternalMetrics
 from lib.sensors.alarm import Alarm
 from lib.displays.display import Display
 from lib.networking import WirelessNetwork
@@ -32,6 +33,8 @@ class Sensors:
         self.file_logger = FileLogger(init_files=True)
         self.load_modules(self.SENSOR_MODULES)
         self._configure_modules()
+        self.internal_metrics = InternalMetrics(self.space_state)
+        self.configured_modules['InternalMetrics'] = self.internal_metrics
         self.alarm = Alarm(self.display, self.space_state)
         if CO2_ALARM_THRESHOLD_PPM > 0 and 'SCD30' in self.configured_modules:
             self.alarm.enable()
