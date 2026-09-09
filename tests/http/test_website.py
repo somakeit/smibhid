@@ -211,6 +211,74 @@ def test_space_light_threshold_endpoint_is_registered(webapp):
     assert b'GET' in params['_callmap'], "GET method not registered for /api/space/light/threshold"
     assert b'PUT' in params['_callmap'], "PUT method not registered for /api/space/light/threshold"
 
+def test_relay_ontime_endpoint_is_registered(webapp):
+    """
+    Test that the relay on time endpoint is registered correctly.
+    """
+    from smibhid_http.website import RelayOnTime
+
+    app = webapp
+    tinyweb_app = app.app
+
+    url = b'/api/space/relay/ontime'
+    assert url in tinyweb_app.explicit_url_map, "Relay on time endpoint not registered"
+
+    handler, params = tinyweb_app.explicit_url_map[url]
+    assert callable(handler), "Handler for /api/space/relay/ontime is not callable"
+    assert b'GET' in params['_callmap'], "GET method not registered for /api/space/relay/ontime"
+    get_handler, kwargs = params['_callmap'][b'GET']
+    assert hasattr(get_handler, '__self__'), "GET handler is not a bound method"
+    assert isinstance(get_handler.__self__, RelayOnTime), "GET handler is not from RelayOnTime class"
+
+def test_relay_ontime_reset_endpoint_is_registered(webapp):
+    """
+    Test that the relay on time reset endpoint is registered correctly.
+    """
+    from smibhid_http.website import RelayOnTimeReset
+
+    app = webapp
+    tinyweb_app = app.app
+
+    url = b'/api/space/relay/ontime/reset'
+    assert url in tinyweb_app.explicit_url_map, "Relay on time reset endpoint not registered"
+
+    handler, params = tinyweb_app.explicit_url_map[url]
+    assert callable(handler), "Handler for /api/space/relay/ontime/reset is not callable"
+    assert b'POST' in params['_callmap'], "POST method not registered for /api/space/relay/ontime/reset"
+    post_handler, kwargs = params['_callmap'][b'POST']
+    assert hasattr(post_handler, '__self__'), "POST handler is not a bound method"
+    assert isinstance(post_handler.__self__, RelayOnTimeReset), "POST handler is not from RelayOnTimeReset class"
+
+def test_relay_ontime_endpoint_returns_json_when_relay_not_configured(hid_log):
+    """
+    Test that the relay on time endpoint returns null total when no relay is configured.
+    """
+    from smibhid_http.website import RelayOnTime
+    from json import loads
+    hid, log = hid_log
+    relay_ontime = RelayOnTime()
+    response = relay_ontime.get("", hid.space_state, log)
+
+    response_data = loads(response)
+
+    assert "total_active_seconds" in response_data, "Response should contain 'total_active_seconds' key"
+    assert response_data["total_active_seconds"] is None
+
+def test_relay_ontime_reset_endpoint_returns_json_when_relay_not_configured(hid_log):
+    """
+    Test that the relay on time reset endpoint reports success with no reset value when no relay is configured.
+    """
+    from smibhid_http.website import RelayOnTimeReset
+    from json import loads
+    hid, log = hid_log
+    relay_ontime_reset = RelayOnTimeReset()
+    response = relay_ontime_reset.post("", hid.space_state, log)
+
+    response_data = loads(response)
+
+    assert response_data["success"] is True
+    assert response_data["previous_total_active_seconds"] is None
+
 def test_space_light_state_endpoint_returns_json(hid_log):
     """
     Test that the space light state endpoint returns JSON with expected keys.

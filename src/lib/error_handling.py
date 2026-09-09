@@ -58,7 +58,8 @@ class ErrorHandler:
         if key in self.errors:
             self.errors[key]['enabled'] = False
             self.log.info(f"Disabled error '{key}'")
-            self.update_errors_on_display()
+            if hasattr(self, 'display'):
+                self.update_errors_on_display()
         else:
             raise ValueError(f"Error key '{key}' not registered.")
 

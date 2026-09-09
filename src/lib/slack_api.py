@@ -1,9 +1,13 @@
 from lib.ulogging import uLogger
 import lib.uaiohttpclient as httpclient
 from lib.networking import WirelessNetwork
+from lib.utils import DateTimeUtils
+from lib.error_handling import ErrorHandler
 from config import WEBSERVER_HOST, WEBSERVER_PORT
 import gc
 from json import loads, dumps
+from time import time
+from asyncio import create_task
 
 class Wrapper:
     """
@@ -12,7 +16,34 @@ class Wrapper:
     def __init__(self, network: WirelessNetwork) -> None:
         self.log = uLogger("Slack API")
         self.wifi = network
+        self.datetime_utils = DateTimeUtils()
         self.event_api_base_url = "http://" + WEBSERVER_HOST + ":" + WEBSERVER_PORT + "/api/"
+
+    def fire_and_forget_async_task(self, coro, error_handler: ErrorHandler | None = None, error_key: str | None = None, success_message: str = "Push to SMIB succeeded") -> None:
+        """
+        Schedule a coroutine as a task without awaiting it, catching any
+        exception it raises and optionally reflecting it via an ErrorHandler key.
+        Prefer this over a bare create_task() for any fire-and-forget
+        coroutine - HID's loop-wide exception handler only catches what
+        this doesn't (tasks that bypass it entirely), it does not replace it.
+        """
+        try:
+            create_task(self._async_fire_and_forget_task(coro, error_handler, error_key, success_message))
+        except Exception as e:
+            self.log.error(f"Failed to schedule fire and forget task: {e}")
+            if error_handler is not None and error_key is not None and not error_handler.is_error_enabled(error_key):
+                error_handler.enable_error(error_key)
+
+    async def _async_fire_and_forget_task(self, coro, error_handler: ErrorHandler | None, error_key: str | None, success_message: str) -> None:
+        try:
+            await coro
+            self.log.info(success_message)
+            if error_handler is not None and error_key is not None and error_handler.is_error_enabled(error_key):
+                error_handler.disable_error(error_key)
+        except Exception as e:
+            self.log.error(f"Fire and forget task failed: {e}")
+            if error_handler is not None and error_key is not None and not error_handler.is_error_enabled(error_key):
+                error_handler.enable_error(error_key)
 
     async def async_space_open(self, hours: int = 0) -> None:
         """Call space_open, with optional hours open for parameter."""
@@ -41,6 +72,34 @@ class Wrapper:
         }
         json_payload = dumps(payload)
         await self.async_slack_api_request("PUT", "space/light/state", json_payload)
+
+    async def async_relay_state_update(self, active: bool, total_active_seconds: float) -> None:
+        """Push a relay state transition to SMIB.
+
+        Args:
+            active: True if the relay is now active, False if now inactive
+            total_active_seconds: SMIBHID's current running total relay active time
+        """
+        payload = {
+            "active": active,
+            "timestamp": self.datetime_utils.timestamp_to_iso8601(time()),
+            "total_active_seconds": total_active_seconds
+        }
+        json_payload = dumps(payload)
+        await self.async_slack_api_request("POST", "space/relay/state", json_payload)
+
+    async def async_relay_reset(self, previous_total_active_seconds: float) -> None:
+        """Notify SMIB that the local relay on-time counter has been reset.
+
+        Args:
+            previous_total_active_seconds: The running total that was reset to zero
+        """
+        payload = {
+            "timestamp": self.datetime_utils.timestamp_to_iso8601(time()),
+            "previous_total_active_seconds": previous_total_active_seconds
+        }
+        json_payload = dumps(payload)
+        await self.async_slack_api_request("POST", "space/relay/reset", json_payload)
 
     async def async_get_space_state(self) -> bool | None:
         """Call space_state and return boolean: True = Open, False = closed."""
@@ -90,6 +149,7 @@ class Wrapper:
 
         self.log.info(f"Calling URL: {url}, with method: {method}")
 
+        request = None
         try:
             await self.wifi.check_network_access()
             hostname = self.wifi.get_hostname()
@@ -116,4 +176,6 @@ class Wrapper:
             self.log.error(f"Failed to call slack API: {url}. Exception: {e}")
             raise
         finally:
+            if request is not None:
+                await request.aclose()
             gc.collect()

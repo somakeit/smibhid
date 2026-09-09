@@ -48,6 +48,7 @@ class WebApp:
         self.create_bh1750_css()
         self.create_pmsa003i_css()
         self.create_configuration_css()
+        self.create_relay_css()
         self.create_common_js()
         self.create_index_js()
         self.create_sensors_js()
@@ -57,6 +58,7 @@ class WebApp:
         self.create_pmsa003i_js()
         self.create_system_js()
         self.create_configuration_js()
+        self.create_relay_js()
         self.create_header_include()
         self.create_footer_include()
         self.create_favicon()
@@ -66,6 +68,7 @@ class WebApp:
         self.create_scd30()
         self.create_bh1750()
         self.create_pmsa003i()
+        self.create_relay()
         self.create_system()
         self.create_configuration()
         self.create_test_sensors()
@@ -122,6 +125,11 @@ class WebApp:
         async def index(request, response):
             await response.send_file('/smibhid_http/www/css/configuration.css', content_type='text/css', max_age=0)
 
+    def create_relay_css(self):
+        @self.app.route('/css/relay.css')
+        async def index(request, response):
+            await response.send_file('/smibhid_http/www/css/relay.css', content_type='text/css', max_age=0)
+
     def create_common_js(self):
         @self.app.route('/js/common.js')
         async def index(request, response):
@@ -166,7 +174,12 @@ class WebApp:
         @self.app.route('/js/configuration.js')
         async def index(request, response):
             await response.send_file('/smibhid_http/www/js/configuration.js', content_type='application/javascript', max_age=0)
-    
+
+    def create_relay_js(self):
+        @self.app.route('/js/relay.js')
+        async def index(request, response):
+            await response.send_file('/smibhid_http/www/js/relay.js', content_type='application/javascript', max_age=0)
+
     def create_header_include(self):
         @self.app.route('/includes/header.html')
         async def index(request, response):
@@ -222,6 +235,11 @@ class WebApp:
         @self.app.route('/sensors/pmsa003i')
         async def index(request, response):
             await response.send_file('/smibhid_http/www/sensors/pmsa003i.html')
+
+    def create_relay(self) -> None:
+        @self.app.route('/relay')
+        async def index(request, response):
+            await response.send_file('/smibhid_http/www/relay.html')
 
     def create_system(self) -> None:
         @self.app.route('/system')
@@ -284,6 +302,8 @@ class WebApp:
         self.app.add_resource(SpaceLightThreshold, '/api/space/light/threshold/<value>', space_state = self.hid.space_state, logger = self.log)
 
         self.app.add_resource(SpaceRelayState, '/api/space/relay/state', space_state = self.hid.space_state, logger = self.log)
+        self.app.add_resource(RelayOnTime, '/api/space/relay/ontime', space_state = self.hid.space_state, logger = self.log)
+        self.app.add_resource(RelayOnTimeReset, '/api/space/relay/ontime/reset', space_state = self.hid.space_state, logger = self.log)
 
         self.app.add_resource(Logging, '/api/logs/read', logger = self.log, File = self.logging_file)
 
@@ -617,6 +637,32 @@ class SpaceRelayState():
         except Exception as e:
             logger.error(f"Failed to get relay state: {e}")
             html = dumps({"error": f"Failed to get relay state: {e}"})
+        logger.info(f"Return value: {html}")
+        return html
+
+class RelayOnTime():
+    def get(self, data, space_state: SpaceState, logger: uLogger) -> str:
+        logger.info("API request - GET /api/space/relay/ontime")
+        try:
+            relay_history = space_state.get_relay_history()
+            total_active_seconds = relay_history.get_total_active_seconds(bool(space_state.get_relay_state())) if relay_history is not None else None
+            html = dumps({"total_active_seconds": total_active_seconds})
+        except Exception as e:
+            logger.error(f"Failed to get relay on time: {e}")
+            html = dumps({"error": f"Failed to get relay on time: {e}"})
+        logger.info(f"Return value: {html}")
+        return html
+
+class RelayOnTimeReset():
+    def post(self, data, space_state: SpaceState, logger: uLogger) -> str:
+        logger.info("API request - POST /api/space/relay/ontime/reset")
+        try:
+            relay_history = space_state.get_relay_history()
+            previous_total_active_seconds = relay_history.reset(bool(space_state.get_relay_state())) if relay_history is not None else None
+            html = dumps({"success": True, "previous_total_active_seconds": previous_total_active_seconds})
+        except Exception as e:
+            logger.error(f"Failed to reset relay on time: {e}")
+            html = dumps({"error": f"Failed to reset relay on time: {e}"})
         logger.info(f"Return value: {html}")
         return html
 

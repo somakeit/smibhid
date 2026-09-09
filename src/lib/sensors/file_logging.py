@@ -1,5 +1,6 @@
 from lib.ulogging import uLogger
-from os import listdir, mkdir, stat, remove, rename
+from lib.utils import check_and_create_folder
+from os import listdir, stat, remove, rename
 from time import time, localtime
 from json import dumps, loads
 from config import SENSOR_LOG_FILE_MAX_SIZE, SENSOR_LOG_CACHE_ENABLED
@@ -14,33 +15,15 @@ class FileLogger:
         self.minute_log_file = "/data/sensors/minute_log.txt"
         self.hour_log_file = "/data/sensors/hour_log.txt"
         self.LOG_FILE_MAX_SIZE = SENSOR_LOG_FILE_MAX_SIZE
-    
+
     def init_file_structure(self) -> None:
-        self.check_and_create_folder("/", "data")
-        self.check_and_create_folder("/data/", "sensors")
+        check_and_create_folder(self.log, "/", "data")
+        check_and_create_folder(self.log, "/data/", "sensors")
         self.check_and_create_file("/data/sensors/", "minute_log.txt")
         self.check_and_create_file("/data/sensors/", "minute_log2.txt")
         self.check_and_create_file("/data/sensors/", "hour_log.txt")
         self.check_and_create_file("/data/sensors/", "hour_log2.txt")
-    
-    def check_and_create_folder(self, path: str, folder: str) -> bool:
-        """
-        Check if a directory exists on a given path.
-        Path should be a string with a closing slash.
-        """
-        self.log.info(f"Checking for {folder} in {path}")
-        try:
-            if folder not in listdir(path [0:-1]):
-                self.log.info(f"{folder} does not exist in {path} - creating")
-                mkdir(path + folder)
-                self.log.info(f"{path + folder} folder created")
-            else:
-                self.log.info(f"{folder} exists in {path}")
-            return True
-        except Exception as e:
-            self.log.error(f"Failed to check for {folder} in {path}: {e}")
-            return False
-    
+
     def check_and_create_file(self, path: str, file: str) -> bool:
         """
         Check if a file exists in a given path.

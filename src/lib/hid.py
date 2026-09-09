@@ -1,6 +1,7 @@
 from lib.ulogging import uLogger
 from asyncio import get_event_loop, Event, create_task, sleep
 from time import ticks_ms, ticks_diff
+import sys
 from lib.space_state import SpaceState, NoneState, OpenState, ClosedState
 from lib.error_handling import ErrorHandler
 from lib.module_config import ModuleConfig
@@ -14,6 +15,7 @@ from smibhid_http.website import WebApp
 from lib.pinger import Pinger
 from machine import freq, I2C
 from lib.sensors import Sensors
+from lib.utils import ListWriter
 
 class HID:
     
@@ -31,10 +33,12 @@ class HID:
         self.i2c = I2C(I2C_ID, sda = SDA_PIN, scl = SCL_PIN, freq = I2C_FREQ)
         self.moduleConfig = ModuleConfig()
         self.moduleConfig.register_display(Display(self.i2c))
+        self.display = self.moduleConfig.get_display()
+        self.error_handler = ErrorHandler("HID")
+        self.error_handler.configure_display(self.display)
         self.moduleConfig.register_wifi(WirelessNetwork())
         if RFID_ENABLED:
             self.moduleConfig.register_rfid(RFIDReader(Event()))
-        self.display = self.moduleConfig.get_display()
         self.wifi = self.moduleConfig.get_wifi()
         self.moduleConfig.register_ui_log(UILog(self.wifi))
         self.reader = self.moduleConfig.get_rfid()
@@ -43,8 +47,6 @@ class HID:
         self.pinger = Pinger(self.moduleConfig, self)
         self.moduleConfig.register_sensors(Sensors(self.i2c, self.display, self.wifi, self.space_state))
         self.sensors = self.moduleConfig.get_sensors()
-        self.error_handler = ErrorHandler("HID")
-        self.error_handler.configure_display(self.display)
         self.web_app = WebApp(self.moduleConfig, self)
         self.ui_state_instance = StartUIState(self, self.space_state)
         self.ui_state_instance.on_enter()
@@ -82,11 +84,45 @@ class HID:
         self.ui_log.startup()
         self.web_app.startup()
       
-        self.log.info("Entering main loop")        
+        self.log.info("Entering main loop")
         self.switch_to_appropriate_spacestate_uistate()
         self.loop_running = True
         loop = get_event_loop()
-        loop.run_forever()
+        loop.set_exception_handler(self._async_exception_handler)
+        try:
+            loop.run_forever()
+        except Exception as e:
+            # Last line of defence: if something still escapes the loop
+            # itself log it before the process dies.
+            trace = ""
+            try:
+                writer = ListWriter()
+                sys.print_exception(e, writer)  # type: ignore[reportCallIssue]
+                trace = "".join(writer.chunks)
+            except Exception:
+                pass
+            self.log.critical(f"Main loop terminated by unhandled exception: {e}\n{trace}")
+            raise
+
+    def _async_exception_handler(self, loop, context: dict) -> None:
+        """
+        Catch-all for exceptions raised inside asyncio tasks that nothing
+        else retrieves. Logging them here at "critical" ensures
+        they land in the log file. Last-resort safety net for a bare
+        create_task() call - prefer Wrapper.fire_and_forget_async_task
+        for fire-and-forget coroutines, which handles its own errors.
+        """
+        message = context.get("message", "Unhandled exception in asyncio task")
+        exception = context.get("exception")
+        trace = ""
+        if exception is not None:
+            try:
+                writer = ListWriter()
+                sys.print_exception(exception, writer)  # type: ignore[reportCallIssue]
+                trace = "\n" + "".join(writer.chunks)
+            except Exception:
+                pass
+        self.log.critical(f"Unhandled asyncio exception: {message}: {exception}{trace}")
 
     def switch_to_appropriate_spacestate_uistate(self) -> None:
         """
